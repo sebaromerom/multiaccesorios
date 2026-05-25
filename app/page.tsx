@@ -187,7 +187,7 @@ export default async function Home() {
         </section>
       )}
 
-      {/* BENTO CATEGORÍAS */}
+ {/* BENTO CATEGORÍAS */}
       <section className="max-w-7xl mx-auto w-full px-6 md:px-16 pb-28">
         <div className="border-t border-zinc-300 pt-12 mb-10">
           <p className="text-[9px] tracking-[0.3em] uppercase text-zinc-400 font-bold mb-1.5">Acceso Directo</p>
@@ -204,7 +204,7 @@ export default async function Home() {
             { cat: 'Cargador',   emoji: '⚡', label: 'Cargadores',   num: '04' },
             { cat: 'Cable',      emoji: '🔌', label: 'Cables',       num: '05' },
             { cat: 'Vapers',     emoji: '💨', label: 'Vapers',       num: '06' },
-            { cat: 'Computacion', emoji: '💻', label: 'Computación',  num: '07' },
+            { cat: 'Computacion', emoji: '💻', label: 'Cómputo',     num: '07' }, // ← Corregido para que no se corte en móviles
             { cat: 'Otros',      emoji: '✨', label: 'Otros',        num: '08' },
           ].map((item) => (
             <Link key={item.cat} href={`/shop?cat=${item.cat}`}>
@@ -219,11 +219,11 @@ export default async function Home() {
                   </span>
                 </div>
 
-                <div className="mt-auto flex items-baseline justify-between">
-                  <h3 className="font-sans text-xs font-semibold uppercase tracking-[0.2em] text-zinc-800 group-hover:text-red-600 transition-colors duration-150">
+                <div className="mt-auto flex items-baseline justify-between gap-1">
+                  <h3 className="font-sans text-xs font-semibold uppercase tracking-[0.2em] text-zinc-800 group-hover:text-red-600 transition-colors duration-150 truncate">
                     {item.label}
                   </h3>
-                  <span className="font-light text-zinc-300 group-hover:text-zinc-800 group-hover:translate-x-0.5 transition-all duration-200 text-sm leading-none">
+                  <span className="font-light text-zinc-300 group-hover:text-zinc-800 group-hover:translate-x-0.5 transition-all duration-200 text-sm leading-none shrink-0">
                     →
                   </span>
                 </div>
