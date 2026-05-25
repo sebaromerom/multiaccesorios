@@ -1,9 +1,32 @@
 'use client'
 
 import Link from 'next/link'
-import { signOut } from 'next-auth/react'
+import { signOut, useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 
 export default function AdminPage() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
+
+  // Control de redirección seguro
+  useEffect(() => {
+    if (status === 'unauthenticated' || (status === 'authenticated' && session?.user?.role !== 'admin')) {
+      router.push('/api/auth/signin')
+    }
+  }, [status, session, router])
+
+  // Mientras valida la sesión, mostramos una pantalla limpia para evitar parpadeos visuales
+  if (status === 'loading' || !session || session.user?.role !== 'admin') {
+    return (
+      <div className="w-full min-h-[80vh] flex items-center justify-center bg-[#FAF9F5]">
+        <p className="text-[10px] tracking-[0.4em] uppercase text-zinc-400 font-mono animate-pulse">
+          Validando credenciales...
+        </p>
+      </div>
+    )
+  }
+
   const adminLinks = [
     { href: '/admin/products', num: '01', title: 'Productos', desc: 'Gestionar productos y stock' },
     { href: '/admin/discounts', num: '02', title: 'Descuentos', desc: 'Crear y gestionar descuentos' },
