@@ -1,4 +1,3 @@
-// app/admin/layout.tsx
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -12,11 +11,11 @@ export default function AdminLayout({
   children: React.ReactNode
 }) {
   return (
-    /* Agregamos la clase 'es-ruta-admin'. 
-      Al renderizarse aquí, el layout raíz (app/layout.tsx) la detectará 
-      y automáticamente ocultará el NavBar y reseteará los paddings y fondos.
+    /* Cambiamos 'bg-zinc-950' por 'bg-[#FAF9F5]' (o 'bg-zinc-50') 
+      y cambiamos 'text-white' por 'text-black' para que haga match 
+      perfecto con los textos oscuros de tu panel.
     */
-    <div className="w-full min-h-screen bg-zinc-950 text-white es-ruta-admin">
+    <div className="w-full min-h-screen bg-[#FAF9F5] text-black es-ruta-admin">
       {children}
     </div>
   )
