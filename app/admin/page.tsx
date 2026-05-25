@@ -2,26 +2,17 @@
 
 import Link from 'next/link'
 import { signOut, useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
 
 export default function AdminPage() {
-  const { data: session, status } = useSession()
-  const router = useRouter()
+  const { data: session } = useSession()
 
-  // Control de redirección seguro
-  useEffect(() => {
-    if (status === 'unauthenticated' || (status === 'authenticated' && session?.user?.role !== 'admin')) {
-      router.push('/api/auth/signin')
-    }
-  }, [status, session, router])
-
-  // Mientras valida la sesión, mostramos una pantalla limpia para evitar parpadeos visuales
-  if (status === 'loading' || !session || session.user?.role !== 'admin') {
+  // Nota: Ya no necesitamos redirigir aquí, el Middleware se encargará de todo.
+  // Solo dejamos un retorno seguro por si la sesión aún no baja, pero sin redirigir.
+  if (!session) {
     return (
       <div className="w-full min-h-[80vh] flex items-center justify-center bg-[#FAF9F5]">
         <p className="text-[10px] tracking-[0.4em] uppercase text-zinc-400 font-mono animate-pulse">
-          Validando credenciales...
+          Cargando panel...
         </p>
       </div>
     )
