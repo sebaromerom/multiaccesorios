@@ -1,35 +1,37 @@
-import { withAuth } from "next-auth/middleware"
 import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
+import { getToken } from "next-auth/jwt"
 
-export default withAuth(
-  function middleware(req) {
-    const token = req.nextauth.token
-    const isUrlAdmin = req.nextUrl.pathname.startsWith("/admin")
+export async function middleware(req: NextRequest) {
+  const pathname = req.nextUrl.pathname
 
-    // Si intenta entrar a una ruta /admin y NO tiene el rol 'admin', lo mandamos a la raíz
-    if (isUrlAdmin && token?.role !== "admin") {
-      return NextResponse.redirect(new URL("/", req.url))
-    }
-  },
-  {
-    callbacks: {
-      authorized: ({ token, req }) => {
-        const { pathname } = req.nextUrl
-        
-        // 1. IMPORTANTE: Dejar pasar libremente las rutas de la API de autenticación 
-        // para que NextAuth pueda procesar el login y el logout sin bloquearse.
-        if (pathname.startsWith("/api/auth")) {
-          return true
-        }
-
-        // 2. Para cualquier otra subruta de /admin, sí exigimos que exista un token activo
-        return !!token
-      },
-    },
+  // 1. IMPORTANTE: Si es una ruta de la API de autenticación, la dejamos pasar DE UNA
+  if (pathname.startsWith("/api/auth")) {
+    return NextResponse.next()
   }
-)
 
+  // 2. Intentamos obtener el token del usuario (la sesión) de forma nativa
+  const token = await getToken({ 
+    req, 
+    secret: process.env.NEXTAUTH_SECRET 
+  })
+
+  // 3. Si intenta entrar a /admin...
+  if (pathname.startsWith("/admin")) {
+    // Si no está logueado o el rol no es admin, lo mandamos al login oficial de NextAuth
+    if (!token || token.role !== "admin") {
+      const loginUrl = new URL("/api/auth/signin", req.url)
+      // Esto le dice a NextAuth que, después de loguearse, lo devuelva a la página que intentaba ver
+      loginUrl.searchParams.set("callbackUrl", pathname) 
+      return NextResponse.redirect(loginUrl)
+    }
+  }
+
+  // Si todo está en orden (es admin o no es una ruta protegida), continúa normal
+  return NextResponse.next()
+}
+
+// Indicamos que el middleware intercepte solo las llamadas de autenticación y el panel admin
 export const config = {
-  // Protege estrictamente todo lo que esté dentro de /admin y sus subcarpetas
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin/:path*", "/api/auth/:path*"],
 }
