@@ -349,19 +349,32 @@ export default async function ShopPage({
             gap: 1px;
           }
           .product-info { padding: 12px; gap: 8px; }
-          .product-name { font-size: 12px; min-height: 34px; }
-          .product-price { font-size: 20px; }
+          .product-name { font-size: 11px; min-height: 32px; line-height: 1.3; }
           
-          .btn-ver, .btn-cart {
-            padding: 0 8px;
-            font-size: 9px;
-            height: 28px;
+          /* FIX 1: Apilar precio y botón para que no choquen en iPhone */
+          .product-bottom { 
+            flex-direction: column; 
+            align-items: flex-start; 
+            gap: 8px; 
+          }
+          .product-price { font-size: 22px; }
+          
+          /* FIX 2: Obligar al botón a tomar todo el ancho disponible */
+          .product-bottom > * {
+            width: 100%;
+          }
+          
+          .btn-ver {
+            width: 100%;
+            padding: 0;
+            font-size: 10px;
+            height: 32px;
           }
           .product-stock-badge {
-            top: 8px;
-            right: 8px;
+            top: 6px;
+            right: 6px;
             font-size: 8px;
-            padding: 2px 6px;
+            padding: 3px 6px;
           }
         }
       `}</style>
@@ -458,52 +471,62 @@ export default async function ShopPage({
               </div>
             ) : (
               <div className="product-grid">
-                {products.map((product, index) => (
-                  <div
-                    key={product.id}
-                    className="product-card"
-                    style={{ animationDelay: `${Math.min(index * 0.025, 0.5)}s` }}
-                  >
-                    <Link href={`/shop/${product.id}`} style={{ display: 'block' }}>
-                      <div className="product-img-wrap">
-                        {product.imageUrl ? (
-                          <img src={product.imageUrl} alt={product.name} />
-                        ) : (
-                          <div className="product-no-img">Sin imagen</div>
-                        )}
-                        <div className={`product-stock-badge${product.stock <= 5 ? ' low' : ''}`}>
-                          {product.stock <= 5 ? `¡Últimas ${product.stock}!` : `${product.stock} uds`}
-                        </div>
-                      </div>
-                    </Link>
+                {products.map((product, index) => {
+                  
+                  // FIX 3: Detectamos si la URL es un placeholder automático de base de datos
+                  const isRealImage = product.imageUrl && 
+                                      product.imageUrl.trim() !== "" && 
+                                      !product.imageUrl.includes("placehold");
 
-                    <div className="product-info">
-                      <Link href={`/shop/${product.id}`} className="product-name">
-                        {product.name}
+                  return (
+                    <div
+                      key={product.id}
+                      className="product-card"
+                      style={{ animationDelay: `${Math.min(index * 0.025, 0.5)}s` }}
+                    >
+                      <Link href={`/shop/${product.id}`} style={{ display: 'block' }}>
+                        <div className="product-img-wrap">
+                          {isRealImage ? (
+                            <img src={product.imageUrl!} alt={product.name} />
+                          ) : (
+                            <div className="product-no-img">Sin imagen</div>
+                          )}
+                          <div className={`product-stock-badge${product.stock <= 5 ? ' low' : ''}`}>
+                            {product.stock <= 5 ? `¡Últimas ${product.stock}!` : `${product.stock} uds`}
+                          </div>
+                        </div>
                       </Link>
 
-                      <div className="product-bottom">
-                        <span className="product-price">
-                          ${product.price.toLocaleString('es-CL')}
-                        </span>
+                      <div className="product-info">
+                        <Link href={`/shop/${product.id}`} className="product-name">
+                          {product.name}
+                        </Link>
 
-                        {product.variants.length > 0 ? (
-                          <Link href={`/shop/${product.id}`} className="btn-ver">
-                            Ver →
-                          </Link>
-                        ) : (
-                          <AddToCartButton
-                            product={{
-                              id:    product.id,
-                              name:  product.name,
-                              price: product.price,
-                            }}
-                          />
-                        )}
+                        <div className="product-bottom">
+                          <span className="product-price">
+                            ${product.price.toLocaleString('es-CL')}
+                          </span>
+
+                          {product.variants.length > 0 ? (
+                            <Link href={`/shop/${product.id}`} className="btn-ver">
+                              Ver →
+                            </Link>
+                          ) : (
+                            <div className="w-full">
+                              <AddToCartButton
+                                product={{
+                                  id:    product.id,
+                                  name:  product.name,
+                                  price: product.price,
+                                }}
+                              />
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
 
