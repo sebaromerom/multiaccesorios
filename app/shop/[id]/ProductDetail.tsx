@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 import ProductCarousel from '@/components/ProductCarousel'
+import { useCartStore } from '@/lib/store'
 
 type Variant = {
   id: string
@@ -21,16 +22,6 @@ type Product = {
   description: string | null
 }
 
-// Definimos la estructura exacta de lo que guardas en el carrito
-type CartItem = {
-  cartKey: string
-  id: string
-  name: string
-  price: number
-  quantity: number
-  size: string | null
-}
-
 export default function ProductDetail({
   product,
   variants,
@@ -42,31 +33,23 @@ export default function ProductDetail({
 }) {
   const [selectedSize, setSelectedSize] = useState<string | null>(null)
   const [clicked, setClicked]           = useState(false)
-  const [cartItems, setCartItems]       = useState<CartItem[]>([])
 
-  // Cargar y escuchar cambios en el carrito local para actualizar existencias dinámicamente
-  useEffect(() => {
-    function loadCart() {
-      const cart = JSON.parse(localStorage.getItem('cart') ?? '[]') as CartItem[]
-      setCartItems(cart)
-    }
-
-    loadCart()
-    window.addEventListener('cart-updated', loadCart)
-    return () => window.removeEventListener('cart-updated', loadCart)
-  }, [])
+  // ── INTEGRACIÓN CON ZUSTAND STORE ──
+  const cartItems = useCartStore((state) => state.cart)
+  const addToCartStore = useCartStore((state) => state.addToCart)
 
   const hasVariants     = variants.length > 0
   const selectedVariant = variants.find(v => v.size === selectedSize)
 
-  // ── CÁLCULO DE STOCK DINÁMICO REPARADO CON TIPOS ──
+  // ── CÁLCULO DE STOCK DINÁMICO REACTIVO ──
   const getDynamicProductStock = () => {
-    const itemInCart = cartItems.find((i: CartItem) => i.id === product.id && !i.size)
+    const itemInCart = cartItems.find((i) => i.id === product.id)
     return Math.max(0, product.stock - (itemInCart?.quantity ?? 0))
   }
 
   const getDynamicVariantStock = (variant: Variant) => {
-    const itemInCart = cartItems.find((i: CartItem) => i.id === product.id && i.size === variant.size)
+    const targetId = `${product.id}-${variant.size}`
+    const itemInCart = cartItems.find((i) => i.id === targetId)
     return Math.max(0, variant.stock - (itemInCart?.quantity ?? 0))
   }
 
@@ -75,7 +58,7 @@ export default function ProductDetail({
     ? (selectedVariant ? getDynamicVariantStock(selectedVariant) : 0)
     : getDynamicProductStock()
 
-  // Determina si queda stock de cualquier tipo para renderizar el botón principal o el cartel de agotado
+  // Determina si queda stock de cualquier tipo
   const hasAnyStockAvailable = hasVariants
     ? variants.some(v => getDynamicVariantStock(v) > 0)
     : getDynamicProductStock() > 0
@@ -101,27 +84,14 @@ export default function ProductDetail({
     setClicked(true)
     setTimeout(() => setClicked(false), 300)
 
-    const cart     = JSON.parse(localStorage.getItem('cart') ?? '[]') as CartItem[]
-    const cartKey  = hasVariants ? `${product.id}-${selectedSize}` : product.id
-    const existing = cart.find((i: CartItem) => i.cartKey === cartKey)
+    // Ajustado exactamente a la interfaz 'ProductInput' sin la propiedad quantity
+    addToCartStore({
+      id:       hasVariants ? `${product.id}-${selectedSize}` : product.id,
+      name:     hasVariants ? `${product.name} (${selectedSize})` : product.name,
+      price:    product.price,
+      stock:    hasVariants && selectedVariant ? selectedVariant.stock : product.stock,
+    })
 
-    if (existing) {
-      existing.quantity += 1
-    } else {
-      cart.push({
-        cartKey,
-        id:       product.id,
-        name:     product.name,
-        price:    product.price,
-        quantity: 1,
-        size:     selectedSize,
-      })
-    }
-
-    localStorage.setItem('cart', JSON.stringify(cart))
-    
-    // Despacha el evento global para sincronizar el Navbar, Shop y este detalle al mismo tiempo
-    window.dispatchEvent(new Event('cart-updated'))
     toast.success(`${product.name}${selectedSize ? ` (${selectedSize})` : ''} agregado`)
   }
 
