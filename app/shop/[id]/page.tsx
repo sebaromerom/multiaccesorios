@@ -48,7 +48,6 @@ export default async function ProductPage({
     <div className="min-h-screen bg-white">
 
       {/* ── NAVEGACIÓN (BOTÓN VOLVER) ── */}
-      {/* Reducimos el padding en móvil (px-4, pt-6) para no desperdiciar pantalla */}
       <div className="px-4 md:px-16 pt-6 md:pt-10 pb-0">
         <Link
           href="/shop"
@@ -60,7 +59,6 @@ export default async function ProductPage({
       </div>
 
       {/* ── DETALLE DEL PRODUCTO ── */}
-      {/* Igualamos el px-4 en móvil para alinear con el botón de volver */}
       <div className="px-4 md:px-16 py-6 md:py-10 max-w-[1400px] mx-auto">
         <ProductDetail
           product={{

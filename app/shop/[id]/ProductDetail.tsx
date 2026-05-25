@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import ProductCarousel from '@/components/ProductCarousel'
 
@@ -21,6 +21,13 @@ type Product = {
   description: string | null
 }
 
+type CartItem = {
+  cartKey: string
+  id: string
+  quantity: number
+  size: string | null
+}
+
 export default function ProductDetail({
   product,
   variants,
@@ -32,9 +39,43 @@ export default function ProductDetail({
 }) {
   const [selectedSize, setSelectedSize] = useState<string | null>(null)
   const [clicked, setClicked]           = useState(false)
+  const [cartItems, setCartItems]       = useState<CartItem[]>([])
+
+  // Cargar y escuchar cambios en el carrito local para actualizar existencias dinámicamente
+  useEffect(() => {
+    function loadCart() {
+      const cart = JSON.parse(localStorage.getItem('cart') ?? '[]')
+      setCartItems(cart)
+    }
+
+    loadCart()
+    window.addEventListener('cart-updated', loadCart)
+    return () => window.removeEventListener('cart-updated', loadCart)
+  }, [])
 
   const hasVariants     = variants.length > 0
   const selectedVariant = variants.find(v => v.size === selectedSize)
+
+  // ── CÁLCULO DE STOCK DINÁMICO (Restando lo que ya está en el carrito) ──
+  const getDynamicProductStock = () => {
+    const itemInCart = cartItems.find(i => i.id === product.id && !i.size)
+    return Math.max(0, product.stock - (itemInCart?.quantity ?? 0))
+  }
+
+  const getDynamicVariantStock = (variant: Variant) => {
+    const itemInCart = cartItems.find(i => i.id === product.id && i.size === variant.size)
+    return Math.max(0, variant.stock - (itemInCart?.quantity ?? 0))
+  }
+
+  // Stock disponible de la variante o producto seleccionado actualmente
+  const currentAvailableStock = hasVariants
+    ? (selectedVariant ? getDynamicVariantStock(selectedVariant) : 0)
+    : getDynamicProductStock()
+
+  // Determina si queda stock de cualquier tipo para renderizar el botón principal o el cartel de agotado
+  const hasAnyStockAvailable = hasVariants
+    ? variants.some(v => getDynamicVariantStock(v) > 0)
+    : getDynamicProductStock() > 0
 
   const displayImages: string[] =
     selectedVariant?.images && selectedVariant.images.length > 0
@@ -43,13 +84,17 @@ export default function ProductDetail({
       ? [selectedVariant.imageUrl]
       : carouselImages
 
-  const inStock = product.stock > 0 || variants.some(v => v.stock > 0)
-
   function addToCart() {
     if (hasVariants && !selectedSize) {
       toast.error('Selecciona una variante')
       return
     }
+
+    if (currentAvailableStock <= 0) {
+      toast.error('No queda más stock disponible de este artículo')
+      return
+    }
+
     setClicked(true)
     setTimeout(() => setClicked(false), 300)
 
@@ -71,21 +116,19 @@ export default function ProductDetail({
     }
 
     localStorage.setItem('cart', JSON.stringify(cart))
+    // Despacha el evento para actualizar este componente y el Navbar
     window.dispatchEvent(new Event('cart-updated'))
     toast.success(`${product.name}${selectedSize ? ` (${selectedSize})` : ''} agregado`)
   }
 
   return (
-    // Reducimos el min-height en móvil para no forzar tanto espacio vacío
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 min-h-[60vh] lg:min-h-[80vh]">
 
       {/* ── IMAGEN ───────────────────────────────────────────────────────── */}
       <div
-        // Reducimos el padding en móvil de p-8 a p-4 o py-8
         className="relative bg-zinc-50 flex items-center justify-center p-4 py-8 lg:p-16"
         style={{ animation: 'fadeIn 0.5s ease forwards' }}
       >
-        {/* Categoría flotante - Ajustamos posición en móvil */}
         {product.category && (
           <div className="absolute top-4 left-4 lg:top-6 lg:left-6 text-[9px] tracking-[0.4em] uppercase text-zinc-400 border border-zinc-200 px-3 py-1.5 bg-white z-10">
             {product.category}
@@ -99,13 +142,11 @@ export default function ProductDetail({
 
       {/* ── INFO ─────────────────────────────────────────────────────────── */}
       <div
-        // Reducimos drásticamente el padding en móvil (p-0 o py-6) para aprovechar la pantalla
         className="flex flex-col justify-between py-8 px-0 lg:p-16 lg:border-l lg:border-zinc-100"
         style={{ animation: 'fadeInUp 0.5s ease 0.1s both' }}
       >
         <div className="flex flex-col gap-0">
 
-          {/* Nombre - Texto más pequeño en móvil (text-3xl) y línea de altura más controlada */}
           <h1
             className="text-3xl lg:text-5xl xl:text-6xl font-black uppercase tracking-tighter leading-none text-black mb-6 lg:mb-8"
             style={{ fontStyle: 'italic' }}
@@ -113,10 +154,8 @@ export default function ProductDetail({
             {product.name}
           </h1>
 
-          {/* Separador - Más sutil en móvil */}
           <div className="w-10 lg:w-12 h-0.5 bg-red-600 mb-6 lg:mb-8" />
 
-          {/* Precio - Ajustado para que quepa bien en pantallas estrechas */}
           <div className="flex items-baseline gap-2 lg:gap-3 mb-2">
             <span className="text-4xl lg:text-5xl font-black tracking-tight text-black">
               ${Number(product.price).toLocaleString('es-CL')}
@@ -124,23 +163,22 @@ export default function ProductDetail({
             <span className="text-[10px] lg:text-xs tracking-[0.2em] uppercase text-zinc-400">CLP</span>
           </div>
 
-          {/* Stock sin variantes */}
+          {/* Stock dinámico sin variantes */}
           {!hasVariants && (
             <p className={`text-[9px] lg:text-[10px] tracking-[0.3em] uppercase font-bold mb-6 lg:mb-8 ${
-              product.stock > 0 ? 'text-zinc-400' : 'text-red-500'
+              getDynamicProductStock() > 0 ? 'text-zinc-400' : 'text-red-500'
             }`}>
-              {product.stock > 0 ? `${product.stock} unidades disponibles` : 'Sin stock'}
+              {getDynamicProductStock() > 0 ? `${getDynamicProductStock()} unidades disponibles` : 'Sin stock disponible'}
             </p>
           )}
 
-          {/* Descripción */}
           {product.description && (
             <p className="text-xs lg:text-sm text-zinc-500 leading-relaxed w-full lg:max-w-sm mt-2 lg:mt-4 mb-6 lg:mb-8">
               {product.description}
             </p>
           )}
 
-          {/* ── VARIANTES ────────────────────────────────────────────────── */}
+          {/* ── VARIANTES DINÁMICAS ────────────────────────────────────────── */}
           {hasVariants && (
             <div className="mt-4 lg:mt-6 mb-8 lg:mb-8">
               <div className="flex items-center justify-between mb-4">
@@ -154,11 +192,12 @@ export default function ProductDetail({
                 )}
               </div>
 
-              {/* Botones de variantes ajustados para móvil (py-2, px-3) */}
               <div className="flex flex-wrap gap-2">
                 {variants.map(variant => {
-                  const isSelected  = selectedSize === variant.size
-                  const isAvailable = variant.stock > 0
+                  const isSelected    = selectedSize === variant.size
+                  const dynamicStock  = getDynamicVariantStock(variant)
+                  const isAvailable   = dynamicStock > 0
+
                   return (
                     <button
                       key={variant.id}
@@ -167,7 +206,7 @@ export default function ProductDetail({
                       className={`
                         px-3 py-2 lg:px-4 lg:py-2.5 text-[10px] lg:text-[11px] tracking-[0.15em] uppercase font-bold border-2 transition-all duration-200
                         ${!isAvailable
-                          ? 'border-zinc-100 text-zinc-300 cursor-not-allowed line-through'
+                          ? 'border-zinc-100 text-zinc-300 cursor-not-allowed line-through bg-zinc-50'
                           : isSelected
                             ? 'border-black bg-black text-white'
                             : 'border-zinc-200 text-zinc-600 hover:border-black hover:text-black'
@@ -182,11 +221,13 @@ export default function ProductDetail({
 
               {selectedVariant && (
                 <p className={`text-[9px] lg:text-[10px] tracking-[0.3em] uppercase font-bold mt-3 ${
-                  selectedVariant.stock <= 3 ? 'text-red-500' : 'text-zinc-400'
+                  getDynamicVariantStock(selectedVariant) <= 3 ? 'text-red-500' : 'text-zinc-400'
                 }`}>
-                  {selectedVariant.stock <= 3
-                    ? `⚠ Últimas ${selectedVariant.stock} unidades`
-                    : `${selectedVariant.stock} unidades disponibles`
+                  {getDynamicVariantStock(selectedVariant) === 0
+                    ? 'Agotado en este tamaño (añadido al carrito)'
+                    : getDynamicVariantStock(selectedVariant) <= 3
+                    ? `⚠ Últimas ${getDynamicVariantStock(selectedVariant)} unidades`
+                    : `${getDynamicVariantStock(selectedVariant)} unidades disponibles`
                   }
                 </p>
               )}
@@ -194,17 +235,20 @@ export default function ProductDetail({
           )}
         </div>
 
-        {/* ── CTA ──────────────────────────────────────────────────────── */}
+        {/* ── CTA DINÁMICO ─────────────────────────────────────────────── */}
         <div className="flex flex-col gap-3 mt-6 lg:mt-0">
-          {inStock ? (
+          {hasAnyStockAvailable ? (
             <>
               <button
                 onClick={addToCart}
+                disabled={hasVariants && selectedSize ? currentAvailableStock <= 0 : false}
                 className={`
                   w-full py-4 lg:py-5 text-[10px] lg:text-xs tracking-[0.3em] uppercase font-black transition-all duration-300
                   flex items-center justify-center gap-3
-                  ${hasVariants && !selectedSize
+                  ${(hasVariants && !selectedSize)
                     ? 'bg-zinc-100 text-zinc-400 cursor-default'
+                    : (hasVariants && selectedSize && currentAvailableStock <= 0)
+                    ? 'bg-zinc-200 text-zinc-400 cursor-not-allowed'
                     : 'bg-black text-white hover:bg-red-600'
                   }
                 `}
@@ -215,6 +259,8 @@ export default function ProductDetail({
               >
                 {hasVariants && !selectedSize
                   ? 'Selecciona una variante'
+                  : hasVariants && selectedSize && currentAvailableStock <= 0
+                  ? 'Sin existencias libres'
                   : (
                     <>
                       Agregar al carrito
@@ -229,8 +275,8 @@ export default function ProductDetail({
               </p>
             </>
           ) : (
-            <div className="w-full py-4 lg:py-5 text-[10px] lg:text-xs tracking-[0.3em] uppercase font-black text-center text-zinc-300 border-2 border-zinc-100">
-              Producto agotado
+            <div className="w-full py-4 lg:py-5 text-[10px] lg:text-xs tracking-[0.3em] uppercase font-black text-center text-zinc-400 bg-zinc-100 border-2 border-zinc-200">
+              Producto totalmente agotado
             </div>
           )}
         </div>
