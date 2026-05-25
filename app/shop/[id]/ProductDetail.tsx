@@ -21,9 +21,12 @@ type Product = {
   description: string | null
 }
 
+// Definimos la estructura exacta de lo que guardas en el carrito
 type CartItem = {
   cartKey: string
   id: string
+  name: string
+  price: number
   quantity: number
   size: string | null
 }
@@ -44,7 +47,7 @@ export default function ProductDetail({
   // Cargar y escuchar cambios en el carrito local para actualizar existencias dinámicamente
   useEffect(() => {
     function loadCart() {
-      const cart = JSON.parse(localStorage.getItem('cart') ?? '[]')
+      const cart = JSON.parse(localStorage.getItem('cart') ?? '[]') as CartItem[]
       setCartItems(cart)
     }
 
@@ -56,14 +59,14 @@ export default function ProductDetail({
   const hasVariants     = variants.length > 0
   const selectedVariant = variants.find(v => v.size === selectedSize)
 
-  // ── CÁLCULO DE STOCK DINÁMICO (Restando lo que ya está en el carrito) ──
+  // ── CÁLCULO DE STOCK DINÁMICO REPARADO CON TIPOS ──
   const getDynamicProductStock = () => {
-    const itemInCart = cartItems.find(i => i.id === product.id && !i.size)
+    const itemInCart = cartItems.find((i: CartItem) => i.id === product.id && !i.size)
     return Math.max(0, product.stock - (itemInCart?.quantity ?? 0))
   }
 
   const getDynamicVariantStock = (variant: Variant) => {
-    const itemInCart = cartItems.find(i => i.id === product.id && i.size === variant.size)
+    const itemInCart = cartItems.find((i: CartItem) => i.id === product.id && i.size === variant.size)
     return Math.max(0, variant.stock - (itemInCart?.quantity ?? 0))
   }
 
@@ -98,9 +101,9 @@ export default function ProductDetail({
     setClicked(true)
     setTimeout(() => setClicked(false), 300)
 
-    const cart     = JSON.parse(localStorage.getItem('cart') ?? '[]')
+    const cart     = JSON.parse(localStorage.getItem('cart') ?? '[]') as CartItem[]
     const cartKey  = hasVariants ? `${product.id}-${selectedSize}` : product.id
-    const existing = cart.find((i: { cartKey: string }) => i.cartKey === cartKey)
+    const existing = cart.find((i: CartItem) => i.cartKey === cartKey)
 
     if (existing) {
       existing.quantity += 1
@@ -116,7 +119,8 @@ export default function ProductDetail({
     }
 
     localStorage.setItem('cart', JSON.stringify(cart))
-    // Despacha el evento para actualizar este componente y el Navbar
+    
+    // Despacha el evento global para sincronizar el Navbar, Shop y este detalle al mismo tiempo
     window.dispatchEvent(new Event('cart-updated'))
     toast.success(`${product.name}${selectedSize ? ` (${selectedSize})` : ''} agregado`)
   }
@@ -135,7 +139,7 @@ export default function ProductDetail({
           </div>
         )}
 
-        <div className="w-full max-w-[280px] sm:max-w-sm lg:max-w-lg">
+        <div className="w-full max-w-70 sm:max-w-sm lg:max-w-lg">
           <ProductCarousel images={displayImages} name={product.name} />
         </div>
       </div>
