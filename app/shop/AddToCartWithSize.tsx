@@ -4,13 +4,14 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import ProductCarousel from '@/components/ProductCarousel'
+import { useCartStore } from '@/lib/store' // ── IMPORTAMOS EL STORE GLOBAL ──
 
 type Variant = {
   id: string
   size: string
   stock: number
   imageUrl: string | null
-  images?: string[] // URLs de imágenes de la variante
+  images?: string[]
 }
 
 type Product = {
@@ -34,8 +35,24 @@ export default function AddToCartWithSize({
   const [selectedSize, setSelectedSize] = useState<string | null>(null)
   const [clicked, setClicked] = useState(false)
 
+  // ── ESTADO GLOBAL DEL CARRITO ──
+  const cart = useCartStore((state) => state.cart)
+
   const hasVariants = variants.length > 0
   const selectedVariant = variants.find(v => v.size === selectedSize)
+
+  // Definimos el ID único que tendrá este item en el carrito (base o compuesto)
+  const targetCartId = hasVariants ? `${product.id}-${selectedSize}` : product.id
+
+  // Calculamos el stock disponible real restando lo que ya está en el carrito
+  const itemInCart = cart.find((i) => i.id === targetCartId)
+  const quantityInCart = itemInCart ? itemInCart.quantity : 0
+  
+  const currentMaxStock = hasVariants 
+    ? (selectedVariant ? selectedVariant.stock : 0) 
+    : product.stock
+
+  const availableStock = currentMaxStock - quantityInCart
 
   // Prioridad: imágenes del carrusel de la variante → imageUrl → imágenes del producto
   const displayImages: string[] =
@@ -55,28 +72,37 @@ export default function AddToCartWithSize({
       return
     }
 
+    if (availableStock <= 0) {
+      toast.error('No queda más stock disponible de esta variante')
+      return
+    }
+
     setClicked(true)
     setTimeout(() => setClicked(false), 300)
 
-    const cart = JSON.parse(localStorage.getItem('cart') ?? '[]')
-    const cartKey = hasVariants ? `${product.id}-${selectedSize}` : product.id
-    const existing = cart.find((i: { cartKey: string }) => i.cartKey === cartKey)
+    // ── MUTACIÓN REACTIVA USANDO LA API DE ZUSTAND ──
+    const existing = cart.find((i) => i.id === targetCartId)
+    let updatedCart = []
 
     if (existing) {
-      existing.quantity += 1
+      updatedCart = cart.map((item) =>
+        item.id === targetCartId ? { ...item, quantity: item.quantity + 1 } : item
+      )
     } else {
-      cart.push({
-        cartKey,
-        id:       product.id,
-        name:     product.name,
-        price:    product.price,
-        quantity: 1,
-        size:     selectedSize,
-      })
+      updatedCart = [
+        ...cart,
+        {
+          id:       targetCartId, // ID compuesto para que la página del carro lo procese sin duplicarse
+          name:     product.name,
+          price:    product.price,
+          quantity: 1,
+        },
+      ]
     }
 
-    localStorage.setItem('cart', JSON.stringify(cart))
-    window.dispatchEvent(new Event('cart-updated'))
+    // Guardamos directo en el store
+    useCartStore.setState({ cart: updatedCart })
+    
     toast.success(`${product.name}${selectedSize ? ` (${selectedSize})` : ''} agregado`)
   }
 
@@ -88,34 +114,41 @@ export default function AddToCartWithSize({
             Variante {selectedSize && `— ${selectedSize}`}
           </p>
           <div className="flex flex-wrap gap-2">
-            {variants.map(variant => (
-              <button
-                key={variant.id}
-                onClick={() => setSelectedSize(variant.size)}
-                disabled={variant.stock === 0}
-                className={`
-                  px-4 py-2 text-sm tracking-widest border rounded transition-all duration-200
-                  ${variant.stock === 0
-                    ? 'border-border text-muted-foreground opacity-40 cursor-not-allowed line-through'
-                    : selectedSize === variant.size
-                      ? 'border-foreground bg-foreground text-background'
-                      : 'border-border hover:border-foreground'
-                  }
-                `}
-              >
-                {variant.size}
-              </button>
-            ))}
+            {variants.map(variant => {
+              // Stock remanente de este botón específico
+              const variantInCart = cart.find((i) => i.id === `${product.id}-${variant.size}`)
+              const variantQtyInCart = variantInCart ? variantInCart.quantity : 0
+              const isVariantAgotada = variant.stock - variantQtyInCart <= 0
+
+              return (
+                <button
+                  key={variant.id}
+                  onClick={() => setSelectedSize(variant.size)}
+                  disabled={isVariantAgotada}
+                  className={`
+                    px-4 py-2 text-sm tracking-widest border rounded transition-all duration-200
+                    ${isVariantAgotada
+                      ? 'border-border text-muted-foreground opacity-40 cursor-not-allowed line-through'
+                      : selectedSize === variant.size
+                        ? 'border-foreground bg-foreground text-background'
+                        : 'border-border hover:border-foreground'
+                    }
+                  `}
+                >
+                  {variant.size}
+                </button>
+              )
+            })}
           </div>
 
-          {selectedVariant && (
-            selectedVariant.stock <= 3 ? (
+          {selectedSize && selectedVariant && (
+            availableStock <= 3 ? (
               <p className="text-xs text-red-500 tracking-widest uppercase font-medium">
-                Últimas {selectedVariant.stock} unidades
+                {availableStock === 0 ? 'Agotado en el carrito' : `Últimas ${availableStock} unidades`}
               </p>
             ) : (
               <p className="text-xs text-muted-foreground">
-                {selectedVariant.stock} unidades disponibles
+                {availableStock} unidades disponibles
               </p>
             )
           )}
@@ -125,13 +158,18 @@ export default function AddToCartWithSize({
       <Button
         onClick={addToCart}
         size="lg"
+        disabled={hasVariants ? !selectedSize || availableStock <= 0 : availableStock <= 0}
         className="w-full"
         style={{
           transform: clicked ? 'scale(0.97)' : 'scale(1)',
           transition: 'transform 0.15s ease',
         }}
       >
-        {hasVariants && !selectedSize ? 'Selecciona una variante' : 'Agregar al carrito'}
+        {hasVariants && !selectedSize 
+          ? 'Selecciona una variante' 
+          : availableStock <= 0 
+          ? 'Sin stock disponible' 
+          : 'Agregar al carrito'}
       </Button>
     </div>
   )

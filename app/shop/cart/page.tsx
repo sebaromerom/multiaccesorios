@@ -7,15 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-
-type CartItem = {
-  cartKey: string
-  id: string
-  name: string
-  price: number
-  quantity: number
-  size: string | null
-}
+import { useCartStore } from '@/lib/store'
 
 type DiscountResult = {
   subtotal: number
@@ -34,34 +26,31 @@ const SUCURSALES = [
 export default function CartPage() {
   const router = useRouter()
   
-  // SOLUCIÓN: Inicialización perezosa para el estado del carrito
-  const [cart, setCart] = useState<CartItem[]>(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('cart')
-      return stored ? JSON.parse(stored) : []
-    }
-    return []
-  })
-  
-  const [result, setResult] = useState<DiscountResult | null>(null)
+  // ── ESTADO REACTIVO DE ZUSTAND ──
+  const cart = useCartStore((state) => state.cart)
+
+  const [result, setResult]   = useState<DiscountResult | null>(null)
   const [loading, setLoading] = useState(false)
-  const [step, setStep] = useState<'cart' | 'checkout'>('cart')
+  const [step, setStep]       = useState<'cart' | 'checkout'>('cart')
 
   // Datos del cliente
-  const [customerName, setCustomerName] = useState('')
+  const [customerName, setCustomerName]   = useState('')
   const [customerPhone, setCustomerPhone] = useState('')
   const [customerEmail, setCustomerEmail] = useState('')
 
   // Entrega
-  const [deliveryType, setDeliveryType] = useState<DeliveryType>('retiro')
+  const [deliveryType, setDeliveryType]         = useState<DeliveryType>('retiro')
   const [deliverySucursal, setDeliverySucursal] = useState(SUCURSALES[0].value)
-  const [deliveryAddress, setDeliveryAddress] = useState('')
-  const [deliveryCity, setDeliveryCity] = useState('')
-  const [deliveryNotes, setDeliveryNotes] = useState('')
+  const [deliveryAddress, setDeliveryAddress]   = useState('')
+  const [deliveryCity, setDeliveryCity]         = useState('')
+  const [deliveryNotes, setDeliveryNotes]       = useState('')
 
-  // ELIMINADO: El useEffect que causaba el error de ESLint fue removido,
-  // ya que la lógica ahora está en el useState inicial.
+  // Métodos de mutación directa usando la API global de Zustand
+  const clearCartState = () => {
+    useCartStore.setState({ cart: [] })
+  }
 
+  // ── MANEJO REACTIVO DE LA API DEL CARRITO ──
   useEffect(() => {
     if (cart.length === 0) return
 
@@ -69,13 +58,12 @@ export default function CartPage() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        items: cart.map((i) => ({ productId: i.id, quantity: i.quantity })),
+        items: cart.map((i) => ({ productId: i.id.split('-')[0], quantity: i.quantity })),
       }),
     })
       .then((r) => {
         if (!r.ok) {
-          localStorage.removeItem('cart')
-          setCart([])
+          clearCartState()
           toast.error('Algunos productos ya no están disponibles. El carrito fue vaciado.')
           return null
         }
@@ -86,12 +74,24 @@ export default function CartPage() {
       })
   }, [cart])
 
-  function updateQuantity(cartKey: string, delta: number) {
-    const updated = cart
-      .map((i) => (i.cartKey === cartKey ? { ...i, quantity: i.quantity + delta } : i))
-      .filter((i) => i.quantity > 0)
-    setCart(updated)
-    localStorage.setItem('cart', JSON.stringify(updated))
+  // ── MANEJO DE CANTIDADES DIRECTO SOBRE EL ARREGLO DEL STORE ──
+  function handleUpdateQuantity(id: string, delta: number) {
+    const updatedCart = cart
+      .map((item) => {
+        if (item.id === id) {
+          return { ...item, quantity: item.quantity + delta }
+        }
+        return item
+      })
+      .filter((item) => item.quantity > 0)
+
+    // Sincronizamos el nuevo arreglo directamente en Zustand
+    useCartStore.setState({ cart: updatedCart })
+
+    // Si sacamos el último elemento del carrito, limpiamos el resumen de precios
+    if (updatedCart.length === 0) {
+      setResult(null)
+    }
   }
 
   function validateCheckout(): boolean {
@@ -137,10 +137,10 @@ export default function CartPage() {
         deliveryCity:     deliveryType === 'despacho' ? deliveryCity : null,
         deliveryNotes:    deliveryNotes || null,
         items: cart.map((i) => ({
-          productId: i.id,
+          productId: i.id.split('-')[0],
           quantity:  i.quantity,
           unitPrice: i.price,
-          size:      i.size,
+          size:      i.id.includes('-') ? i.id.split('-')[1] : null,
         })),
       }),
     })
@@ -151,7 +151,8 @@ export default function CartPage() {
       return
     }
 
-    localStorage.removeItem('cart')
+    clearCartState()
+    setResult(null)
     router.push('/shop/success')
   }
 
@@ -181,7 +182,7 @@ export default function CartPage() {
           <div className="flex flex-col gap-4 mb-8">
             {cart.map((item, index) => (
               <Card
-                key={item.cartKey}
+                key={item.id}
                 style={{
                   animation: 'fadeInUp 0.5s ease forwards',
                   animationDelay: `${index * 0.08}s`,
@@ -191,9 +192,9 @@ export default function CartPage() {
                 <CardContent className="flex justify-between items-center py-4">
                   <div>
                     <p className="font-medium">{item.name}</p>
-                    {item.size && (
+                    {item.id.includes('-') && (
                       <p className="text-xs tracking-widest uppercase text-muted-foreground">
-                        Talla: {item.size}
+                        Talla: {item.id.split('-')[1]}
                       </p>
                     )}
                     <p className="text-sm text-muted-foreground">
@@ -201,9 +202,9 @@ export default function CartPage() {
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <Button variant="outline" size="sm" onClick={() => updateQuantity(item.cartKey, -1)}>-</Button>
+                    <Button variant="outline" size="sm" onClick={() => handleUpdateQuantity(item.id, -1)}>-</Button>
                     <span className="w-6 text-center font-medium">{item.quantity}</span>
-                    <Button variant="outline" size="sm" onClick={() => updateQuantity(item.cartKey, 1)}>+</Button>
+                    <Button variant="outline" size="sm" onClick={() => handleUpdateQuantity(item.id, 1)}>+</Button>
                   </div>
                 </CardContent>
               </Card>
@@ -305,7 +306,6 @@ export default function CartPage() {
               </CardHeader>
               <CardContent className="flex flex-col gap-4">
 
-                {/* Selector retiro / despacho */}
                 <div className="grid grid-cols-2 gap-3">
                   {(['retiro', 'despacho'] as DeliveryType[]).map((type) => (
                     <button
@@ -322,7 +322,6 @@ export default function CartPage() {
                   ))}
                 </div>
 
-                {/* Retiro en sucursal */}
                 {deliveryType === 'retiro' && (
                   <div className="flex flex-col gap-3 pt-2">
                     <Label className="text-sm font-medium">Selecciona la sucursal</Label>
@@ -355,7 +354,6 @@ export default function CartPage() {
                   </div>
                 )}
 
-                {/* Despacho Starken */}
                 {deliveryType === 'despacho' && (
                   <div className="flex flex-col gap-4 pt-2">
                     <div className="flex flex-col gap-1.5">
@@ -382,7 +380,6 @@ export default function CartPage() {
                   </div>
                 )}
 
-                {/* Notas adicionales */}
                 <div className="flex flex-col gap-1.5 pt-2 border-t">
                   <Label htmlFor="notes">Notas adicionales (opcional)</Label>
                   <Input
@@ -403,9 +400,9 @@ export default function CartPage() {
                 </CardHeader>
                 <CardContent className="flex flex-col gap-2">
                   {cart.map((item) => (
-                    <div key={item.cartKey} className="flex justify-between text-sm">
+                    <div key={item.id} className="flex justify-between text-sm">
                       <span className="text-muted-foreground">
-                        {item.name} {item.size ? `(${item.size})` : ''} x{item.quantity}
+                        {item.name} x{item.quantity}
                       </span>
                       <span>${(item.price * item.quantity).toLocaleString('es-CL')}</span>
                     </div>
