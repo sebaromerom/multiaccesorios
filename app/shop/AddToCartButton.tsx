@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { useCartStore } from '@/lib/store' // Ajusta la ruta a tu store
+import { useCartStore } from '@/lib/store'
 import { toast } from 'sonner'
 
 type Product = {
@@ -15,11 +15,11 @@ type Product = {
 export default function AddToCartButton({ product }: { product: Product }) {
   const [clicked, setClicked] = useState(false)
   
-  // Obtenemos el estado actual del carrito de forma reactiva sin useEffects
+  // useCartStore ya maneja internamente la sincronización segura con el cliente
   const cart = useCartStore((state) => state.cart)
   const addToCartStore = useCartStore((state) => state.addToCart)
 
-  // Calculamos la cantidad en carrito directamente en el cuerpo del render
+  // Buscamos si el item ya está en el carrito
   const itemInCart = cart.find((i) => i.id === product.id && !i.size)
   const quantityInCart = itemInCart ? itemInCart.quantity : 0
   const availableStock = product.stock - quantityInCart
