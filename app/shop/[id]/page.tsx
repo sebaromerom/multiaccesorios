@@ -24,26 +24,31 @@ export default async function ProductPage({
 
   if (!product) notFound()
 
-  const carouselImages =
-    product.images.length > 0
+  // ── 1. FILTRO DE IMÁGENES FALSAS O VACÍAS ──
+  const rawCarouselImages = product.images.length > 0
       ? product.images.map(img => img.url)
       : product.imageUrl
       ? [product.imageUrl]
       : []
 
+  const carouselImages = rawCarouselImages.filter(
+    url => url && url.trim() !== "" && !url.includes("placehold")
+  )
+
   const variantsWithImages = product.variants.map(v => ({
     id:       v.id,
     size:     v.size,
     stock:    v.stock,
-    imageUrl: v.imageUrl,
-    images:   v.images.map(img => img.url),
+    imageUrl: v.imageUrl && !v.imageUrl.includes("placehold") ? v.imageUrl : null,
+    images:   v.images.map(img => img.url).filter(url => url && !url.includes("placehold")),
   }))
 
   return (
     <div className="min-h-screen bg-white">
 
-      {/* ── BACK ─────────────────────────────────────────────────────────── */}
-      <div className="px-6 md:px-16 pt-10 pb-0">
+      {/* ── NAVEGACIÓN (BOTÓN VOLVER) ── */}
+      {/* Reducimos el padding en móvil (px-4, pt-6) para no desperdiciar pantalla */}
+      <div className="px-4 md:px-16 pt-6 md:pt-10 pb-0">
         <Link
           href="/shop"
           className="inline-flex items-center gap-2 text-[10px] tracking-[0.3em] uppercase text-zinc-400 hover:text-black transition-colors duration-200 group"
@@ -53,8 +58,9 @@ export default async function ProductPage({
         </Link>
       </div>
 
-      {/* ── PRODUCT ──────────────────────────────────────────────────────── */}
-      <div className="px-6 md:px-16 py-10 max-w-[1400px] mx-auto">
+      {/* ── DETALLE DEL PRODUCTO ── */}
+      {/* Igualamos el px-4 en móvil para alinear con el botón de volver */}
+      <div className="px-4 md:px-16 py-6 md:py-10 max-w-[1400px] mx-auto">
         <ProductDetail
           product={{
             id:          product.id,
