@@ -33,7 +33,16 @@ const SUCURSALES = [
 
 export default function CartPage() {
   const router = useRouter()
-  const [cart, setCart] = useState<CartItem[]>([])
+  
+  // SOLUCIÓN: Inicialización perezosa para el estado del carrito
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('cart')
+      return stored ? JSON.parse(stored) : []
+    }
+    return []
+  })
+  
   const [result, setResult] = useState<DiscountResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [step, setStep] = useState<'cart' | 'checkout'>('cart')
@@ -50,10 +59,8 @@ export default function CartPage() {
   const [deliveryCity, setDeliveryCity] = useState('')
   const [deliveryNotes, setDeliveryNotes] = useState('')
 
-  useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem('cart') ?? '[]')
-    setCart(stored)
-  }, [])
+  // ELIMINADO: El useEffect que causaba el error de ESLint fue removido,
+  // ya que la lógica ahora está en el useState inicial.
 
   useEffect(() => {
     if (cart.length === 0) return
