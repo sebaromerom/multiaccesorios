@@ -1,9 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { notFound } from 'next/navigation'
-import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
-import ProductCarousel from '@/components/ProductCarousel'
-import AddToCartWithSize from '../AddToCartWithSize'
+import ProductDetail from './ProductDetail'
 
 export default async function ProductPage({
   params,
@@ -16,71 +14,61 @@ export default async function ProductPage({
     where: { id },
     include: {
       images: { orderBy: { order: 'asc' } },
-      variants: true,
+      variants: {
+        include: {
+          images: { orderBy: { order: 'asc' } },
+        },
+      },
     },
   })
 
   if (!product) notFound()
 
-  const carouselImages = product.images.length > 0
-    ? product.images
-    : product.imageUrl
-      ? [{ id: 'main', url: product.imageUrl, order: 0 }]
+  const carouselImages =
+    product.images.length > 0
+      ? product.images.map(img => img.url)
+      : product.imageUrl
+      ? [product.imageUrl]
       : []
 
+  const variantsWithImages = product.variants.map(v => ({
+    id:       v.id,
+    size:     v.size,
+    stock:    v.stock,
+    imageUrl: v.imageUrl,
+    images:   v.images.map(img => img.url),
+  }))
+
   return (
-    <div style={{ animation: 'fadeIn 0.4s ease forwards' }}>
-      <Link
-        href="/shop"
-        className="text-xs tracking-widest uppercase text-muted-foreground hover:text-foreground transition-colors mb-8 inline-block"
-      >
-        ← Volver a la tienda
-      </Link>
+    <div className="min-h-screen bg-white">
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mt-4">
-        <div style={{ animation: 'fadeInUp 0.5s ease forwards' }}>
-          <ProductCarousel images={carouselImages} name={product.name} />
-        </div>
-
-        <div
-          className="flex flex-col gap-6 justify-center"
-          style={{ animation: 'fadeInUp 0.5s ease 0.15s forwards', opacity: 0 }}
+      {/* ── BACK ─────────────────────────────────────────────────────────── */}
+      <div className="px-6 md:px-16 pt-10 pb-0">
+        <Link
+          href="/shop"
+          className="inline-flex items-center gap-2 text-[10px] tracking-[0.3em] uppercase text-zinc-400 hover:text-black transition-colors duration-200 group"
         >
-          <div>
-            <h1 className="text-5xl mb-2">{product.name}</h1>
-            {product.description && (
-              <p className="text-muted-foreground">{product.description}</p>
-            )}
-          </div>
-
-          <div className="flex items-center gap-4">
-            <span className="text-4xl" style={{ fontFamily: "'Bebas Neue', sans-serif" }}>
-              ${product.price.toLocaleString('es-CL')}
-            </span>
-            {product.variants.length === 0 && (
-              <Badge variant={product.stock > 0 ? 'default' : 'secondary'}>
-                {product.stock > 0 ? `Stock: ${product.stock}` : 'Sin stock'}
-              </Badge>
-            )}
-          </div>
-
-          {product.stock > 0 || product.variants.some(v => v.stock > 0) ? (
-            <div style={{ animation: 'fadeInUp 0.5s ease 0.3s forwards', opacity: 0 }}>
-              <AddToCartWithSize
-                product={{
-                  id: product.id,
-                  name: product.name,
-                  price: product.price,
-                  stock: product.stock,
-                }}
-                variants={product.variants}
-              />
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground tracking-widest uppercase">Producto agotado</p>
-          )}
-        </div>
+          <span className="group-hover:-translate-x-1 transition-transform duration-200">←</span>
+          Volver a la tienda
+        </Link>
       </div>
+
+      {/* ── PRODUCT ──────────────────────────────────────────────────────── */}
+      <div className="px-6 md:px-16 py-10 max-w-[1400px] mx-auto">
+        <ProductDetail
+          product={{
+            id:          product.id,
+            name:        product.name,
+            price:       product.price,
+            stock:       product.stock,
+            category:    product.category,
+            description: product.description,
+          }}
+          variants={variantsWithImages}
+          carouselImages={carouselImages}
+        />
+      </div>
+
     </div>
   )
 }

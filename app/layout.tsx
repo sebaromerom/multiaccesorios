@@ -22,12 +22,15 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
+
       <body className="min-h-screen bg-background">
         <Providers>
           <NavBar />
-          <main className="max-w-4xl mx-auto py-12 px-8">
+
+          <main className="w-full py-12 px-8">
             {children}
           </main>
+
           <Toaster />
         </Providers>
       </body>

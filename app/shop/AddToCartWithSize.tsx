@@ -3,11 +3,14 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
+import ProductCarousel from '@/components/ProductCarousel'
 
 type Variant = {
   id: string
   size: string
   stock: number
+  imageUrl: string | null
+  images?: string[] // URLs de imágenes de la variante
 }
 
 type Product = {
@@ -20,18 +23,35 @@ type Product = {
 export default function AddToCartWithSize({
   product,
   variants,
+  carouselImages,
+  showCarouselOnly = false,
 }: {
   product: Product
   variants: Variant[]
+  carouselImages: string[]
+  showCarouselOnly?: boolean
 }) {
   const [selectedSize, setSelectedSize] = useState<string | null>(null)
   const [clicked, setClicked] = useState(false)
 
   const hasVariants = variants.length > 0
+  const selectedVariant = variants.find(v => v.size === selectedSize)
+
+  // Prioridad: imágenes del carrusel de la variante → imageUrl → imágenes del producto
+  const displayImages: string[] =
+    selectedVariant?.images && selectedVariant.images.length > 0
+      ? selectedVariant.images
+      : selectedVariant?.imageUrl
+      ? [selectedVariant.imageUrl]
+      : carouselImages
+
+  if (showCarouselOnly) {
+    return <ProductCarousel images={displayImages} name={product.name} />
+  }
 
   function addToCart() {
     if (hasVariants && !selectedSize) {
-      toast.error('Selecciona una talla')
+      toast.error('Selecciona una variante')
       return
     }
 
@@ -47,27 +67,25 @@ export default function AddToCartWithSize({
     } else {
       cart.push({
         cartKey,
-        id: product.id,
-        name: product.name,
-        price: product.price,
+        id:       product.id,
+        name:     product.name,
+        price:    product.price,
         quantity: 1,
-        size: selectedSize,
+        size:     selectedSize,
       })
     }
 
     localStorage.setItem('cart', JSON.stringify(cart))
     window.dispatchEvent(new Event('cart-updated'))
-    toast.success(`${product.name}${selectedSize ? ` (${selectedSize})` : ''} agregado al carrito`)
+    toast.success(`${product.name}${selectedSize ? ` (${selectedSize})` : ''} agregado`)
   }
-
-  const selectedVariant = variants.find(v => v.size === selectedSize)
 
   return (
     <div className="flex flex-col gap-4">
       {hasVariants && (
         <div className="flex flex-col gap-2">
           <p className="text-xs tracking-widest uppercase text-muted-foreground">
-            Talla {selectedSize && `— ${selectedSize}`}
+            Variante {selectedSize && `— ${selectedSize}`}
           </p>
           <div className="flex flex-wrap gap-2">
             {variants.map(variant => (
@@ -93,7 +111,7 @@ export default function AddToCartWithSize({
           {selectedVariant && (
             selectedVariant.stock <= 3 ? (
               <p className="text-xs text-red-500 tracking-widest uppercase font-medium">
-                ¡Últimas {selectedVariant.stock} unidades!
+                Últimas {selectedVariant.stock} unidades
               </p>
             ) : (
               <p className="text-xs text-muted-foreground">
@@ -113,7 +131,7 @@ export default function AddToCartWithSize({
           transition: 'transform 0.15s ease',
         }}
       >
-        {hasVariants && !selectedSize ? 'Selecciona una talla' : 'Agregar al carrito'}
+        {hasVariants && !selectedSize ? 'Selecciona una variante' : 'Agregar al carrito'}
       </Button>
     </div>
   )

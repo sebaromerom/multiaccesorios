@@ -20,23 +20,39 @@ export async function POST(req: Request) {
     data: {
       total: body.total,
       status: body.status ?? 'pending',
-      customerName: body.customerName ?? null,
-      customerWhatsapp: body.customerWhatsapp ?? null,
+      // Datos del cliente
+      customerName:     body.customerName     ?? null,
+      customerPhone:    body.customerPhone     ?? null,
+      customerEmail:    body.customerEmail     ?? null,
+      // Entrega
+      deliveryType:     body.deliveryType      ?? 'retiro',
+      deliverySucursal: body.deliverySucursal  ?? null,
+      deliveryAddress:  body.deliveryAddress   ?? null,
+      deliveryCity:     body.deliveryCity      ?? null,
+      deliveryNotes:    body.deliveryNotes     ?? null,
       items: {
-        create: body.items.map((item: { productId: string; quantity: number; unitPrice: number; size?: string }) => ({
-          productId: item.productId,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          size: item.size ?? null,
-        })),
+        create: body.items.map(
+          (item: {
+            productId: string
+            quantity: number
+            unitPrice: number
+            size?: string
+          }) => ({
+            productId: item.productId,
+            quantity:  item.quantity,
+            unitPrice: item.unitPrice,
+            size:      item.size ?? null,
+          })
+        ),
       },
     },
   })
 
+  // Descontar stock
   for (const item of body.items) {
     await prisma.product.update({
       where: { id: item.productId },
-      data: { stock: { decrement: item.quantity } },
+      data:  { stock: { decrement: item.quantity } },
     })
   }
 

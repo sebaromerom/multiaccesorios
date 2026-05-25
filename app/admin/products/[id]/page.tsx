@@ -10,16 +10,44 @@ export default async function EditProductPage({
   const { id } = await params
 
   const product = await prisma.product.findUnique({
-    where: { id },
-    include: { images: { orderBy: { order: 'asc' } } },
+    where: {
+      id,
+    },
+
+    include: {
+      images: {
+        orderBy: {
+          order: 'asc',
+        },
+      },
+
+      variants: {
+        include: {
+          images: {
+            orderBy: {
+              order: 'asc',
+            },
+          },
+        },
+
+        orderBy: {
+          size: 'asc',
+        },
+      },
+    },
   })
 
-  if (!product) notFound()
+  if (!product) {
+    notFound()
+  }
 
   return (
     <div className="flex justify-center">
       <div className="w-full max-w-lg">
-        <h1 className="text-5xl mb-8">Editar Producto</h1>
+        <h1 className="text-5xl mb-8">
+          Editar Producto
+        </h1>
+
         <EditProductForm product={product} />
       </div>
     </div>

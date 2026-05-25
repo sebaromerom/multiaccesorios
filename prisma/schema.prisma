@@ -3,21 +3,35 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
+  // Borramos las líneas de url y directUrl de aquí
 }
 
+enum Category {
+  Carcasa
+  Lamina
+  Cargador
+  Cable
+  Audifonos
+  Vapers
+  Computacion
+  Otros
+}
+
+enum DeliveryType {
+  retiro
+  despacho
+}
 
 model Product {
-  id          String   @id @default(cuid())
+  id          String           @id @default(cuid())
   name        String
   description String?
   price       Float
-  stock       Int      @default(0)
+  stock       Int              @default(0)
   imageUrl    String?
-  category    String?
-  createdAt   DateTime @default(now())
+  category    Category?
+  createdAt   DateTime         @default(now())
   orderItems  OrderItem[]
   discounts   DiscountRule[]
   images      ProductImage[]
@@ -25,40 +39,68 @@ model Product {
 }
 
 model ProductVariant {
-  id        String   @id @default(cuid())
-  size      String
-  stock     Int      @default(0)
+  id String @id @default(cuid())
+
+  size String
+
+  stock Int @default(0)
+
+  imageUrl String?
+
   productId String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  images ProductVariantImage[]
+}
+
+model ProductVariantImage {
+  id String @id @default(cuid())
+
+  url String
+
+  order Int @default(0)
+
+  variantId String
+
+  variant ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
 }
 
 model ProductImage {
-  id        String   @id @default(cuid())
+  id        String  @id @default(cuid())
   url       String
-  order     Int      @default(0)
+  order     Int     @default(0)
   productId String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
 model Order {
-  id               String      @id @default(cuid())
+  id               String       @id @default(cuid())
   total            Float
-  status           String      @default("pending")
+  status           String       @default("pending")
+  // Datos del cliente
   customerName     String?
-  customerWhatsapp String?
-  createdAt        DateTime    @default(now())
+  customerPhone    String?
+  customerEmail    String?
+  // Entrega
+  deliveryType     DeliveryType @default(retiro)
+  deliverySucursal String? // "Chacabuco 479" o "Chacabuco 456" — solo si retiro
+  deliveryAddress  String? // Dirección completa — solo si despacho
+  deliveryCity     String? // Ciudad — solo si despacho
+  deliveryNotes    String? // Instrucciones adicionales
+  createdAt        DateTime     @default(now())
   items            OrderItem[]
 }
 
 model OrderItem {
-  id         String   @id @default(cuid())
-  quantity   Int
-  unitPrice  Float
-  size       String?
-  productId  String
-  orderId    String
-  product    Product  @relation(fields: [productId], references: [id])
-  order      Order    @relation(fields: [orderId], references: [id])
+  id        String  @id @default(cuid())
+  quantity  Int
+  unitPrice Float
+  size      String?
+  productId String
+  orderId   String
+  product   Product @relation(fields: [productId], references: [id])
+  order     Order   @relation(fields: [orderId], references: [id])
 }
 
 model DiscountRule {
