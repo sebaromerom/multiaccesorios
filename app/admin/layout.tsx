@@ -1,44 +1,50 @@
-'use client'
+import type { Metadata } from 'next'
+import './globals.css'
+import Providers from './providers'
+import NavBar from './NavBar'
+import { Toaster } from '@/components/ui/sonner'
 
-import { useSession } from "next-auth/react"
-import { usePathname, useRouter } from "next/navigation"
-import { useEffect } from "react"
+export const metadata: Metadata = {
+  title: 'CARCASAS STORE',
+  description: 'Carcasas, cargadores y accesorios',
+}
 
-export default function AdminLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const { data: session, status } = useSession()
-  const pathname = usePathname()
-  const router = useRouter()
+  return (
+    <html lang="es">
+      <head>
+        <link
+          href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600&display=swap"
+          rel="stylesheet"
+        />
+      </head>
 
-  useEffect(() => {
-    // 1. Si está cargando la sesión o si YA estás en el login, no hagas nada
-    if (status === "loading" || pathname === "/admin/login") return
+      {/* EXPLICACIÓN DEL TRUCO:
+        Agregamos una clase personalizada 'es-ruta-admin' en el body si se renderiza el admin.
+        Y abajo usamos '[&:has(.es-ruta-admin)]' para ocultar la barra y quitar el fondo blanco de la tienda de forma automática.
+      */}
+      <body className="min-h-screen bg-background text-foreground [&:has(.es-ruta-admin)]:bg-zinc-950 [&:has(.es-ruta-admin)]:text-white">
+        <Providers>
+          
+          {/* Ocultamos el NavBar de la tienda si detecta que adentro del DOM está el administrador */}
+          <div className="[&:has(~_main_.es-ruta-admin)]:hidden">
+            <NavBar />
+          </div>
 
-    // 2. Si no hay sesión o el rol no es admin, te manda a iniciar sesión
-    if (status === "unauthenticated" || (session?.user?.role !== "admin")) {
-      router.push("/admin/login")
-    }
-  }, [status, session, pathname, router])
+          {/* Si el hijo contiene la clase '.es-ruta-admin', 
+            neutralizamos los paddings ('py-0 px-0') y forzamos el color de fondo oscuro
+          */}
+          <main className="w-full py-12 px-8 [&:has(.es-ruta-admin)]:py-0 [&:has(.es-ruta-admin)]:px-0">
+            {children}
+          </main>
 
-  // 3. EXCEPCIÓN CLAVE: Si la URL es exactamente el login, renderiza la pantalla de una sin trabas
-  if (pathname === "/admin/login") {
-    return <>{children}</>
-  }
-
-  // 4. Mientras verifica las credenciales del panel, muestra una pantalla de carga limpia
-  if (status === "loading" || !session || session.user?.role !== "admin") {
-    return (
-      <div className="w-full min-h-[80vh] flex items-center justify-center bg-[#FAF9F5]">
-        <p className="text-[10px] tracking-[0.4em] uppercase text-zinc-400 font-mono animate-pulse">
-          Autenticando administrador...
-        </p>
-      </div>
-    )
-  }
-
-  // 5. Si todo está perfecto y es admin, despliega el panel normal
-  return <>{children}</>
+          <Toaster />
+        </Providers>
+      </body>
+    </html>
+  )
 }

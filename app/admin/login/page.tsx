@@ -27,7 +27,7 @@ export default function LoginPage() {
     })
 
     if (result?.error) {
-      setError('Usuario o contrasena incorrectos')
+      setError('Usuario o contraseña incorrectos')
       setLoading(false)
     } else {
       router.push('/admin')
@@ -36,28 +36,64 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center">
+    // Agregamos la clase 'es-ruta-admin' para accionar los cambios visuales en la raíz
+    <div className="es-ruta-admin min-h-screen w-full flex items-center justify-center bg-zinc-950 p-4">
       <div className="w-full max-w-sm">
-        <h1 className="text-5xl mb-8 text-center">Admin</h1>
-        <Card>
-          <CardHeader><CardTitle>Iniciar sesion</CardTitle></CardHeader>
+        
+        <h1 className="text-5xl mb-8 text-center text-white font-black uppercase tracking-tighter italic">
+          Admin
+        </h1>
+        
+        <Card className="bg-zinc-900 border-zinc-800 shadow-2xl">
+          <CardHeader>
+            <CardTitle className="text-white text-xl font-bold uppercase tracking-wide">
+              Iniciar sesión
+            </CardTitle>
+          </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+              
               <div className="flex flex-col gap-2">
-                <Label htmlFor="username">Usuario</Label>
-                <Input id="username" name="username" required />
+                <Label htmlFor="username" className="text-zinc-300 font-medium text-xs tracking-wider uppercase">
+                  Usuario
+                </Label>
+                <Input 
+                  id="username" 
+                  name="username" 
+                  required 
+                  className="bg-zinc-800 text-white border-zinc-700 focus:border-white focus:ring-0 h-10"
+                />
               </div>
+              
               <div className="flex flex-col gap-2">
-                <Label htmlFor="password">Contrasena</Label>
-                <Input id="password" name="password" type="password" required />
+                <Label htmlFor="password" className="text-zinc-300 font-medium text-xs tracking-wider uppercase">
+                  Contraseña
+                </Label>
+                <Input 
+                  id="password" 
+                  name="password" 
+                  type="password" 
+                  required 
+                  className="bg-zinc-800 text-white border-zinc-700 focus:border-white focus:ring-0 h-10"
+                />
               </div>
-              {error && <p className="text-sm text-destructive">{error}</p>}
-              <Button type="submit" disabled={loading}>
+              
+              {error && (
+                <p className="text-sm text-red-500 font-semibold">{error}</p>
+              )}
+              
+              <Button 
+                type="submit" 
+                disabled={loading}
+                className="w-full h-11 bg-[#ff0066] hover:bg-[#e6005c] text-white text-xs tracking-[0.2em] font-black uppercase rounded-sm transition-all duration-200"
+              >
                 {loading ? 'Entrando...' : 'Entrar'}
               </Button>
+              
             </form>
           </CardContent>
         </Card>
+        
       </div>
     </div>
   )
