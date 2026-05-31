@@ -13,10 +13,13 @@ export default function ProductCarousel({
   const [prev, setPrev] = useState<number | null>(null)
   const [direction, setDirection] = useState<'left' | 'right'>('right')
 
+  // Estado para rastrear qué índices de imágenes han fallado definitivamente
+  const [brokenImages, setBrokenImages] = useState<Record<number, boolean>>({})
+
   // Estados para el control táctil (Swipe)
   const [touchStart, setTouchStart] = useState<number | null>(null)
   const [touchEnd, setTouchEnd] = useState<number | null>(null)
-  const minSwipeDistance = 50 // Distancia mínima en píxeles para considerar que fue un "deslizamiento"
+  const minSwipeDistance = 50 
 
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -44,7 +47,7 @@ export default function ProductCarousel({
     goTo((current + 1) % safeImages.length, 'right')
   }, [current, safeImages.length, goTo])
 
-  // Funciones manejadoras del evento táctil
+  // Manejadores de eventos táctiles
   const onTouchStart = (e: React.TouchEvent) => {
     setTouchEnd(null)
     setTouchStart(e.targetTouches[0].clientX)
@@ -84,14 +87,29 @@ export default function ProductCarousel({
 
   // UNA IMAGEN
   if (safeImages.length === 1) {
+    const hasError = brokenImages[0]
     return (
       <div className="relative aspect-square bg-zinc-100 overflow-hidden rounded-lg">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={safeImages[0]}
-          alt={name}
-          className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-        />
+        {hasError ? (
+          <div className="w-full h-full flex items-center justify-center text-xs uppercase tracking-widest text-zinc-400">
+            Sin imagen
+          </div>
+        ) : (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={safeImages[0]}
+            alt={name}
+            className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+            onError={(e) => {
+              // En lugar de mutar las props, cambiamos la propiedad src directamente en el nodo del DOM
+              if (e.currentTarget.src !== window.location.origin + '/default-placeholder.jpg' && !e.currentTarget.src.endsWith('/default-placeholder.jpg')) {
+                e.currentTarget.src = '/default-placeholder.jpg'
+              } else {
+                setBrokenImages(prev => ({ ...prev, 0: true }))
+              }
+            }}
+          />
+        )}
       </div>
     )
   }
@@ -106,6 +124,7 @@ export default function ProductCarousel({
       {safeImages.map((url, index) => {
         const isCurrent = index === current
         const isPrev    = index === prev
+        const isBroken  = brokenImages[index]
 
         let transform = 'translateX(100%)'
         if (isCurrent) {
@@ -126,18 +145,32 @@ export default function ProductCarousel({
               zIndex: isCurrent ? 2 : isPrev ? 1 : 0,
             }}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={url}
-              alt={`${name} ${index + 1}`}
-              className="w-full h-full object-cover select-none"
-              draggable="false"
-            />
+            {isBroken ? (
+              <div className="w-full h-full flex items-center justify-center bg-zinc-100 text-xs uppercase tracking-widest text-zinc-400">
+                Imagen no disponible
+              </div>
+            ) : (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={url}
+                alt={`${name} ${index + 1}`}
+                className="w-full h-full object-cover select-none"
+                draggable="false"
+                onError={(e) => {
+                  // Reemplazo seguro mediante mutación controlada de la instancia del DOM de la imagen específica
+                  if (e.currentTarget.src !== window.location.origin + '/default-placeholder.jpg' && !e.currentTarget.src.endsWith('/default-placeholder.jpg')) {
+                    e.currentTarget.src = '/default-placeholder.jpg'
+                  } else {
+                    setBrokenImages(prev => ({ ...prev, [index]: true }))
+                  }
+                }}
+              />
+            )}
           </div>
         )
       })}
 
-      {/* PREV */}
+      {/* BOTÓN PREV */}
       <button
         onClick={goPrev}
         className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/90 backdrop-blur flex items-center justify-center opacity-0 lg:group-hover:opacity-100 transition shadow-md"
@@ -148,7 +181,7 @@ export default function ProductCarousel({
         </svg>
       </button>
 
-      {/* NEXT */}
+      {/* BOTÓN NEXT */}
       <button
         onClick={goNext}
         className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/90 backdrop-blur flex items-center justify-center opacity-0 lg:group-hover:opacity-100 transition shadow-md"
@@ -159,7 +192,7 @@ export default function ProductCarousel({
         </svg>
       </button>
 
-      {/* DOTS */}
+      {/* INDICADORES (DOTS) */}
       <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-10 flex gap-2">
         {safeImages.map((_, index) => (
           <button
