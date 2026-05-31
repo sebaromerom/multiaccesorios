@@ -1,15 +1,14 @@
 import { prisma } from '@/lib/prisma'
 import AddToCartButton from './AddToCartButton'
 import ProductStockBadge from './ProductStockBadge'
+import ProductImage from './ProductImage' // <-- Importación del componente cliente
 import Link from 'next/link'
 import SearchBar from './SearchBar'
 import MobileSortSelect from './MobileSortSelect'
 import { Suspense } from 'react'
-import { Category } from '@prisma/client'
+import { Category, Product } from '@prisma/client'
 
 export const dynamic = 'force-dynamic'
-
-/* eslint-disable @next/next/no-img-element */
 
 const CATEGORIES = [
   { value: 'Carcasa',     label: 'Carcasas' },
@@ -86,7 +85,7 @@ export default async function ShopPage({
 
   const totalPages = Math.ceil(totalProducts / PAGE_SIZE)
 
-  // Generador de URLs para filtros cruzados en links tradicionales de escritorio
+  // Generador de URLs para filtros cruzados
   const buildUrl = (updates: { cat?: string | null; q?: string | null; page?: string | null; sort?: string | null }) => {
     const params = new URLSearchParams()
     if (q) params.set('q', q)
@@ -280,8 +279,6 @@ export default async function ShopPage({
         @keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 
         .product-img-wrap { aspect-ratio: 1; overflow: hidden; background: #fcfcfc; position: relative; }
-        .product-img-wrap img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); display: block; }
-        .product-card:hover .product-img-wrap img { transform: scale(1.05); }
         
         .product-stock-badge { position: absolute; top: 12px; right: 12px; background: rgba(255,255,255,0.95); backdrop-filter: blur(4px); font-size: 9px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #333; padding: 4px 8px; border: 1px solid #e5e5e5; z-index: 2; }
         .product-stock-badge.low { background: #d11a2a; color: #fff; border-color: #d11a2a; }
@@ -310,7 +307,7 @@ export default async function ShopPage({
           .shop-layout { grid-template-columns: 1fr; }
           .shop-sidebar { display: none; }
           .shop-mobile-cats { display: flex; }
-          .mobile-sort-wrapper { block; }
+          .mobile-sort-wrapper { display: block; }
 
           .shop-hero {
             padding: 32px 20px 24px;
@@ -463,29 +460,15 @@ export default async function ShopPage({
                       className="product-card"
                       style={{ animationDelay: `${Math.min(index * 0.025, 0.5)}s` }}
                     >
-                      {/* CONTENEDOR DE IMAGEN CORREGIDO PARA SUPABASE STORAGE */}
                       <Link href={`/shop/${product.id}`} className="product-img-wrap" style={{ display: 'block' }}>
-                        <img 
-                          src={`https://ylgcohlwbyunoncuruzb.supabase.co/storage/v1/object/public/products/${product.id}/1.jpg`} 
-                          alt={product.name}
-                          loading="lazy"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.style.display = 'none';
-                            
-                            const parent = target.parentElement;
-                            if (parent && !parent.querySelector('.img-fallback-placeholder')) {
-                              const placeholder = document.createElement('div');
-                              placeholder.className = "img-fallback-placeholder w-full h-full flex items-center justify-center text-xs tracking-widest font-bold text-neutral-300 uppercase bg-neutral-50";
-                              placeholder.style.height = "100%";
-                              placeholder.style.width = "100%";
-                              placeholder.style.display = "flex";
-                              placeholder.style.alignItems = "center";
-                              placeholder.style.justifyContent = "center";
-                              placeholder.innerText = "Sin imagen";
-                              parent.appendChild(placeholder);
-                            }
-                          }}
+                        
+                        {/* LLAMADA AL COMPONENTE CLIENTE SEGURO */}
+                        <ProductImage 
+                          productId={product.id} 
+                          productName={product.name} 
+                          // Nota: Ajusta "imageUrl" por el nombre real de tu campo si se llama distinto en Prisma, 
+                          // o déjalo así; el "as any" protege el tipo si no lo tienes tipado.
+                          initialImageUrl={(product as Product & { imageUrl?: string | null }).imageUrl || null}
                         />
                         
                         <ProductStockBadge 

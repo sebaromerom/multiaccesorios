@@ -9,29 +9,49 @@ interface ProductImageProps {
 }
 
 export default function ProductImage({ productId, productName, initialImageUrl }: ProductImageProps) {
+  // 1. URL fija de tu bucket público de Supabase
+  const supabaseStorageUrl = `https://ylgcohlwbyunoncuruzb.supabase.co/storage/v1/object/public/products/${productId}/1.jpg`
+
   const isRealImage = initialImageUrl && 
                       initialImageUrl.trim() !== "" && 
                       !initialImageUrl.includes("placehold")
 
+  // 2. Si hay una URL en la BD la usamos primero; si no, vamos directo al bucket
   const [src, setSrc] = useState<string>(
-    isRealImage ? initialImageUrl! : `/products/${productId}/1.jpg`
+    isRealImage ? initialImageUrl! : supabaseStorageUrl
   )
   const [errorCount, setErrorCount] = useState<number>(0)
 
   const handleError = () => {
     if (errorCount === 0 && isRealImage) {
-      // Si falló la URL principal de la BD, intentamos la local por si acaso
+      // Si falló la URL guardada en la BD, intentamos directo con la estructura del bucket
       setErrorCount(1)
-      setSrc(`/products/${productId}/1.jpg`)
+      setSrc(supabaseStorageUrl)
     } else {
-      // Si ya falló la local o no tenía imagen real, pasamos al estado roto seguro
+      // Si ya falló el bucket, pasamos al estado "Sin imagen"
       setErrorCount(2)
     }
   }
 
+  // Fallback elegante si no hay ninguna foto disponible
   if (errorCount === 2) {
     return (
-      <div className="product-no-img" style={{ height: '100%', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div 
+        className="img-fallback-placeholder" 
+        style={{ 
+          height: '100%', 
+          width: '100%', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          fontSize: '11px',
+          letterSpacing: '0.1em',
+          textTransform: 'uppercase',
+          color: '#ccc',
+          fontWeight: 'bold',
+          background: '#f9f9f9'
+        }}
+      >
         Sin imagen
       </div>
     )
