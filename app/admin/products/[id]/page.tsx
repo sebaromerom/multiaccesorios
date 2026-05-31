@@ -4,23 +4,29 @@ import { notFound } from 'next/navigation'
 
 export default async function EditProductPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
   const { id } = await params
+  
+  // 🎒 RESOLVEMOS LOS FILTROS Y LOS PREPARAMOS PARA EL FORMULARIO
+  const resolvedSearchParams = await searchParams
+  const returnQueryString = new URLSearchParams(
+    resolvedSearchParams as Record<string, string>
+  ).toString()
 
   const product = await prisma.product.findUnique({
     where: {
       id,
     },
-
     include: {
       images: {
         orderBy: {
           order: 'asc',
         },
       },
-
       variants: {
         include: {
           images: {
@@ -29,7 +35,6 @@ export default async function EditProductPage({
             },
           },
         },
-
         orderBy: {
           size: 'asc',
         },
@@ -48,7 +53,8 @@ export default async function EditProductPage({
           Editar Producto
         </h1>
 
-        <EditProductForm product={product} />
+        {/* Le pasamos la mochila de filtros (returnQuery) al formulario */}
+        <EditProductForm product={product} returnQuery={returnQueryString} />
       </div>
     </div>
   )

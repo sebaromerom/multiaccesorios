@@ -120,7 +120,8 @@ function DropZone({
 
 // ─── Formulario principal ─────────────────────────────────────────────────────
 
-export default function EditProductForm({ product }: { product: Product }) {
+// <-- CAMBIO 1: Agregamos `returnQuery` a las props del componente
+export default function EditProductForm({ product, returnQuery }: { product: Product, returnQuery?: string }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
 
@@ -285,7 +286,14 @@ export default function EditProductForm({ product }: { product: Product }) {
       if (!response.ok) throw new Error()
 
       toast.success('Producto actualizado')
-      router.push('/admin/products')
+      
+      // <-- CAMBIO 2: Redirigir usando el string mágico que trae los filtros
+      if (returnQuery) {
+        router.push(`/admin/products?${returnQuery}`)
+      } else {
+        router.push('/admin/products')
+      }
+      
       router.refresh()
     } catch {
       toast.error('Error al actualizar producto')

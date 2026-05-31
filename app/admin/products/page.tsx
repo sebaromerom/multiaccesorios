@@ -40,6 +40,13 @@ export default async function ProductsPage({
 
   const totalPages = Math.ceil(total / PER_PAGE)
 
+  // 🎒 EMPACAMOS LOS FILTROS ACTUALES
+  const currentParams = new URLSearchParams()
+  if (q) currentParams.set('q', q)
+  if (cat) currentParams.set('cat', cat)
+  if (page) currentParams.set('page', String(currentPage))
+  const queryString = currentParams.toString()
+
   function buildUrl(params: Record<string, string | undefined>) {
     const p = new URLSearchParams()
     if (params.q)    p.set('q', params.q)
@@ -147,7 +154,7 @@ export default async function ProductsPage({
                         width={56}
                         height={56}
                         className="w-14 h-14 object-cover border border-zinc-200"
-                        unoptimized // 👈 Evita que Next.js intente optimizar los links dinámicos de placehold.co
+                        unoptimized
                       />
                     ) : (
                       <div className="w-14 h-14 bg-zinc-100 border border-dashed border-zinc-300 flex items-center justify-center text-[10px] uppercase tracking-widest text-zinc-400">
@@ -182,7 +189,8 @@ export default async function ProductsPage({
 
                   <TableCell>
                     <div className="flex justify-end gap-2">
-                      <Link href={`/admin/products/${product.id}`}>
+                      {/* 🎒 LE PASAMOS LOS FILTROS AL LINK DE EDITAR */}
+                      <Link href={`/admin/products/${product.id}${queryString ? `?${queryString}` : ''}`}>
                         <Button variant="outline" size="sm" className="rounded-none border-zinc-300 hover:border-black hover:bg-black hover:text-white uppercase text-[10px] tracking-widest font-bold transition-all">
                           Editar
                         </Button>
