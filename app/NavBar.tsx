@@ -1,20 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState } from 'react'; // Eliminamos useEffect
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 
 export default function NavBar() {
-  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  const [prevPathname, setPrevPathname] = useState(pathname);
 
-  // Verificamos el cambio de ruta durante el renderizado para evitar el error de ESLint.
-  // El menú se mantendrá abierto mientras Next.js carga la nueva página.
-  if (pathname !== prevPathname) {
-    setPrevPathname(pathname);
-    setIsOpen(false);
-  }
+  // Función auxiliar para cerrar el menú
+  const closeMenu = () => setIsOpen(false);
 
   return (
     <nav className="w-full bg-[#f7f4ee] border-b border-gray-200 uppercase font-['Inter'] relative z-50">
@@ -23,7 +16,7 @@ export default function NavBar() {
           
           {/* LOGO */}
           <div className="flex-shrink-0">
-            <Link href="/" className="text-xl md:text-2xl font-bold tracking-wider text-black block leading-tight">
+            <Link href="/" onClick={closeMenu} className="text-xl md:text-2xl font-bold tracking-wider text-black block leading-tight">
               MULTI <br className="sm:hidden" /> ACCESORIOS
             </Link>
           </div>
@@ -35,7 +28,7 @@ export default function NavBar() {
             <Link href="/admin" className="hover:text-black transition-colors">Admin</Link>
           </div>
 
-          {/* BOTÓN HAMBURGUESA MÓVIL */}
+          {/* BOTÓN HAMBURGUESA */}
           <div className="flex md:hidden">
             <button
               onClick={() => setIsOpen(!isOpen)}
@@ -52,34 +45,22 @@ export default function NavBar() {
               </svg>
             </button>
           </div>
-
         </div>
       </div>
 
       {/* MENÚ DESPLEGABLE MÓVIL */}
       <div
         className={`md:hidden bg-[#f7f4ee] border-t border-gray-200 px-4 transition-all duration-300 ease-in-out overflow-hidden ${
-          isOpen 
-            ? 'max-h-60 opacity-100 pt-2 pb-4 shadow-lg' 
-            : 'max-h-0 opacity-0 pt-0 pb-0 pointer-events-none'
+          isOpen ? 'max-h-60 opacity-100 pt-2 pb-4 shadow-lg' : 'max-h-0 opacity-0 pt-0 pb-0 pointer-events-none'
         }`}
       >
-        <Link 
-          href="/shop" 
-          className="block text-base font-medium text-gray-700 hover:text-black py-2 transition-colors"
-        >
+        <Link href="/shop" onClick={closeMenu} className="block text-base font-medium text-gray-700 hover:text-black py-2 transition-colors">
           Tienda
         </Link>
-        <Link 
-          href="/shop/cart" 
-          className="block text-base font-medium text-gray-700 hover:text-black py-2 transition-colors"
-        >
+        <Link href="/shop/cart" onClick={closeMenu} className="block text-base font-medium text-gray-700 hover:text-black py-2 transition-colors">
           Carrito
         </Link>
-        <Link 
-          href="/admin" 
-          className="block text-base font-medium text-gray-700 hover:text-black py-2 transition-colors"
-        >
+        <Link href="/admin" onClick={closeMenu} className="block text-base font-medium text-gray-700 hover:text-black py-2 transition-colors">
           Admin
         </Link>
       </div>

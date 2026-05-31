@@ -1,11 +1,12 @@
 import { prisma } from '@/lib/prisma'
 import AddToCartButton from './AddToCartButton'
-import ProductStockBadge from './ProductStockBadge' // ← Importamos el nuevo badge cliente
+import ProductStockBadge from './ProductStockBadge'
 import Link from 'next/link'
 import SearchBar from './SearchBar'
 import MobileSortSelect from './MobileSortSelect'
 import { Suspense } from 'react'
 import { Category } from '@prisma/client'
+
 export const dynamic = 'force-dynamic'
 
 /* eslint-disable @next/next/no-img-element */
@@ -325,7 +326,7 @@ export default async function ShopPage({
           .shop-layout { grid-template-columns: 1fr; }
           .shop-sidebar { display: none; }
           .shop-mobile-cats { display: flex; }
-          .mobile-sort-wrapper { block; }
+          .mobile-sort-wrapper { display: block; }
 
           .shop-hero {
             padding: 32px 20px 24px;
@@ -482,20 +483,33 @@ export default async function ShopPage({
                       className="product-card"
                       style={{ animationDelay: `${Math.min(index * 0.025, 0.5)}s` }}
                     >
-                      <Link href={`/shop/${product.id}`} style={{ display: 'block' }}>
-                        <div className="product-img-wrap">
-                          {isRealImage ? (
-                            <img src={product.imageUrl!} alt={product.name} />
-                          ) : (
-                            <div className="product-no-img">Sin imagen</div>
-                          )}
-                          
-                          {/* IMPLEMENTACIÓN DEL NUEVO BADGE CLIENTE INTERACTIVO */}
-                          <ProductStockBadge 
-                            productId={product.id} 
-                            initialStock={product.stock} 
+                      <Link href={`/shop/${product.id}`} className="product-img-wrap" style={{ display: 'block' }}>
+                        {isRealImage ? (
+                          <img src={product.imageUrl!} alt={product.name} loading="lazy" />
+                        ) : (
+                          // INTENTO DE ENLACE DE IMAGEN LOCAL AUTOMÁTICO
+                          <img 
+                            src={`/products/${product.id}/1.jpg`} 
+                            alt={product.name} 
+                            loading="lazy"
+                            onError={(e) => { 
+                              // Si falla la imagen local, evitamos romper el layout y mostramos el texto default
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              if (target.parentElement) {
+                                const placeholder = document.createElement('div');
+                                placeholder.className = 'product-no-img';
+                                placeholder.innerText = 'Sin imagen';
+                                target.parentElement.appendChild(placeholder);
+                              }
+                            }} 
                           />
-                        </div>
+                        )}
+                        
+                        <ProductStockBadge 
+                          productId={product.id} 
+                          initialStock={product.stock} 
+                        />
                       </Link>
 
                       <div className="product-info">
