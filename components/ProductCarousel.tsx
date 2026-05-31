@@ -89,9 +89,9 @@ export default function ProductCarousel({
   if (safeImages.length === 1) {
     const hasError = brokenImages[0]
     return (
-      <div className="relative aspect-square bg-zinc-100 overflow-hidden rounded-lg">
+      <div className="relative aspect-square bg-white overflow-hidden rounded-lg border border-zinc-100">
         {hasError ? (
-          <div className="w-full h-full flex items-center justify-center text-xs uppercase tracking-widest text-zinc-400">
+          <div className="w-full h-full flex items-center justify-center bg-zinc-100 text-xs uppercase tracking-widest text-zinc-400">
             Sin imagen
           </div>
         ) : (
@@ -99,9 +99,9 @@ export default function ProductCarousel({
           <img
             src={safeImages[0]}
             alt={name}
-            className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+            // AQUÍ EL CAMBIO: object-contain y p-4 (opcional, para darle un poco de aire)
+            className="w-full h-full object-contain bg-white transition-transform duration-500 hover:scale-105 p-2"
             onError={(e) => {
-              // En lugar de mutar las props, cambiamos la propiedad src directamente en el nodo del DOM
               if (e.currentTarget.src !== window.location.origin + '/default-placeholder.jpg' && !e.currentTarget.src.endsWith('/default-placeholder.jpg')) {
                 e.currentTarget.src = '/default-placeholder.jpg'
               } else {
@@ -114,9 +114,10 @@ export default function ProductCarousel({
     )
   }
 
+  // MÚLTIPLES IMÁGENES
   return (
     <div 
-      className="relative aspect-square bg-zinc-100 overflow-hidden rounded-lg group touch-pan-y"
+      className="relative aspect-square bg-white border border-zinc-100 overflow-hidden rounded-lg group touch-pan-y"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
@@ -138,7 +139,7 @@ export default function ProductCarousel({
         return (
           <div
             key={`${url}-${index}`}
-            className="absolute inset-0"
+            className="absolute inset-0 bg-white"
             style={{
               transform,
               transition: isCurrent || isPrev ? 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)' : 'none',
@@ -154,10 +155,10 @@ export default function ProductCarousel({
               <img
                 src={url}
                 alt={`${name} ${index + 1}`}
-                className="w-full h-full object-cover select-none"
+                // AQUÍ EL CAMBIO: object-contain
+                className="w-full h-full object-contain bg-white select-none p-2"
                 draggable="false"
                 onError={(e) => {
-                  // Reemplazo seguro mediante mutación controlada de la instancia del DOM de la imagen específica
                   if (e.currentTarget.src !== window.location.origin + '/default-placeholder.jpg' && !e.currentTarget.src.endsWith('/default-placeholder.jpg')) {
                     e.currentTarget.src = '/default-placeholder.jpg'
                   } else {
@@ -173,7 +174,7 @@ export default function ProductCarousel({
       {/* BOTÓN PREV */}
       <button
         onClick={goPrev}
-        className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/90 backdrop-blur flex items-center justify-center opacity-0 lg:group-hover:opacity-100 transition shadow-md"
+        className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/90 backdrop-blur flex items-center justify-center opacity-0 lg:group-hover:opacity-100 transition shadow-md border border-zinc-200"
         aria-label="Anterior"
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -184,7 +185,7 @@ export default function ProductCarousel({
       {/* BOTÓN NEXT */}
       <button
         onClick={goNext}
-        className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/90 backdrop-blur flex items-center justify-center opacity-0 lg:group-hover:opacity-100 transition shadow-md"
+        className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/90 backdrop-blur flex items-center justify-center opacity-0 lg:group-hover:opacity-100 transition shadow-md border border-zinc-200"
         aria-label="Siguiente"
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -199,7 +200,7 @@ export default function ProductCarousel({
             key={index}
             onClick={() => goTo(index, index > current ? 'right' : 'left')}
             className={`h-1.5 rounded-full transition-all duration-300 ${
-              index === current ? 'w-6 bg-black' : 'w-1.5 bg-black/30'
+              index === current ? 'w-6 bg-zinc-800' : 'w-1.5 bg-zinc-400'
             }`}
             aria-label={`Ir a la imagen ${index + 1}`}
           />
