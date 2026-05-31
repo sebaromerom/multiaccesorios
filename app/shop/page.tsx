@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import AddToCartButton from './AddToCartButton'
 import ProductStockBadge from './ProductStockBadge'
+import ProductImage from './ProductImage' // 1. Traemos el componente cliente que creamos
 import Link from 'next/link'
 import SearchBar from './SearchBar'
 import MobileSortSelect from './MobileSortSelect'
@@ -150,19 +151,6 @@ export default async function ShopPage({
           padding: 0 20px 16px;
           background: #fff;
         }
-        .mobile-sort-select {
-          width: 100%;
-          padding: 10px 12px;
-          font-size: 12px;
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          border: 1.5px solid #0a0a0a;
-          border-radius: 0;
-          background: #fff;
-          color: #0a0a0a;
-          outline: none;
-        }
 
         /* ── LAYOUT PRINCIPAL ── */
         .shop-layout {
@@ -298,7 +286,6 @@ export default async function ShopPage({
         
         .product-no-img { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #ccc; }
         
-        /* Mantenemos los estilos del badge en el archivo principal */
         .product-stock-badge { position: absolute; top: 12px; right: 12px; background: rgba(255,255,255,0.95); backdrop-filter: blur(4px); font-size: 9px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #333; padding: 4px 8px; border: 1px solid #e5e5e5; z-index: 2; }
         .product-stock-badge.low { background: #d11a2a; color: #fff; border-color: #d11a2a; }
 
@@ -473,38 +460,19 @@ export default async function ShopPage({
             ) : (
               <div className="product-grid">
                 {products.map((product, index) => {
-                  const isRealImage = product.imageUrl && 
-                                      product.imageUrl.trim() !== "" && 
-                                      !product.imageUrl.includes("placehold");
-
                   return (
                     <div
                       key={product.id}
                       className="product-card"
                       style={{ animationDelay: `${Math.min(index * 0.025, 0.5)}s` }}
                     >
+                      {/* 2. Reemplazamos toda la lógica manual rota de imágenes por nuestro componente protegido */}
                       <Link href={`/shop/${product.id}`} className="product-img-wrap" style={{ display: 'block' }}>
-                        {isRealImage ? (
-                          <img src={product.imageUrl!} alt={product.name} loading="lazy" />
-                        ) : (
-                          // INTENTO DE ENLACE DE IMAGEN LOCAL AUTOMÁTICO
-                          <img 
-                            src={`/products/${product.id}/1.jpg`} 
-                            alt={product.name} 
-                            loading="lazy"
-                            onError={(e) => { 
-                              // Si falla la imagen local, evitamos romper el layout y mostramos el texto default
-                              const target = e.target as HTMLImageElement;
-                              target.style.display = 'none';
-                              if (target.parentElement) {
-                                const placeholder = document.createElement('div');
-                                placeholder.className = 'product-no-img';
-                                placeholder.innerText = 'Sin imagen';
-                                target.parentElement.appendChild(placeholder);
-                              }
-                            }} 
-                          />
-                        )}
+                        <ProductImage 
+                          productId={product.id}
+                          productName={product.name}
+                          initialImageUrl={product.imageUrl}
+                        />
                         
                         <ProductStockBadge 
                           productId={product.id} 
