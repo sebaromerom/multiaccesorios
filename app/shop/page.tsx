@@ -1,7 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import AddToCartButton from './AddToCartButton'
 import ProductStockBadge from './ProductStockBadge'
-import ProductImage from './ProductImage' // 1. Traemos el componente cliente que creamos
 import Link from 'next/link'
 import SearchBar from './SearchBar'
 import MobileSortSelect from './MobileSortSelect'
@@ -13,14 +12,14 @@ export const dynamic = 'force-dynamic'
 /* eslint-disable @next/next/no-img-element */
 
 const CATEGORIES = [
-  { value: 'Carcasa',    label: 'Carcasas' },
-  { value: 'Lamina',     label: 'Láminas' },
-  { value: 'Cargador',   label: 'Cargadores' },
-  { value: 'Cable',      label: 'Cables' },
-  { value: 'Audifonos',  label: 'Audífonos' },
-  { value: 'Vapers',     label: 'Vapers' },
+  { value: 'Carcasa',     label: 'Carcasas' },
+  { value: 'Lamina',      label: 'Láminas' },
+  { value: 'Cargador',    label: 'Cargadores' },
+  { value: 'Cable',       label: 'Cables' },
+  { value: 'Audifonos',   label: 'Audífonos' },
+  { value: 'Vapers',      label: 'Vapers' },
   { value: 'Computacion', label: 'Computación' },
-  { value: 'Otros',      label: 'Otros' },
+  { value: 'Otros',       label: 'Otros' },
 ]
 
 const SORT_OPTIONS = [
@@ -284,8 +283,6 @@ export default async function ShopPage({
         .product-img-wrap img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); display: block; }
         .product-card:hover .product-img-wrap img { transform: scale(1.05); }
         
-        .product-no-img { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #ccc; }
-        
         .product-stock-badge { position: absolute; top: 12px; right: 12px; background: rgba(255,255,255,0.95); backdrop-filter: blur(4px); font-size: 9px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #333; padding: 4px 8px; border: 1px solid #e5e5e5; z-index: 2; }
         .product-stock-badge.low { background: #d11a2a; color: #fff; border-color: #d11a2a; }
 
@@ -313,7 +310,7 @@ export default async function ShopPage({
           .shop-layout { grid-template-columns: 1fr; }
           .shop-sidebar { display: none; }
           .shop-mobile-cats { display: flex; }
-          .mobile-sort-wrapper { display: block; }
+          .mobile-sort-wrapper { block; }
 
           .shop-hero {
             padding: 32px 20px 24px;
@@ -466,12 +463,29 @@ export default async function ShopPage({
                       className="product-card"
                       style={{ animationDelay: `${Math.min(index * 0.025, 0.5)}s` }}
                     >
-                      {/* 2. Reemplazamos toda la lógica manual rota de imágenes por nuestro componente protegido */}
+                      {/* CONTENEDOR DE IMAGEN CORREGIDO PARA SUPABASE STORAGE */}
                       <Link href={`/shop/${product.id}`} className="product-img-wrap" style={{ display: 'block' }}>
-                        <ProductImage 
-                          productId={product.id}
-                          productName={product.name}
-                          initialImageUrl={product.imageUrl}
+                        <img 
+                          src={`https://ylgcohlwbyunoncuruzb.supabase.co/storage/v1/object/public/products/${product.id}/1.jpg`} 
+                          alt={product.name}
+                          loading="lazy"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            
+                            const parent = target.parentElement;
+                            if (parent && !parent.querySelector('.img-fallback-placeholder')) {
+                              const placeholder = document.createElement('div');
+                              placeholder.className = "img-fallback-placeholder w-full h-full flex items-center justify-center text-xs tracking-widest font-bold text-neutral-300 uppercase bg-neutral-50";
+                              placeholder.style.height = "100%";
+                              placeholder.style.width = "100%";
+                              placeholder.style.display = "flex";
+                              placeholder.style.alignItems = "center";
+                              placeholder.style.justifyContent = "center";
+                              placeholder.innerText = "Sin imagen";
+                              parent.appendChild(placeholder);
+                            }
+                          }}
                         />
                         
                         <ProductStockBadge 
