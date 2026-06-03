@@ -19,6 +19,7 @@ import {
   PackageCheck,
   PanelsTopLeft,
   ShieldCheck,
+  Sparkles,
   Smartphone,
   Truck,
   User,
@@ -33,6 +34,7 @@ const CATEGORIES = [
   { value: 'Audifonos', label: 'Audio', icon: Headphones },
   { value: 'Cable', label: 'Cables', icon: Cable },
   { value: 'Cargador', label: 'Cargadores', icon: Zap },
+  { value: 'Vapers', label: 'Vapers', icon: Sparkles },
   { value: 'Computacion', label: 'Tech', icon: Laptop },
   { value: 'Otros', label: 'Hogar', icon: Home },
 ] as const
@@ -1004,7 +1006,7 @@ export default async function ShopPage({
 
               <div className="shop-cat-chips">
                 <Link href={buildUrl({ cat: null, page: '1' })} className={`shop-chip${!cat ? ' active' : ''}`}>Todos</Link>
-                {CATEGORIES.slice(0, 5).map((category) => (
+                {CATEGORIES.map((category) => (
                   <Link key={category.value} href={buildUrl({ cat: category.value, page: '1' })} className={`shop-chip${cat === category.value ? ' active' : ''}`}>
                     {category.label} ({categoryCounts[category.value] || 0})
                   </Link>
