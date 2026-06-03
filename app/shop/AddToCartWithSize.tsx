@@ -93,9 +93,12 @@ export default function AddToCartWithSize({
         ...cart,
         {
           id:       targetCartId, // ID compuesto para que la página del carro lo procese sin duplicarse
+          productId: product.id,
           name:     product.name,
           price:    product.price,
           quantity: 1,
+          size:     selectedSize,
+          imageUrl: displayImages[0] ?? null,
         },
       ]
     }

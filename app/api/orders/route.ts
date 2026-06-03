@@ -50,6 +50,13 @@ export async function POST(req: Request) {
 
   // Descontar stock
   for (const item of body.items) {
+    if (item.size) {
+      await prisma.productVariant.updateMany({
+        where: { productId: item.productId, size: item.size },
+        data: { stock: { decrement: item.quantity } },
+      })
+    }
+
     await prisma.product.update({
       where: { id: item.productId },
       data:  { stock: { decrement: item.quantity } },

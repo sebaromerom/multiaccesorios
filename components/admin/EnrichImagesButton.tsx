@@ -15,7 +15,7 @@ export default function EnrichImagesButton() {
   const [loading, setLoading] = useState(false)
 
   async function handleEnrichImages() {
-    if (!confirm('Buscar imagenes para productos sin foto? Se procesaran hasta 25 productos por vez.')) return
+    if (!confirm('Buscar imagenes para productos y variantes sin foto? Se procesaran hasta 50 variantes por vez.')) return
 
     setLoading(true)
     toast.info('Buscando imagenes de productos...')
@@ -24,7 +24,7 @@ export default function EnrichImagesButton() {
       const res = await fetch('/api/admin/enrich-images', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ limit: 25, overwrite: false }),
+        body: JSON.stringify({ limit: 25, variantLimit: 50, concurrency: 6, overwrite: false }),
       })
 
       const data = await res.json()
@@ -35,12 +35,13 @@ export default function EnrichImagesButton() {
       }
 
       const result: EnrichImagesResult = data.result
+      const variants: EnrichImagesResult = data.variants
       toast.success(
-        `Imagenes listas: ${result.updated} actualizados, ${result.skipped} omitidos`
+        `Imagenes listas: ${result.updated} productos y ${variants.updated} variantes actualizadas`
       )
 
-      if (result.errors.length > 0) {
-        console.warn('Errores enriqueciendo imagenes:', result.errors)
+      if (result.errors.length > 0 || variants.errors.length > 0) {
+        console.warn('Errores enriqueciendo imagenes:', [...result.errors, ...variants.errors])
       }
 
       window.location.reload()

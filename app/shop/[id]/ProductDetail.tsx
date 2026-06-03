@@ -87,9 +87,12 @@ export default function ProductDetail({
     // Ajustado exactamente a la interfaz 'ProductInput' sin la propiedad quantity
     addToCartStore({
       id:       hasVariants ? `${product.id}-${selectedSize}` : product.id,
+      productId: product.id,
       name:     hasVariants ? `${product.name} (${selectedSize})` : product.name,
       price:    product.price,
       stock:    hasVariants && selectedVariant ? selectedVariant.stock : product.stock,
+      size:     selectedSize,
+      imageUrl: displayImages[0] ?? null,
     })
 
     toast.success(`${product.name}${selectedSize ? ` (${selectedSize})` : ''} agregado`)
@@ -171,6 +174,7 @@ export default function ProductDetail({
                   const isSelected    = selectedSize === variant.size
                   const dynamicStock  = getDynamicVariantStock(variant)
                   const isAvailable   = dynamicStock > 0
+                  const variantImage  = variant.images[0] ?? variant.imageUrl
 
                   return (
                     <button
@@ -178,7 +182,8 @@ export default function ProductDetail({
                       onClick={() => isAvailable && setSelectedSize(variant.size)}
                       disabled={!isAvailable}
                       className={`
-                        px-3 py-2 lg:px-4 lg:py-2.5 text-[10px] lg:text-[11px] tracking-[0.15em] uppercase font-bold border-2 transition-all duration-200
+                        min-h-12 px-2 py-2 lg:px-3 text-[10px] lg:text-[11px] tracking-[0.15em] uppercase font-bold border-2 transition-all duration-200
+                        inline-flex items-center gap-2
                         ${!isAvailable
                           ? 'border-zinc-100 text-zinc-300 cursor-not-allowed line-through bg-zinc-50'
                           : isSelected
@@ -187,6 +192,14 @@ export default function ProductDetail({
                         }
                       `}
                     >
+                      {variantImage && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={variantImage}
+                          alt=""
+                          className="size-8 rounded-[3px] bg-white object-contain"
+                        />
+                      )}
                       {variant.size}
                     </button>
                   )

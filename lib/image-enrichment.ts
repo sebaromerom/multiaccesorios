@@ -30,6 +30,7 @@ type UnsplashPhoto = {
 type EnrichOptions = {
   limit?: number
   overwrite?: boolean
+  concurrency?: number
 }
 
 export type ImageEnrichmentResult = {
@@ -397,6 +398,48 @@ export async function getProductImages(
   }
 }
 
+export async function getVariantImages(
+  productName: string,
+  variantName: string,
+  category?: Category | null
+): Promise<string[]> {
+  const variantTokens = getTokens(variantName)
+  if (variantTokens.length === 0) return []
+
+  const combinedName = `${productName} ${variantName}`.trim()
+  const hasVariantToken = (title: string) => {
+    const titleTokens = new Set(getTokens(title))
+    return variantTokens.some((token) => titleTokens.has(token))
+  }
+
+  try {
+    for (const query of buildSearchQueries(combinedName, category)) {
+      const mercadoLibreCandidates = await fetchMercadoLibreCandidates(combinedName, category, query)
+      const bestCatalogMatches = mercadoLibreCandidates
+        .filter((candidate) => candidate.score >= 0.4 && hasVariantToken(candidate.title))
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 4)
+
+      if (bestCatalogMatches.length > 0) {
+        return [...new Set(bestCatalogMatches.map((candidate) => candidate.url))]
+      }
+
+      const duckDuckGoCandidates = await fetchDuckDuckGoCandidates(combinedName, query)
+      const bestWebMatches = duckDuckGoCandidates
+        .filter((candidate) => hasVariantToken(candidate.title))
+        .slice(0, 4)
+
+      if (bestWebMatches.length > 0) {
+        return [...new Set(bestWebMatches.map((candidate) => candidate.url))]
+      }
+    }
+  } catch (err) {
+    console.warn('Error buscando imagenes de variante:', err)
+  }
+
+  return []
+}
+
 export async function enrichMissingProductImages(
   options: EnrichOptions = {}
 ): Promise<ImageEnrichmentResult> {
@@ -473,6 +516,91 @@ export async function enrichMissingProductImages(
       result.errors.push(`[${product.name}] ${err instanceof Error ? err.message : String(err)}`)
     }
   }
+
+  return result
+}
+
+export async function enrichMissingVariantImages(
+  options: EnrichOptions = {}
+): Promise<ImageEnrichmentResult> {
+  const limit = Math.min(Math.max(options.limit ?? 25, 1), 100)
+  const overwrite = options.overwrite ?? false
+  const concurrency = Math.min(Math.max(options.concurrency ?? 6, 1), 8)
+  const candidateLimit = Math.min(limit * 4, 400)
+
+  const variants = await prisma.productVariant.findMany({
+    where: overwrite
+      ? undefined
+      : {
+          imageUrl: null,
+          images: { none: {} },
+        },
+    include: {
+      images: true,
+      product: true,
+    },
+    orderBy: { product: { createdAt: 'desc' } },
+    take: candidateLimit,
+  })
+
+  const result: ImageEnrichmentResult = {
+    scanned: variants.length,
+    updated: 0,
+    skipped: 0,
+    errors: [],
+  }
+
+  let currentIndex = 0
+
+  async function runWorker() {
+    while (currentIndex < variants.length) {
+      const variant = variants[currentIndex]
+      currentIndex++
+
+      try {
+        const images = await getVariantImages(
+          variant.product.name,
+          variant.size,
+          variant.product.category
+        )
+
+        if (images.length === 0) {
+          result.skipped++
+          continue
+        }
+
+        await prisma.$transaction(async (tx) => {
+          await tx.productVariant.update({
+            where: { id: variant.id },
+            data: { imageUrl: images[0] },
+          })
+
+          await tx.productVariantImage.deleteMany({
+            where: { variantId: variant.id },
+          })
+
+          await tx.productVariantImage.createMany({
+            data: images.map((url, index) => ({
+              variantId: variant.id,
+              url,
+              order: index,
+            })),
+          })
+        })
+
+        result.updated++
+      } catch (err) {
+        result.skipped++
+        result.errors.push(
+          `[${variant.product.name} / ${variant.size}] ${err instanceof Error ? err.message : String(err)}`
+        )
+      }
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, variants.length) }, () => runWorker())
+  )
 
   return result
 }

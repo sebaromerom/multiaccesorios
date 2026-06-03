@@ -57,7 +57,11 @@ export default function CartPage() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        items: cart.map((item) => ({ productId: item.id.split('-')[0], quantity: item.quantity })),
+        items: cart.map((item) => ({
+          productId: item.productId ?? item.id.split('-')[0],
+          quantity: item.quantity,
+          size: item.size ?? null,
+        })),
       }),
     })
       .then((response) => {
@@ -113,10 +117,10 @@ export default function CartPage() {
         deliveryCity: deliveryType === 'despacho' ? deliveryCity : null,
         deliveryNotes: deliveryNotes || null,
         items: cart.map((item) => ({
-          productId: item.id.split('-')[0],
+          productId: item.productId ?? item.id.split('-')[0],
           quantity: item.quantity,
           unitPrice: item.price,
-          size: item.id.includes('-') ? item.id.split('-')[1] : null,
+          size: item.size ?? null,
         })),
       }),
     })

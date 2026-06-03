@@ -6,7 +6,7 @@ import SearchBar from './SearchBar'
 import CartHeaderLink from './CartHeaderLink'
 import SortSelect from './SortSelect'
 import { Suspense } from 'react'
-import { Category, Product } from '@prisma/client'
+import { Category } from '@prisma/client'
 import {
   BadgePercent,
   Cable,
@@ -71,7 +71,11 @@ export default async function ShopPage({
     prisma.product.findMany({
       where,
       orderBy,
-      include: { variants: true },
+      include: {
+        variants: {
+          include: { images: { orderBy: { order: 'asc' } } },
+        },
+      },
       take: PAGE_SIZE,
       skip: (currentPage - 1) * PAGE_SIZE,
     }),
@@ -1017,14 +1021,24 @@ export default async function ShopPage({
                 <div className="shop-empty">No se encontraron productos</div>
               ) : (
                 <div className="product-grid">
-                  {products.map((product) => (
+                  {products.map((product) => {
+                    const firstVariantImage = product.variants
+                      .filter((variant) => variant.stock > 0)
+                      .flatMap((variant) => [
+                        variant.imageUrl,
+                        ...variant.images.map((image) => image.url),
+                      ])
+                      .find((url): url is string => Boolean(url && !url.includes('placehold')))
+                    const cardImage = product.imageUrl || firstVariantImage || null
+
+                    return (
                     <article key={product.id} className="product-card">
                       <Link href={`/shop/${product.id}`} className="product-img-wrap">
                         <span className="product-img-inner">
                           <ProductImage
                             productId={product.id}
                             productName={product.name}
-                            initialImageUrl={(product as Product & { imageUrl?: string | null }).imageUrl || null}
+                            initialImageUrl={cardImage}
                           />
                         </span>
                         <span className="product-stock-badge">En stock</span>
@@ -1052,7 +1066,8 @@ export default async function ShopPage({
                         )}
                       </div>
                     </article>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
 

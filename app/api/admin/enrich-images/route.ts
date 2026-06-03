@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
-import { enrichMissingProductImages } from '@/lib/image-enrichment'
+import { enrichMissingProductImages, enrichMissingVariantImages } from '@/lib/image-enrichment'
 
 export async function POST(req: Request) {
   try {
@@ -19,8 +19,13 @@ export async function POST(req: Request) {
       limit: Number(body.limit ?? 25),
       overwrite: Boolean(body.overwrite ?? false),
     })
+    const variants = await enrichMissingVariantImages({
+      limit: Number(body.variantLimit ?? body.limit ?? 25),
+      overwrite: Boolean(body.overwrite ?? false),
+      concurrency: Number(body.concurrency ?? 6),
+    })
 
-    return NextResponse.json({ ok: true, result })
+    return NextResponse.json({ ok: true, result, variants })
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     return NextResponse.json({ ok: false, error: message }, { status: 500 })

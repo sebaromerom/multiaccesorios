@@ -3,6 +3,7 @@ import { persist, createJSONStorage, StateStorage } from 'zustand/middleware'
 
 type CartItem = {
   id: string
+  productId?: string
   name: string
   price: number
   quantity: number
@@ -12,9 +13,11 @@ type CartItem = {
 
 type ProductInput = {
   id: string
+  productId?: string
   name: string
   price: number
   stock: number
+  size?: string | null
   imageUrl?: string | null
 }
 
@@ -47,7 +50,8 @@ export const useCartStore = create<CartState>()(
       cart: [],
       addToCart: (product: ProductInput) => {
         const { cart } = get()
-        const existing = cart.find((item: CartItem) => item.id === product.id && !item.size)
+        const size = product.size ?? null
+        const existing = cart.find((item: CartItem) => item.id === product.id && (item.size ?? null) === size)
 
         const quantityInCart = existing ? existing.quantity : 0
         if (quantityInCart >= product.stock) return
@@ -56,14 +60,22 @@ export const useCartStore = create<CartState>()(
 
         if (existing) {
           newCart = cart.map((item: CartItem) =>
-            item.id === product.id && !item.size
+            item.id === product.id && (item.size ?? null) === size
               ? { ...item, quantity: item.quantity + 1 }
               : item
           )
         } else {
           newCart = [
             ...cart,
-            { id: product.id, name: product.name, price: product.price, quantity: 1, size: null, imageUrl: product.imageUrl }
+            {
+              id: product.id,
+              productId: product.productId ?? product.id,
+              name: product.name,
+              price: product.price,
+              quantity: 1,
+              size,
+              imageUrl: product.imageUrl,
+            }
           ]
         }
 
