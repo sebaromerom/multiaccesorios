@@ -1,300 +1,359 @@
-import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
-import AuthButton from '@/components/AuthButton'
+import { prisma } from '@/lib/prisma'
+import AddToCartButton from '@/app/shop/AddToCartButton'
+import CartHeaderLink from '@/app/shop/CartHeaderLink'
+import HomeSearchBar from '@/app/HomeSearchBar'
+import {
+  BadgePercent,
+  Cable,
+  Clock3,
+  Headphones,
+  Heart,
+  Home as HomeIcon,
+  Laptop,
+  List,
+  Menu,
+  PackageCheck,
+  PanelsTopLeft,
+  ShieldCheck,
+  Smartphone,
+  Sparkles,
+  Tag,
+  Truck,
+  User,
+  Zap,
+} from 'lucide-react'
 
 export const revalidate = 0
 
+const CATEGORIES = [
+  { value: 'Carcasa', label: 'Carcasas', icon: Smartphone },
+  { value: 'Lamina', label: 'Laminas', icon: PanelsTopLeft },
+  { value: 'Audifonos', label: 'Audifonos', icon: Headphones },
+  { value: 'Cargador', label: 'Cargadores', icon: Zap },
+  { value: 'Cable', label: 'Cables', icon: Cable },
+  { value: 'Vapers', label: 'Vapers', icon: Sparkles },
+  { value: 'Computacion', label: 'Computo', icon: Laptop },
+  { value: 'Otros', label: 'Otros', icon: Sparkles },
+] as const
+
 export default async function Home() {
-  const session = await getServerSession(authOptions)
+  const [featuredProducts, fallbackProducts, categoryCounts, activeDiscount] = await Promise.all([
+    prisma.product.findMany({
+      where: {
+        stock: { gt: 0 },
+        imageUrl: { not: null },
+        OR: [
+          { name: { contains: 'TERMO', mode: 'insensitive' } },
+          { name: { contains: 'TELEFONO MLAB', mode: 'insensitive' } },
+          { name: { contains: 'AUDIFONOS MLAB', mode: 'insensitive' } },
+          { name: { contains: 'MAGSAFE', mode: 'insensitive' } },
+          { name: { contains: 'CABLE USB', mode: 'insensitive' } },
+        ],
+      },
+      orderBy: { stock: 'desc' },
+      take: 8,
+    }),
+    prisma.product.findMany({
+      where: { stock: { gt: 0 }, imageUrl: { not: null }, category: { in: ['Carcasa', 'Audifonos', 'Cargador', 'Cable', 'Otros'] } },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+    }),
+    prisma.product.groupBy({
+      by: ['category'],
+      _count: { id: true },
+      where: { stock: { gt: 0 } },
+    }),
+    prisma.discountRule.findFirst({
+      where: { active: true, productId: { not: null }, product: { stock: { gt: 0 }, imageUrl: { not: null } } },
+      include: { product: true },
+      orderBy: { createdAt: 'desc' },
+    }),
+  ])
 
-  const activeRules = await prisma.discountRule.findMany({
-    where: {
-      active: true,
-      minQuantity: 1,
-      productId: { not: null },
-    },
-    include: {
-      product: true,
-    },
-    orderBy: { createdAt: 'desc' },
-    take: 4,
-  })
+  const trending = [...featuredProducts, ...fallbackProducts]
+    .filter((product, index, products) => products.findIndex((item) => item.id === product.id) === index)
+    .slice(0, 5)
+  const heroProducts = trending.slice(0, 3)
 
-  const ofertasDestacadas = activeRules
-    .map((rule) => {
-      const prod = rule.product
-      if (!prod) return null
+  const counts = categoryCounts.reduce((acc, row) => {
+    if (row.category) acc[row.category] = row._count.id
+    return acc
+  }, {} as Record<string, number>)
 
-      let precioConDescuento = prod.price
-      let etiquetaBadge = ''
-
-      if (rule.type === 'percentage') {
-        precioConDescuento = prod.price * (1 - rule.value / 100)
-        etiquetaBadge = `-${rule.value}%`
-      } else if (rule.type === 'fixed') {
-        precioConDescuento = Math.max(0, prod.price - rule.value)
-        etiquetaBadge = 'OFERTA'
-      } else if (rule.type === '2x1') {
-        etiquetaBadge = '2X1'
-      }
-
-      return {
-        id: prod.id,
-        name: prod.name,
-        precioOriginal: prod.price,
-        precioOferta: precioConDescuento,
-        badge: etiquetaBadge,
-        tipo: rule.type,
-      }
-    })
-    .filter(Boolean)
+  const offerProduct = activeDiscount?.product ?? trending[0]
+  const offerPrice = activeDiscount?.type === 'percentage'
+    ? Math.max(0, offerProduct.price * (1 - activeDiscount.value / 100))
+    : activeDiscount?.type === 'fixed'
+      ? Math.max(0, offerProduct.price - activeDiscount.value)
+      : offerProduct.price
+  const offerBadge = activeDiscount?.type === 'percentage'
+    ? `-${activeDiscount.value}%`
+    : activeDiscount?.type === '2x1'
+      ? '2X1'
+      : activeDiscount ? 'OFERTA' : '-20%'
 
   return (
-    <div className="w-full min-h-screen bg-[#FAF9F5] text-zinc-900 font-sans flex flex-col justify-between overflow-x-hidden antialiased relative">
+    <div className="home-marketplace">
+      <style>{`
+        body:has(.home-marketplace) .public-navbar { display: none; }
+        body:has(.home-marketplace) main { padding: 0 !important; background: #f6f6f5; }
+        .home-marketplace { min-height: 100vh; background: #f6f6f5; color: #111; font-family: var(--font-inter), Inter, sans-serif; letter-spacing: 0; }
+        .home-shell { max-width: 1510px; min-height: 100vh; margin: 0 auto; background: #fff; box-shadow: 0 18px 60px rgba(15,15,15,.08); overflow: hidden; }
+        .home-topbar { height: 44px; padding: 0 52px; background: #111; color: #fff; display: flex; align-items: center; justify-content: space-between; border-radius: 22px 22px 0 0; font-size: 12px; font-weight: 600; }
+        .home-topbar-group { display: flex; gap: 34px; align-items: center; }
+        .home-topbar-item { display: inline-flex; gap: 8px; align-items: center; white-space: nowrap; }
+        .home-header { display: grid; grid-template-columns: 220px minmax(360px, 1fr) 310px; gap: 24px; align-items: center; padding: 22px 52px 16px; }
+        .home-brand { display: inline-flex; align-items: center; gap: 12px; color: #111; text-decoration: none; }
+        .home-brand-mark { width: 52px; height: 52px; border-radius: 8px; display: grid; place-items: center; background: #e30613; color: #fff; font-family: Georgia,serif; font-size: 39px; line-height: 1; font-style: italic; font-weight: 700; }
+        .home-brand-text { font-size: 21px; line-height: .9; font-weight: 900; }
+        .shop-search-control { height: 48px; border: 1px solid #d9d9d9; border-radius: 999px; display: grid; grid-template-columns: 1fr auto auto; align-items: center; overflow: hidden; background: #fff; }
+        .shop-search-control input { min-width: 0; height: 100%; border: 0; outline: 0; padding: 0 22px; font-size: 13px; color: #333; }
+        .shop-search-clear { width: 32px; height: 32px; border: 0; background: transparent; color: #999; font-weight: 800; }
+        .shop-search-submit { width: 58px; height: 48px; border: 0; background: #e30613; color: #fff; display: grid; place-items: center; }
+        .home-header-actions { display: flex; justify-content: flex-end; align-items: center; gap: 22px; }
+        .shop-header-action { display: inline-flex; align-items: center; gap: 8px; color: #111; text-decoration: none; font-size: 12px; font-weight: 700; white-space: nowrap; }
+        .shop-header-action small { display: block; font-size: 10px; color: #666; }
+        .shop-cart-icon-link { position: relative; color: #111; display: inline-flex; }
+        .shop-cart-count { position: absolute; top: -9px; right: -10px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 999px; background: #e30613; color: #fff; display: grid; place-items: center; font-size: 9px; font-weight: 900; }
+        .home-nav { height: 64px; padding: 0 52px; display: flex; align-items: center; gap: 34px; border-bottom: 1px solid #ededed; }
+        .home-all-cats { height: 42px; min-width: 220px; padding: 0 16px; border-radius: 5px; background: #111; color: #fff; display: inline-flex; justify-content: space-between; align-items: center; text-decoration: none; font-size: 12px; font-weight: 800; }
+        .home-nav-links { display: flex; gap: 32px; align-items: center; font-size: 12px; font-weight: 800; }
+        .home-nav-links a { color: #111; text-decoration: none; }
+        .home-nav-links a:first-child { color: #e30613; }
+        .home-content { padding: 18px 52px 0; }
+        .home-hero { height: 250px; border-radius: 8px; background: #fff5f5; position: relative; overflow: hidden; display: flex; align-items: center; padding: 34px 38px; }
+        .home-hero-copy { position: relative; z-index: 3; width: 45%; }
+        .home-hero-kicker { color: #e30613; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; }
+        .home-hero h1 { margin: 14px 0 24px; font-size: 31px; line-height: 1.12; font-weight: 900; }
+        .home-hero h1 span { color: #e30613; }
+        .home-hero-benefits { display: flex; gap: 24px; }
+        .home-hero-benefit { display: flex; align-items: center; gap: 8px; font-size: 10px; font-weight: 800; color: #555; }
+        .home-hero-products { position: absolute; inset: 0 2% 0 45%; display: flex; align-items: flex-end; justify-content: center; gap: 2px; }
+        .home-hero-products img { width: 24%; height: 80%; object-fit: contain; filter: drop-shadow(0 12px 12px rgba(0,0,0,.12)); }
+        .home-hero-products img:nth-child(2) { height: 92%; }
+        .home-hero-products img:nth-child(3) { height: 68%; }
+        .home-hero-discount { position: absolute; z-index: 4; top: 24px; right: 17%; width: 66px; height: 66px; border-radius: 50%; background: #e30613; color: #fff; display: grid; place-items: center; text-align: center; font-size: 13px; font-weight: 900; line-height: 1; }
+        .home-section { margin-top: 22px; }
+        .home-section-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .home-section-head h2 { font-size: 15px; font-weight: 900; }
+        .home-section-head a { height: 30px; padding: 0 15px; border: 1px solid #ddd; border-radius: 4px; display: inline-flex; align-items: center; color: #111; text-decoration: none; font-size: 10px; font-weight: 800; }
+        .home-categories { display: grid; grid-template-columns: repeat(8, minmax(0,1fr)); gap: 16px; }
+        .home-category { min-height: 92px; border: 1px solid #e5e5e5; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: #111; text-decoration: none; font-size: 11px; font-weight: 800; transition: .16s ease; }
+        .home-category:hover { border-color: #e30613; color: #e30613; }
+        .home-category small { color: #999; font-size: 9px; font-weight: 700; }
+        .home-trending-layout { display: grid; grid-template-columns: minmax(0,1fr) 290px; gap: 22px; }
+        .home-product-grid { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 14px; }
+        .home-product-card { border: 1px solid #e5e5e5; border-radius: 6px; background: #fff; overflow: hidden; min-width: 0; }
+        .home-product-image { position: relative; height: 155px; display: block; padding: 12px; background: #fafafa; }
+        .home-product-image img { width: 100%; height: 100%; object-fit: contain; }
+        .home-stock { position: absolute; top: 9px; left: 9px; border: 1px solid #bfe7c8; border-radius: 3px; background: #f6fff7; color: #1f9a3f; padding: 3px 6px; font-size: 8px; font-weight: 800; }
+        .home-heart { position: absolute; top: 9px; right: 9px; color: #555; }
+        .home-product-info { padding: 10px 12px 12px; }
+        .home-product-name { height: 34px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; color: #111; text-decoration: none; font-size: 10px; line-height: 1.35; font-weight: 900; text-transform: uppercase; }
+        .home-product-price { display: block; margin-top: 10px; color: #e30613; font-size: 15px; font-weight: 900; }
+        .home-offer { min-height: 245px; border-radius: 8px; background: #fff0f0; padding: 24px 20px; position: relative; overflow: hidden; }
+        .home-offer-kicker { color: #e30613; font-size: 10px; font-weight: 900; text-transform: uppercase; }
+        .home-offer h3 { margin-top: 10px; font-size: 24px; line-height: 1; font-weight: 900; }
+        .home-offer-product { position: absolute; right: 0; bottom: 0; width: 56%; height: 70%; object-fit: contain; filter: drop-shadow(0 10px 10px rgba(0,0,0,.15)); }
+        .home-offer-price { position: relative; z-index: 2; margin-top: 18px; }
+        .home-offer-price del { display: block; color: #999; font-size: 10px; }
+        .home-offer-price strong { color: #e30613; font-size: 18px; }
+        .home-offer-link { position: relative; z-index: 2; margin-top: 16px; height: 36px; padding: 0 16px; border-radius: 4px; background: #e30613; color: #fff; display: inline-flex; align-items: center; text-decoration: none; font-size: 10px; font-weight: 800; }
+        .home-benefits { margin-top: 30px; border-top: 1px solid #ededed; display: grid; grid-template-columns: repeat(4,1fr); gap: 20px; padding: 22px 52px; }
+        .home-benefit { display: flex; align-items: center; gap: 12px; font-size: 12px; font-weight: 900; }
+        .home-benefit small { display: block; color: #777; margin-top: 3px; font-size: 10px; font-weight: 600; }
+        .home-mobile-header, .home-mobile-nav { display: none; }
+        @media (max-width: 1180px) {
+          .home-topbar, .home-header, .home-nav { display: none; }
+          .home-shell { box-shadow: none; }
+          .home-mobile-header { display: block; padding: 16px; border-bottom: 1px solid #ededed; background: #fff; position: sticky; top: 0; z-index: 20; }
+          .home-mobile-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+          .home-mobile-actions { display: flex; align-items: center; gap: 18px; }
+          .home-mobile-header .home-brand-mark { width: 42px; height: 42px; font-size: 31px; }
+          .home-mobile-header .home-brand-text { font-size: 15px; }
+          .home-mobile-header .shop-search-control { height: 42px; border-radius: 5px; }
+          .home-mobile-header .shop-search-submit { height: 42px; width: 48px; }
+          .home-content { padding: 14px 14px 78px; }
+          .home-hero { height: 170px; padding: 18px 16px; }
+          .home-hero-copy { width: 52%; }
+          .home-hero-kicker { font-size: 7px; }
+          .home-hero h1 { margin: 8px 0 14px; font-size: 17px; }
+          .home-hero-benefits { display: none; }
+          .home-hero-products { inset: 0 -5% 0 48%; }
+          .home-hero-products img { width: 30%; height: 72%; }
+          .home-hero-products img:nth-child(2) { height: 82%; }
+          .home-hero-discount { display: none; }
+          .home-hero-copy .home-offer-link { display: inline-flex !important; height: 30px; margin-top: 0; padding: 0 12px; font-size: 9px; }
+          .home-categories { display: flex; gap: 12px; overflow-x: auto; scrollbar-width: none; margin-right: -14px; padding-right: 14px; }
+          .home-categories::-webkit-scrollbar { display: none; }
+          .home-category { flex: 0 0 74px; min-height: 76px; gap: 7px; font-size: 9px; }
+          .home-category small { display: none; }
+          .home-trending-layout { display: block; }
+          .home-product-grid { grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; }
+          .home-product-card:nth-child(n+4) { display: none; }
+          .home-product-image { height: 126px; padding: 7px; }
+          .home-product-info { padding: 8px; }
+          .home-product-name { height: 34px; font-size: 9px; }
+          .home-product-price { font-size: 13px; }
+          .home-product-info button { display: none; }
+          .home-offer { margin-top: 16px; min-height: 138px; padding: 18px 14px; }
+          .home-offer h3 { font-size: 16px; max-width: 42%; }
+          .home-offer-product { width: 48%; height: 86%; }
+          .home-benefits { display: none; }
+          .home-mobile-nav { position: fixed; z-index: 30; display: grid; grid-template-columns: repeat(5,1fr); bottom: 0; left: 0; right: 0; height: 64px; border-top: 1px solid #ddd; background: #fff; }
+          .home-mobile-nav a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: #555; text-decoration: none; font-size: 9px; font-weight: 700; }
+          .home-mobile-nav a:first-child { color: #e30613; }
+        }
+        @media (max-width: 390px) {
+          .home-product-image { height: 112px; }
+          .home-product-grid { gap: 6px; }
+          .home-section-head h2 { font-size: 14px; }
+        }
+      `}</style>
 
-      {/* BOTÓN ADMIN */}
-      <div className="fixed bottom-6 right-6 z-[9999]">
-        <AuthButton 
-          isLoggedIn={!!session} 
-          isAdmin={session?.user?.role === 'admin'} 
-        />
+      <div className="home-shell">
+        <div className="home-topbar">
+          <div className="home-topbar-group">
+            <span className="home-topbar-item"><Truck className="size-4 text-red-500" /> Envios a todo Chile</span>
+            <span className="home-topbar-item"><Clock3 className="size-4" /> Despacho 24-48h en Linares</span>
+          </div>
+          <div className="home-topbar-group">
+            <span className="home-topbar-item">Centro de ayuda</span>
+            <span className="home-topbar-item">Contacto</span>
+          </div>
+        </div>
+
+        <header className="home-header">
+          <HomeBrand />
+          <HomeSearchBar />
+          <div className="home-header-actions">
+            <Link href="/admin/login" className="shop-header-action"><User className="size-5" /><span>Mi cuenta<small>Ingresar</small></span></Link>
+            <CartHeaderLink />
+          </div>
+        </header>
+
+        <nav className="home-nav">
+          <Link href="/shop" className="home-all-cats"><span className="inline-flex items-center gap-3"><Menu className="size-4" /> Todas las categorias</span></Link>
+          <div className="home-nav-links">
+            <Link href="/shop"><BadgePercent className="inline size-4 mr-1" /> Ofertas</Link>
+            <Link href="/shop?sort=newest">Nuevos</Link>
+            <Link href="/shop">Mas vendidos</Link>
+            <Link href="/shop">Marcas</Link>
+            <Link href="/shop">Blog</Link>
+            <Link href="/shop">Contacto</Link>
+          </div>
+        </nav>
+
+        <header className="home-mobile-header">
+          <div className="home-mobile-top">
+            <HomeBrand />
+            <div className="home-mobile-actions"><CartHeaderLink mobile /><Link href="/shop" aria-label="Abrir catalogo"><Menu className="size-6 text-black" /></Link></div>
+          </div>
+          <HomeSearchBar />
+        </header>
+
+        <div className="home-content">
+          <section className="home-hero">
+            <div className="home-hero-copy">
+              <p className="home-hero-kicker">Tecnologia que te conecta</p>
+              <h1>Todo lo que necesitas,<br /><span>en un solo lugar.</span></h1>
+              <div className="home-hero-benefits">
+                <span className="home-hero-benefit"><Truck className="size-5" /> Envios rapidos</span>
+                <span className="home-hero-benefit"><ShieldCheck className="size-5" /> Compra segura</span>
+                <span className="home-hero-benefit"><PackageCheck className="size-5" /> Garantia y cambios</span>
+              </div>
+              <Link href="/shop" className="home-offer-link hidden">Ver productos</Link>
+            </div>
+            <div className="home-hero-products">
+              {heroProducts.slice(0, 3).map((product) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img key={product.id} src={product.imageUrl!} alt={product.name} />
+              ))}
+            </div>
+            <span className="home-hero-discount">HASTA<br />20%<br />OFF</span>
+          </section>
+
+          <section className="home-section">
+            <div className="home-section-head"><h2>Explora por categoria</h2><Link href="/shop">Ver todas</Link></div>
+            <div className="home-categories">
+              {CATEGORIES.map((category) => {
+                const Icon = category.icon
+                return (
+                  <Link key={category.value} href={`/shop?cat=${category.value}`} className="home-category">
+                    <Icon className="size-6" />
+                    <span>{category.label}</span>
+                    <small>{counts[category.value] ?? 0} productos</small>
+                  </Link>
+                )
+              })}
+            </div>
+          </section>
+
+          <section className="home-section">
+            <div className="home-section-head"><h2>Productos en tendencia</h2><Link href="/shop">Ver todos</Link></div>
+            <div className="home-trending-layout">
+              <div className="home-product-grid">
+                {trending.map((product) => (
+                  <article key={product.id} className="home-product-card">
+                    <Link href={`/shop/${product.id}`} className="home-product-image">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={product.imageUrl!} alt={product.name} />
+                      <span className="home-stock">En stock</span>
+                      <Heart className="home-heart size-4" />
+                    </Link>
+                    <div className="home-product-info">
+                      <Link href={`/shop/${product.id}`} className="home-product-name">{product.name}</Link>
+                      <span className="home-product-price">${product.price.toLocaleString('es-CL')}</span>
+                      <AddToCartButton product={{ id: product.id, name: product.name, price: product.price, stock: product.stock, imageUrl: product.imageUrl }} />
+                    </div>
+                  </article>
+                ))}
+              </div>
+
+              {offerProduct && (
+                <aside className="home-offer">
+                  <p className="home-offer-kicker">Oferta flash <Zap className="inline size-3" /></p>
+                  <h3>{offerProduct.name}</h3>
+                  <div className="home-offer-price">
+                    {activeDiscount && <del>${offerProduct.price.toLocaleString('es-CL')}</del>}
+                    <strong>${offerPrice.toLocaleString('es-CL')}</strong>
+                    <span className="ml-2 rounded-[3px] bg-white px-2 py-1 text-[9px] font-bold text-red-600">{offerBadge}</span>
+                  </div>
+                  <Link href={`/shop/${offerProduct.id}`} className="home-offer-link">Ver oferta</Link>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={offerProduct.imageUrl!} alt={offerProduct.name} className="home-offer-product" />
+                </aside>
+              )}
+            </div>
+          </section>
+        </div>
+
+        <footer className="home-benefits">
+          <div className="home-benefit"><Truck className="size-7" /><span>Envios a todo Chile<small>Rapido y seguro</small></span></div>
+          <div className="home-benefit"><Clock3 className="size-7" /><span>Despacho 24-48h en Linares<small>Compras antes de las 14:00</small></span></div>
+          <div className="home-benefit"><ShieldCheck className="size-7" /><span>Compra segura<small>Sitio protegido SSL</small></span></div>
+          <div className="home-benefit"><PackageCheck className="size-7" /><span>Garantia y cambios<small>Hasta 30 dias</small></span></div>
+        </footer>
       </div>
 
-      {/* HERO SECTION */}
-      <main className="flex-1 max-w-7xl mx-auto w-full px-6 md:px-16 py-20 md:py-28 flex flex-col items-center justify-center text-center relative">
-        <div className="absolute inset-0 pointer-events-none opacity-5"
-          style={{
-            backgroundImage: `repeating-linear-gradient(-45deg, transparent, transparent 80px, #000 80px, #000 81px)`,
-          }}
-        />
-
-        <div className="relative mb-14">
-          <div className="absolute inset-0 bg-zinc-900 rounded-[2.5rem] translate-x-3 translate-y-3 opacity-90" />
-          <div className="relative w-40 h-40 md:w-48 md:h-48 bg-red-600 rounded-[2.5rem] flex items-center justify-center border border-zinc-900">
-            <span 
-              className="text-white text-[7rem] md:text-[9rem] font-normal leading-none select-none pr-2 pt-2"
-              style={{ fontFamily: "'Georgia', serif", fontStyle: 'italic' }}
-            >
-              m
-            </span>
-          </div>
-        </div>
-
-        <div className="flex flex-col items-center gap-4 mb-14">
-          <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4">
-            <h1 className="text-4xl md:text-5xl font-semibold tracking-[0.25em] uppercase text-zinc-900">
-              MULTI
-            </h1>
-            <h1 className="text-4xl md:text-5xl font-semibold tracking-[0.25em] uppercase text-red-600">
-              ACCESORIOS
-            </h1>
-          </div>
-          
-          <div className="flex items-center gap-4 text-zinc-400 mt-2">
-            <span className="w-8 h-[1px] bg-zinc-300" />
-            <p className="text-[9px] tracking-[0.4em] uppercase font-medium">
-              Linares, Chile — Est. 2020
-            </p>
-            <span className="w-8 h-[1px] bg-zinc-300" />
-          </div>
-        </div>
-
-        <div className="flex flex-col items-center gap-10">
-          <Link href="/shop">
-            <button className="group flex items-center gap-6 bg-zinc-900 text-white px-10 py-5 text-[10px] tracking-[0.3em] uppercase font-semibold border border-zinc-900 hover:bg-red-600 hover:border-red-600 transition-all duration-300 shadow-[5px_5px_0px_0px_rgba(220,38,38,1)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 rounded-sm">
-              Ver Catálogo
-              <span className="group-hover:translate-x-1 transition-transform duration-300 text-sm">→</span>
-            </button>
-          </Link>
-          
-          <p className="max-w-sm text-zinc-400 text-[10px] leading-relaxed uppercase tracking-[0.15em] font-medium">
-            Atención personalizada en el corazón de Linares. <br />
-            Tecnología y estilo para tu smartphone.
-          </p>
-        </div>
-      </main>
-
-      {/* SECCIÓN DE OFERTAS */}
-      {ofertasDestacadas.length > 0 && (
-        <section className="max-w-7xl mx-auto w-full px-6 md:px-16 pb-24">
-          <div className="border-t border-zinc-300 pt-12 mb-10 flex justify-between items-end">
-            <div>
-              <p className="text-red-600 text-[9px] tracking-[0.3em] uppercase font-bold mb-1.5">
-                Promociones Activas
-              </p>
-              <h2 className="text-xl md:text-2xl font-semibold uppercase tracking-[0.15em] text-zinc-800">
-                Liquidación del Maule
-              </h2>
-            </div>
-            <span className="text-[9px] font-medium uppercase tracking-[0.2em] text-zinc-400 hidden sm:block">
-              Actualizado directo en tienda %
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-            {ofertasDestacadas.map((prod) => (
-              <Link key={prod!.id} href={`/shop?id=${prod!.id}`}>
-                <div className="group relative bg-white border-2 border-zinc-950 p-6 min-h-[250px] flex flex-col justify-between shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 hover:bg-[#FCFBF9] transition-all duration-200 cursor-pointer rounded-sm overflow-hidden">
-                  
-                  <div className="flex justify-between items-start w-full">
-                    <span className="font-mono text-[9px] tracking-widest text-zinc-400 font-bold uppercase">
-                      [ Disponible ]
-                    </span>
-                    <span className="bg-red-600 text-white font-bold text-[9px] px-2 py-0.5 uppercase tracking-widest rounded-sm border border-zinc-950 transform rotate-1 group-hover:rotate-0 transition-transform duration-150 shrink-0">
-                      {prod!.badge}
-                    </span>
-                  </div>
-
-                  <div className="my-6">
-                    <h3 className="font-sans text-xs md:text-[13px] font-semibold uppercase tracking-wider text-zinc-800 group-hover:text-red-600 transition-colors duration-150 leading-snug line-clamp-3">
-                      {prod!.name}
-                    </h3>
-                  </div>
-
-                  <div className="border-t border-zinc-200 pt-4 flex items-center justify-between w-full">
-                    <div className="flex flex-col justify-end">
-                      {prod!.tipo === '2x1' ? (
-                        <span className="text-xs font-bold tracking-widest text-red-600 uppercase">Lleva 2 paga 1</span>
-                      ) : (
-                        <>
-                          <span className="text-[10px] text-zinc-400 line-through font-medium tracking-wide mb-0.5 leading-none">
-                            ${prod!.precioOriginal.toLocaleString('es-CL')}
-                          </span>
-                          <span className="text-xl font-bold tracking-tight text-zinc-950 leading-none">
-                            ${prod!.precioOferta.toLocaleString('es-CL')}
-                          </span>
-                        </>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity duration-150">
-                      <span className="text-[9px] uppercase tracking-[0.2em] font-bold text-zinc-800">
-                        Ver
-                      </span>
-                      <span className="text-sm font-light text-zinc-800 group-hover:translate-x-1 transition-transform duration-150">
-                        →
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="absolute top-0 left-0 w-[3px] h-full bg-red-600 scale-y-0 group-hover:scale-y-100 transition-transform duration-200 origin-top" />
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
-
- {/* BENTO CATEGORÍAS */}
-      <section className="max-w-7xl mx-auto w-full px-6 md:px-16 pb-28">
-        <div className="border-t border-zinc-300 pt-12 mb-10">
-          <p className="text-[9px] tracking-[0.3em] uppercase text-zinc-400 font-bold mb-1.5">Acceso Directo</p>
-          <h2 className="text-xl md:text-2xl font-semibold uppercase tracking-[0.15em] text-zinc-800">
-            Categorías principales
-          </h2>
-        </div>
-        
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { cat: 'Carcasa',    emoji: '📱', label: 'Carcasas',    num: '01' },
-            { cat: 'Lamina',     emoji: '🛡️', label: 'Láminas',     num: '02' },
-            { cat: 'Audifonos',  emoji: '🎧', label: 'Audífonos',    num: '03' },
-            { cat: 'Cargador',   emoji: '⚡', label: 'Cargadores',   num: '04' },
-            { cat: 'Cable',      emoji: '🔌', label: 'Cables',       num: '05' },
-            { cat: 'Vapers',     emoji: '💨', label: 'Vapers',       num: '06' },
-            { cat: 'Computacion', emoji: '💻', label: 'Cómputo',     num: '07' }, // ← Corregido para que no se corte en móviles
-            { cat: 'Otros',      emoji: '✨', label: 'Otros',        num: '08' },
-          ].map((item) => (
-            <Link key={item.cat} href={`/shop?cat=${item.cat}`}>
-              <div className="group relative bg-white border border-black/40 p-6 flex flex-col justify-between aspect-[4/3] shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all duration-200 cursor-pointer overflow-hidden rounded-sm">
-                
-                <div className="flex justify-between items-center">
-                  <span className="font-mono text-[9px] tracking-widest text-zinc-400">
-                    {item.num}
-                  </span>
-                  <span className="text-lg grayscale opacity-40 group-hover:opacity-100 group-hover:grayscale-0 transition-all duration-300 transform group-hover:scale-110">
-                    {item.emoji}
-                  </span>
-                </div>
-
-                <div className="mt-auto flex items-baseline justify-between gap-1">
-                  <h3 className="font-sans text-xs font-semibold uppercase tracking-[0.2em] text-zinc-800 group-hover:text-red-600 transition-colors duration-150 truncate">
-                    {item.label}
-                  </h3>
-                  <span className="font-light text-zinc-300 group-hover:text-zinc-800 group-hover:translate-x-0.5 transition-all duration-200 text-sm leading-none shrink-0">
-                    →
-                  </span>
-                </div>
-
-                <div className="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-200 origin-left" />
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* ── FOOTER IMPECABLE Y CORREGIDO SIN ERRORES SINTÁCTICOS ── */}
-      <footer className="w-full bg-zinc-950 text-[#FAF9F5] py-16 px-6 md:px-16 border-t border-zinc-900 mt-auto">
-        <div className="max-w-7xl mx-auto">
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-6 items-start pb-12 border-b border-zinc-800/60">
-            
-            {/* Columna 1: Ciudad y Región */}
-            <div className="space-y-2">
-              <span className="font-mono text-[9px] tracking-[0.3em] text-red-500 uppercase font-bold block">
-                📍 Puntos de Venta
-              </span>
-              <h3 className="text-2xl font-semibold uppercase tracking-[0.15em] text-white">
-                Linares <span className="text-zinc-600">CHILE</span>
-              </h3>
-              <p className="text-zinc-400 text-[10px] uppercase tracking-[0.2em]">
-                Región del Maule
-              </p>
-            </div>
-
-            {/* Columna 2: Sucursal Plaza */}
-            <div className="space-y-2.5 md:border-l md:border-zinc-800/80 md:pl-8">
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-[10px] text-zinc-500">[ 01 ]</span>
-                <span className="text-[9px] font-bold tracking-[0.25em] text-zinc-400 uppercase bg-zinc-900 px-2 py-0.5 rounded-sm border border-zinc-800">
-                  Frente a la Plaza
-                </span>
-              </div>
-              <div>
-                <p className="text-zinc-300 font-mono text-[11px] uppercase tracking-wider">
-                  Chacabuco 479
-                </p>
-              </div>
-            </div>
-
-            {/* Columna 3: Sucursal Peatonal */}
-            <div className="space-y-2.5 md:border-l md:border-zinc-800/80 md:pl-8">
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-[10px] text-zinc-500">[ 02 ]</span>
-                <span className="text-[9px] font-bold tracking-[0.25em] text-emerald-500 uppercase bg-emerald-950/30 px-2 py-0.5 rounded-sm border border-emerald-900/40">
-                  Paseo Peatonal
-                </span>
-              </div>
-              <div>
-                <p className="text-zinc-300 font-mono text-[11px] uppercase tracking-wider">
-                  Chacabuco 456
-                </p>
-              </div>
-            </div>
-
-          </div>
-
-          {/* Fila de Créditos Inferior */}
-          <div className="pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-zinc-500 text-[9px] uppercase tracking-[0.25em] font-medium">
-            <p>© {new Date().getFullYear()} Multi Accesorios. Todos los derechos reservados.</p>
-            <p className="text-zinc-600 font-mono">Designed for Brutalism & Speed</p>
-          </div>
-
-        </div>
-      </footer>
+      <nav className="home-mobile-nav">
+        <Link href="/"><HomeIcon className="size-5" />Inicio</Link>
+        <Link href="/shop"><List className="size-5" />Categorias</Link>
+        <Link href="/shop"><Tag className="size-5" />Ofertas</Link>
+        <Link href="/shop"><Heart className="size-5" />Favoritos</Link>
+        <Link href="/admin/login"><User className="size-5" />Cuenta</Link>
+      </nav>
 
     </div>
+  )
+}
+
+function HomeBrand() {
+  return (
+    <Link href="/" className="home-brand">
+      <span className="home-brand-mark">m</span>
+      <span className="home-brand-text">MULTI<br />ACCESORIOS</span>
+    </Link>
   )
 }
