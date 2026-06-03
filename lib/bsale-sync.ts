@@ -254,7 +254,7 @@ export async function syncBsaleToSupabase(): Promise<SyncResult> {
         CATEGORY_IMAGES[category]
 
       const images =
-        await getProductImages(bp.name)
+        await getProductImages(bp.name, category)
 
       const existing =
         await prisma.product.findFirst({

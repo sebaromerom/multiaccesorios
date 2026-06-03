@@ -1,95 +1,108 @@
-'use client'
-
 import Link from 'next/link'
-import { signOut, useSession } from 'next-auth/react'
+import { prisma } from '@/lib/prisma'
+import {
+  ArrowRight,
+  Boxes,
+  CircleDollarSign,
+  ImageOff,
+  PackageCheck,
+  ReceiptText,
+  Tag,
+} from 'lucide-react'
 
-export default function AdminPage() {
-  const { data: session } = useSession()
+export default async function AdminPage() {
+  const [productCount, orderCount, pendingOrders, discountCount, missingImages] = await Promise.all([
+    prisma.product.count(),
+    prisma.order.count(),
+    prisma.order.count({ where: { status: 'pending' } }),
+    prisma.discountRule.count({ where: { active: true } }),
+    prisma.product.count({
+      where: {
+        OR: [{ imageUrl: null }, { imageUrl: '' }],
+      },
+    }),
+  ])
 
-  // Nota: Ya no necesitamos redirigir aquí, el Middleware se encargará de todo.
-  // Solo dejamos un retorno seguro por si la sesión aún no baja, pero sin redirigir.
-  if (!session) {
-    return (
-      <div className="w-full min-h-[80vh] flex items-center justify-center bg-[#FAF9F5]">
-        <p className="text-[10px] tracking-[0.4em] uppercase text-zinc-400 font-mono animate-pulse">
-          Cargando panel...
-        </p>
-      </div>
-    )
-  }
-
-  const adminLinks = [
-    { href: '/admin/products', num: '01', title: 'Productos', desc: 'Gestionar productos y stock' },
-    { href: '/admin/discounts', num: '02', title: 'Descuentos', desc: 'Crear y gestionar descuentos' },
-    { href: '/admin/orders', num: '03', title: 'Ordenes', desc: 'Ver y gestionar ordenes' },
-    { href: '/admin/metrics', num: '04', title: 'Metricas', desc: 'Analiticas de ventas y rendimiento' },
+  const sections = [
+    { href: '/admin/products', label: 'Productos', detail: 'Catalogo, stock e imagenes', value: productCount, icon: Boxes },
+    { href: '/admin/orders', label: 'Pedidos', detail: 'Ventas y entregas', value: orderCount, icon: ReceiptText },
+    { href: '/admin/discounts', label: 'Descuentos', detail: 'Reglas comerciales activas', value: discountCount, icon: Tag },
+    { href: '/admin/metrics', label: 'Metricas', detail: 'Rendimiento de la tienda', value: 'Ver', icon: CircleDollarSign },
   ]
 
   return (
-    <div className="animate-fade-in px-8 py-10 max-w-5xl mx-auto">
-      <div className="mb-16">
-        <p className="text-[10px] tracking-[0.4em] uppercase text-zinc-400 font-bold mb-3">
-          Multiaccesorios — Panel interno
-        </p>
-        <h1 className="text-7xl text-black font-black uppercase tracking-tighter leading-none">
-          Admin
-        </h1>
+    <main>
+      <div className="mb-7">
+        <h1 className="admin-page-title">Resumen del negocio</h1>
+        <p className="admin-page-kicker">Control rapido del catalogo y las ventas de Multi Accesorios.</p>
       </div>
 
-      <div className="flex flex-col divide-y divide-zinc-100">
-        {/* ENLACES NORMALES DEL PANEL */}
-        {adminLinks.map((item, index) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className="group flex items-center justify-between py-8 hover:bg-zinc-50 transition-all duration-300 px-2"
-            style={{ animation: 'fadeInUp 0.4s ease forwards', animationDelay: `${index * 0.08}s`, opacity: 0 }}
-          >
-            <div className="flex items-center gap-10">
-              <span className="text-red-600 text-xs tracking-widest uppercase font-black w-6">
-                {item.num}
-              </span>
-              <div>
-                <h2 className="text-2xl font-black uppercase tracking-tight text-black group-hover:translate-x-1 transition-transform duration-300">
-                  {item.title}
-                </h2>
-                <p className="text-xs text-zinc-400 uppercase tracking-widest mt-1">{item.desc}</p>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-7">
+        {sections.map((section) => {
+          const Icon = section.icon
+          return (
+            <Link
+              key={section.href}
+              href={section.href}
+              className="group bg-white border border-zinc-200 rounded-[6px] p-4 min-h-32 hover:border-red-300 hover:shadow-sm transition-all"
+            >
+              <div className="flex items-center justify-between mb-5">
+                <span className="w-9 h-9 rounded-[5px] bg-zinc-100 grid place-items-center group-hover:bg-red-50 transition-colors">
+                  <Icon className="size-4 text-zinc-600 group-hover:text-red-600" />
+                </span>
+                <ArrowRight className="size-4 text-zinc-300 group-hover:text-red-600" />
               </div>
-            </div>
-            <span className="text-zinc-300 group-hover:text-red-600 group-hover:translate-x-1 transition-all duration-300 text-2xl font-light">
-              &#8594;
-            </span>
-          </Link>
-        ))}
-
-        {/* ── BOTÓN DE LOG OUT (FILA 05) ── */}
-        <button
-          onClick={() => signOut({ callbackUrl: '/' })}
-          className="group w-full flex items-center justify-between py-8 hover:bg-red-50/50 transition-all duration-300 px-2 text-left border-b border-zinc-100"
-          style={{ 
-            animation: 'fadeInUp 0.4s ease forwards', 
-            animationDelay: `${adminLinks.length * 0.08}s`, 
-            opacity: 0 
-          }}
-        >
-          <div className="flex items-center gap-10">
-            <span className="text-zinc-400 group-hover:text-red-600 text-xs tracking-widest uppercase font-black w-6 transition-colors">
-              05
-            </span>
-            <div>
-              <h2 className="text-2xl font-black uppercase tracking-tight text-zinc-500 group-hover:text-red-600 group-hover:translate-x-1 transition-all duration-300">
-                Cerrar Sesión
-              </h2>
-              <p className="text-xs text-zinc-400 uppercase tracking-widest mt-1 group-hover:text-red-600/70 transition-colors">
-                Salir del perfil de administrador de forma segura
-              </p>
-            </div>
-          </div>
-          <span className="text-zinc-300 group-hover:text-red-600 group-hover:translate-x-1 transition-all duration-300 text-2xl font-light">
-            ✕
-          </span>
-        </button>
+              <p className="text-2xl font-extrabold">{section.value}</p>
+              <p className="text-sm font-bold mt-1">{section.label}</p>
+              <p className="text-[11px] text-zinc-500 mt-1">{section.detail}</p>
+            </Link>
+          )
+        })}
       </div>
-    </div>
+
+      <div className="grid lg:grid-cols-[1fr_340px] gap-5">
+        <section className="bg-white border border-zinc-200 rounded-[6px]">
+          <div className="px-5 py-4 border-b border-zinc-200">
+            <h2 className="text-sm font-bold">Acciones frecuentes</h2>
+            <p className="text-[11px] text-zinc-500 mt-1">Atajos para las tareas del dia.</p>
+          </div>
+          <div className="divide-y divide-zinc-100">
+            <Link href="/admin/products/new" className="flex items-center gap-3 px-5 py-4 hover:bg-zinc-50">
+              <Boxes className="size-4 text-red-600" />
+              <span className="text-sm font-semibold">Agregar un producto al catalogo</span>
+              <ArrowRight className="ml-auto size-4 text-zinc-400" />
+            </Link>
+            <Link href="/admin/orders" className="flex items-center gap-3 px-5 py-4 hover:bg-zinc-50">
+              <PackageCheck className="size-4 text-red-600" />
+              <span className="text-sm font-semibold">Revisar pedidos pendientes</span>
+              <span className="ml-auto text-xs font-bold text-red-600">{pendingOrders}</span>
+            </Link>
+            <Link href="/admin/discounts/new" className="flex items-center gap-3 px-5 py-4 hover:bg-zinc-50">
+              <Tag className="size-4 text-red-600" />
+              <span className="text-sm font-semibold">Crear una promocion</span>
+              <ArrowRight className="ml-auto size-4 text-zinc-400" />
+            </Link>
+          </div>
+        </section>
+
+        <aside className="bg-white border border-zinc-200 rounded-[6px] p-5">
+          <div className="w-10 h-10 rounded-[5px] bg-red-50 grid place-items-center mb-4">
+            <ImageOff className="size-5 text-red-600" />
+          </div>
+          <p className="text-3xl font-extrabold">{missingImages}</p>
+          <h2 className="text-sm font-bold mt-1">Productos sin imagen cargada</h2>
+          <p className="text-xs text-zinc-500 mt-2 leading-relaxed">
+            Revisa los productos que aun necesitan una fotografia confiable.
+          </p>
+          <Link
+            href="/admin/products"
+            className="mt-5 h-10 rounded-[4px] bg-red-600 hover:bg-red-700 text-white text-xs font-bold flex items-center justify-center gap-2"
+          >
+            Revisar catalogo
+            <ArrowRight className="size-4" />
+          </Link>
+        </aside>
+      </div>
+    </main>
   )
 }

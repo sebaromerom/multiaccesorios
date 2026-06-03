@@ -1,12 +1,23 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+import {
+  ArrowLeft,
+  Check,
+  ChevronRight,
+  Minus,
+  PackageCheck,
+  Plus,
+  Search,
+  ShieldCheck,
+  ShoppingCart,
+  Store,
+  Trash2,
+  Truck,
+} from 'lucide-react'
 import { useCartStore } from '@/lib/store'
 
 type DiscountResult = {
@@ -19,110 +30,75 @@ type DiscountResult = {
 type DeliveryType = 'retiro' | 'despacho'
 
 const SUCURSALES = [
-  { value: 'Chacabuco 479', label: 'Chacabuco 479 — Local principal' },
-  { value: 'Chacabuco 456', label: 'Chacabuco 456 — Local secundario' },
+  { value: 'Chacabuco 479', label: 'Chacabuco 479 - Local principal' },
+  { value: 'Chacabuco 456', label: 'Chacabuco 456 - Local secundario' },
 ]
 
 export default function CartPage() {
   const router = useRouter()
-  
-  // ── ESTADO REACTIVO DE ZUSTAND ──
   const cart = useCartStore((state) => state.cart)
-
-  const [result, setResult]   = useState<DiscountResult | null>(null)
+  const [result, setResult] = useState<DiscountResult | null>(null)
   const [loading, setLoading] = useState(false)
-  const [step, setStep]       = useState<'cart' | 'checkout'>('cart')
-
-  // Datos del cliente
-  const [customerName, setCustomerName]   = useState('')
+  const [step, setStep] = useState<'cart' | 'checkout'>('cart')
+  const [customerName, setCustomerName] = useState('')
   const [customerPhone, setCustomerPhone] = useState('')
   const [customerEmail, setCustomerEmail] = useState('')
-
-  // Entrega
-  const [deliveryType, setDeliveryType]         = useState<DeliveryType>('retiro')
+  const [deliveryType, setDeliveryType] = useState<DeliveryType>('retiro')
   const [deliverySucursal, setDeliverySucursal] = useState(SUCURSALES[0].value)
-  const [deliveryAddress, setDeliveryAddress]   = useState('')
-  const [deliveryCity, setDeliveryCity]         = useState('')
-  const [deliveryNotes, setDeliveryNotes]       = useState('')
+  const [deliveryAddress, setDeliveryAddress] = useState('')
+  const [deliveryCity, setDeliveryCity] = useState('')
+  const [deliveryNotes, setDeliveryNotes] = useState('')
 
-  // Métodos de mutación directa usando la API global de Zustand
-  const clearCartState = () => {
-    useCartStore.setState({ cart: [] })
-  }
+  const clearCartState = () => useCartStore.setState({ cart: [] })
 
-  // ── MANEJO REACTIVO DE LA API DEL CARRITO ──
   useEffect(() => {
     if (cart.length === 0) return
-
     fetch('/api/cart', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        items: cart.map((i) => ({ productId: i.id.split('-')[0], quantity: i.quantity })),
+        items: cart.map((item) => ({ productId: item.id.split('-')[0], quantity: item.quantity })),
       }),
     })
-      .then((r) => {
-        if (!r.ok) {
+      .then((response) => {
+        if (!response.ok) {
           clearCartState()
-          toast.error('Algunos productos ya no están disponibles. El carrito fue vaciado.')
+          toast.error('Algunos productos ya no estan disponibles. El carrito fue vaciado.')
           return null
         }
-        return r.json()
+        return response.json()
       })
-      .then((data) => {
-        if (data) setResult(data)
-      })
+      .then((data) => data && setResult(data))
   }, [cart])
 
-  // ── MANEJO DE CANTIDADES DIRECTO SOBRE EL ARREGLO DEL STORE ──
-  function handleUpdateQuantity(id: string, delta: number) {
+  function updateQuantity(id: string, delta: number) {
     const updatedCart = cart
-      .map((item) => {
-        if (item.id === id) {
-          return { ...item, quantity: item.quantity + delta }
-        }
-        return item
-      })
+      .map((item) => item.id === id ? { ...item, quantity: item.quantity + delta } : item)
       .filter((item) => item.quantity > 0)
-
-    // Sincronizamos el nuevo arreglo directamente en Zustand
     useCartStore.setState({ cart: updatedCart })
-
-    // Si sacamos el último elemento del carrito, limpiamos el resumen de precios
-    if (updatedCart.length === 0) {
-      setResult(null)
-    }
+    if (updatedCart.length === 0) setResult(null)
   }
 
-  function validateCheckout(): boolean {
-    if (!customerName.trim()) {
-      toast.error('Ingresa tu nombre completo')
-      return false
-    }
+  function removeItem(id: string) {
+    const updatedCart = cart.filter((item) => item.id !== id)
+    useCartStore.setState({ cart: updatedCart })
+    if (updatedCart.length === 0) setResult(null)
+  }
+
+  function validateCheckout() {
+    if (!customerName.trim()) return toast.error('Ingresa tu nombre completo'), false
     if (!customerPhone.trim() || customerPhone.replace(/\D/g, '').length < 9) {
-      toast.error('Ingresa un teléfono válido (mínimo 9 dígitos)')
-      return false
+      return toast.error('Ingresa un telefono valido'), false
     }
-    if (deliveryType === 'despacho') {
-      if (!deliveryAddress.trim()) {
-        toast.error('Ingresa tu dirección de despacho')
-        return false
-      }
-      if (!deliveryCity.trim()) {
-        toast.error('Ingresa la ciudad de despacho')
-        return false
-      }
-    }
+    if (deliveryType === 'despacho' && !deliveryAddress.trim()) return toast.error('Ingresa tu direccion'), false
+    if (deliveryType === 'despacho' && !deliveryCity.trim()) return toast.error('Ingresa la ciudad'), false
     return true
   }
 
   async function confirmOrder() {
-    if (!result) return
-    if (!validateCheckout()) return
-
+    if (!result || !validateCheckout()) return
     setLoading(true)
-
-    const res = await fetch('/api/orders', {
+    const response = await fetch('/api/orders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -133,312 +109,218 @@ export default function CartPage() {
         customerEmail: customerEmail || null,
         deliveryType,
         deliverySucursal: deliveryType === 'retiro' ? deliverySucursal : null,
-        deliveryAddress:  deliveryType === 'despacho' ? deliveryAddress : null,
-        deliveryCity:     deliveryType === 'despacho' ? deliveryCity : null,
-        deliveryNotes:    deliveryNotes || null,
-        items: cart.map((i) => ({
-          productId: i.id.split('-')[0],
-          quantity:  i.quantity,
-          unitPrice: i.price,
-          size:      i.id.includes('-') ? i.id.split('-')[1] : null,
+        deliveryAddress: deliveryType === 'despacho' ? deliveryAddress : null,
+        deliveryCity: deliveryType === 'despacho' ? deliveryCity : null,
+        deliveryNotes: deliveryNotes || null,
+        items: cart.map((item) => ({
+          productId: item.id.split('-')[0],
+          quantity: item.quantity,
+          unitPrice: item.price,
+          size: item.id.includes('-') ? item.id.split('-')[1] : null,
         })),
       }),
     })
-
-    if (!res.ok) {
+    if (!response.ok) {
       toast.error('Error al procesar la orden. Intenta nuevamente.')
       setLoading(false)
       return
     }
-
     clearCartState()
     setResult(null)
     router.push('/shop/success')
   }
 
-  if (cart.length === 0) {
-    return (
-      <div className="text-center py-20" style={{ animation: 'fadeIn 0.4s ease forwards' }}>
-        <h1 className="text-5xl mb-4">Carrito vacío</h1>
-        <p className="text-muted-foreground mb-8">No tienes productos en tu carrito.</p>
-        <Button onClick={() => router.push('/shop')}>Ver productos</Button>
-      </div>
-    )
-  }
+  const fieldClass = 'h-11 w-full rounded-[4px] border border-zinc-300 bg-white px-3 text-sm outline-none focus:border-red-600'
 
   return (
-    <div className="max-w-2xl mx-auto" style={{ animation: 'fadeIn 0.4s ease forwards' }}>
+    <div className="cart-root">
+      <style>{`
+        body:has(.cart-root) .public-navbar { display: none; }
+        body:has(.cart-root) main { padding: 0 !important; background: #f6f6f5; }
+        .cart-root { min-height: 100vh; background: #f6f6f5; color: #171717; font-family: var(--font-inter), Inter, sans-serif; letter-spacing: 0; }
+        .cart-shell { max-width: 1510px; min-height: 100vh; margin: 0 auto; background: #fff; box-shadow: 0 18px 60px rgba(15,15,15,.08); }
+        .cart-header { height: 82px; display: flex; align-items: center; gap: 42px; padding: 0 52px; border-bottom: 1px solid #e5e5e5; }
+        .cart-mark { width: 42px; height: 42px; border-radius: 6px; background: #e30613; color: white; display: grid; place-items: center; font-size: 27px; font-weight: 900; font-style: italic; }
+        .cart-content { max-width: 1120px; margin: 0 auto; padding: 38px 24px 60px; }
+        .cart-grid { display: grid; grid-template-columns: minmax(0,1fr) 340px; gap: 26px; align-items: start; }
+        .cart-panel { border: 1px solid #e5e5e5; border-radius: 6px; background: #fff; }
+        .cart-item { display: grid; grid-template-columns: 94px minmax(0,1fr) auto; gap: 16px; align-items: center; padding: 18px; border-bottom: 1px solid #eee; }
+        .cart-item:last-child { border-bottom: 0; }
+        .cart-image { width: 94px; height: 94px; border-radius: 5px; object-fit: contain; background: #f7f7f7; border: 1px solid #eee; }
+        .cart-summary { position: sticky; top: 18px; }
+        @media (max-width: 760px) {
+          .cart-header { height: auto; min-height: 72px; padding: 12px 16px; gap: 12px; flex-wrap: wrap; }
+          .cart-search { order: 3; width: 100%; }
+          .cart-content { padding: 24px 12px 40px; }
+          .cart-grid { grid-template-columns: 1fr; gap: 16px; }
+          .cart-item { grid-template-columns: 76px minmax(0,1fr); padding: 12px; gap: 12px; }
+          .cart-image { width: 76px; height: 76px; }
+          .cart-item-actions { grid-column: 1 / -1; display: flex; justify-content: space-between; }
+          .cart-summary { position: static; }
+        }
+      `}</style>
 
-      {/* PASO 1 — CARRITO */}
-      {step === 'cart' && (
-        <>
-          <h1
-            className="text-5xl mb-8"
-            style={{ animation: 'fadeInUp 0.5s ease forwards', opacity: 0 }}
-          >
-            Tu carrito
-          </h1>
-
-          <div className="flex flex-col gap-4 mb-8">
-            {cart.map((item, index) => (
-              <Card
-                key={item.id}
-                style={{
-                  animation: 'fadeInUp 0.5s ease forwards',
-                  animationDelay: `${index * 0.08}s`,
-                  opacity: 0,
-                }}
-              >
-                <CardContent className="flex justify-between items-center py-4">
-                  <div>
-                    <p className="font-medium">{item.name}</p>
-                    {item.id.includes('-') && (
-                      <p className="text-xs tracking-widest uppercase text-muted-foreground">
-                        Talla: {item.id.split('-')[1]}
-                      </p>
-                    )}
-                    <p className="text-sm text-muted-foreground">
-                      ${item.price.toLocaleString('es-CL')} c/u
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Button variant="outline" size="sm" onClick={() => handleUpdateQuantity(item.id, -1)}>-</Button>
-                    <span className="w-6 text-center font-medium">{item.quantity}</span>
-                    <Button variant="outline" size="sm" onClick={() => handleUpdateQuantity(item.id, 1)}>+</Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+      <div className="cart-shell">
+        <header className="cart-header">
+          <Link href="/shop" className="flex items-center gap-3 shrink-0">
+            <span className="cart-mark">m</span>
+            <span className="text-sm font-extrabold leading-tight">MULTI<br />ACCESORIOS</span>
+          </Link>
+          <Link href="/shop" className="cart-search h-11 flex-1 max-w-2xl rounded-[5px] border border-zinc-300 flex items-center px-4 text-sm text-zinc-400 hover:border-red-300">
+            <Search className="size-4 mr-3" />
+            Buscar productos, marcas y mas...
+          </Link>
+          <div className="ml-auto flex items-center gap-2 text-sm font-bold">
+            <ShoppingCart className="size-5" />
+            Carrito
           </div>
+        </header>
 
-          {result && (
-            <Card className="mb-6" style={{ animation: 'fadeInUp 0.5s ease 0.2s forwards', opacity: 0 }}>
-              <CardHeader>
-                <CardTitle>Resumen</CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Subtotal</span>
-                  <span>${result.subtotal.toLocaleString('es-CL')}</span>
+        <div className="cart-content">
+          <Link href="/shop" className="inline-flex items-center gap-2 text-xs font-semibold text-zinc-500 hover:text-red-600 mb-6">
+            <ArrowLeft className="size-4" />
+            Seguir comprando
+          </Link>
+
+          {cart.length === 0 ? (
+            <div className="cart-panel text-center py-20 px-5">
+              <ShoppingCart className="size-10 text-zinc-300 mx-auto mb-4" />
+              <h1 className="text-2xl font-extrabold">Tu carrito esta vacio</h1>
+              <p className="text-sm text-zinc-500 mt-2 mb-6">Agrega productos para comenzar tu pedido.</p>
+              <Link href="/shop" className="inline-flex h-11 px-6 rounded-[4px] bg-red-600 hover:bg-red-700 text-white text-sm font-bold items-center">
+                Ver productos
+              </Link>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-end justify-between mb-5">
+                <div>
+                  <h1 className="text-2xl md:text-3xl font-extrabold">{step === 'cart' ? 'Tu carrito' : 'Datos del pedido'}</h1>
+                  <p className="text-xs text-zinc-500 mt-1">{cart.length} producto{cart.length === 1 ? '' : 's'} en tu pedido</p>
                 </div>
-                {result.appliedDiscounts.map((d, i) => (
-                  <div key={i} className="flex justify-between text-sm text-green-600">
-                    <span>{d.name}</span>
-                    <span>-${d.amount.toLocaleString('es-CL')}</span>
-                  </div>
-                ))}
-                <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2">
-                  <span>Total</span>
-                  <span>${result.total.toLocaleString('es-CL')}</span>
+                <div className="hidden sm:flex items-center gap-2 text-xs font-semibold">
+                  <span className={`w-6 h-6 rounded-full grid place-items-center ${step === 'cart' ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}`}>
+                    {step === 'cart' ? '1' : <Check className="size-3" />}
+                  </span>
+                  Carrito
+                  <ChevronRight className="size-3 text-zinc-400" />
+                  <span className={`w-6 h-6 rounded-full grid place-items-center ${step === 'checkout' ? 'bg-red-600 text-white' : 'bg-zinc-200 text-zinc-500'}`}>2</span>
+                  Entrega
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              </div>
 
-          <Button
-            className="w-full"
-            size="lg"
-            onClick={() => setStep('checkout')}
-            style={{ animation: 'fadeInUp 0.5s ease 0.3s forwards', opacity: 0 }}
-          >
-            Continuar con el pedido →
-          </Button>
-        </>
-      )}
-
-      {/* PASO 2 — CHECKOUT */}
-      {step === 'checkout' && (
-        <>
-          <div className="flex items-center gap-4 mb-8" style={{ animation: 'fadeInUp 0.4s ease forwards', opacity: 0 }}>
-            <button
-              onClick={() => setStep('cart')}
-              className="text-sm text-muted-foreground hover:text-black transition-colors"
-            >
-              ← Volver al carrito
-            </button>
-            <h1 className="text-4xl font-bold">Datos del pedido</h1>
-          </div>
-
-          <div className="flex flex-col gap-6">
-
-            {/* Datos personales */}
-            <Card style={{ animation: 'fadeInUp 0.4s ease 0.05s forwards', opacity: 0 }}>
-              <CardHeader>
-                <CardTitle className="text-base uppercase tracking-widest">Tus datos</CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="name">Nombre completo *</Label>
-                  <Input
-                    id="name"
-                    placeholder="Ej: María González"
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="phone">Teléfono *</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder="+56 9 1234 5678"
-                    value={customerPhone}
-                    onChange={(e) => setCustomerPhone(e.target.value)}
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="email">Email (opcional)</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="correo@ejemplo.com"
-                    value={customerEmail}
-                    onChange={(e) => setCustomerEmail(e.target.value)}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Tipo de entrega */}
-            <Card style={{ animation: 'fadeInUp 0.4s ease 0.1s forwards', opacity: 0 }}>
-              <CardHeader>
-                <CardTitle className="text-base uppercase tracking-widest">Forma de entrega</CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-4">
-
-                <div className="grid grid-cols-2 gap-3">
-                  {(['retiro', 'despacho'] as DeliveryType[]).map((type) => (
-                    <button
-                      key={type}
-                      onClick={() => setDeliveryType(type)}
-                      className={`py-4 px-4 border-2 text-sm font-bold uppercase tracking-widest transition-all duration-200 ${
-                        deliveryType === type
-                          ? 'border-black bg-black text-white'
-                          : 'border-zinc-200 text-zinc-500 hover:border-zinc-400'
-                      }`}
-                    >
-                      {type === 'retiro' ? '🏪 Retiro en tienda' : '🚚 Despacho Starken'}
-                    </button>
-                  ))}
-                </div>
-
-                {deliveryType === 'retiro' && (
-                  <div className="flex flex-col gap-3 pt-2">
-                    <Label className="text-sm font-medium">Selecciona la sucursal</Label>
-                    {SUCURSALES.map((s) => (
-                      <label
-                        key={s.value}
-                        className={`flex items-center gap-3 p-4 border-2 cursor-pointer transition-all ${
-                          deliverySucursal === s.value
-                            ? 'border-black bg-zinc-50'
-                            : 'border-zinc-200 hover:border-zinc-400'
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="sucursal"
-                          value={s.value}
-                          checked={deliverySucursal === s.value}
-                          onChange={() => setDeliverySucursal(s.value)}
-                          className="accent-black"
-                        />
-                        <div>
-                          <p className="font-bold text-sm">{s.label}</p>
-                          <p className="text-xs text-muted-foreground">Linares, Chile</p>
+              <div className="cart-grid">
+                <div>
+                  {step === 'cart' ? (
+                    <section className="cart-panel">
+                      {cart.map((item) => (
+                        <article key={item.id} className="cart-item">
+                          {item.imageUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={item.imageUrl} alt={item.name} className="cart-image" />
+                          ) : (
+                            <div className="cart-image grid place-items-center text-zinc-300"><PackageCheck className="size-7" /></div>
+                          )}
+                          <div>
+                            <p className="text-sm font-bold leading-snug">{item.name}</p>
+                            {item.size && <p className="text-xs text-zinc-500 mt-1">Talla: {item.size}</p>}
+                            <p className="text-base font-extrabold text-red-600 mt-2">${item.price.toLocaleString('es-CL')}</p>
+                          </div>
+                          <div className="cart-item-actions flex flex-col items-end gap-3">
+                            <button type="button" onClick={() => removeItem(item.id)} className="text-zinc-400 hover:text-red-600" aria-label="Eliminar producto">
+                              <Trash2 className="size-4" />
+                            </button>
+                            <div className="h-9 rounded-[4px] border border-zinc-300 flex items-center">
+                              <button type="button" onClick={() => updateQuantity(item.id, -1)} className="w-9 h-full grid place-items-center hover:text-red-600" aria-label="Disminuir cantidad"><Minus className="size-3" /></button>
+                              <span className="w-8 text-center text-sm font-bold">{item.quantity}</span>
+                              <button type="button" onClick={() => updateQuantity(item.id, 1)} className="w-9 h-full grid place-items-center hover:text-red-600" aria-label="Aumentar cantidad"><Plus className="size-3" /></button>
+                            </div>
+                          </div>
+                        </article>
+                      ))}
+                    </section>
+                  ) : (
+                    <div className="space-y-4">
+                      <section className="cart-panel p-5">
+                        <h2 className="text-sm font-bold mb-4">Tus datos</h2>
+                        <div className="grid sm:grid-cols-2 gap-3">
+                          <input className={fieldClass} placeholder="Nombre completo *" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
+                          <input className={fieldClass} type="tel" placeholder="Telefono *" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
+                          <input className={`${fieldClass} sm:col-span-2`} type="email" placeholder="Email (opcional)" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} />
                         </div>
-                      </label>
-                    ))}
-                    <p className="text-xs text-muted-foreground pt-1">
-                      Te avisaremos por teléfono cuando tu pedido esté listo para retirar.
-                    </p>
-                  </div>
-                )}
+                      </section>
 
-                {deliveryType === 'despacho' && (
-                  <div className="flex flex-col gap-4 pt-2">
-                    <div className="flex flex-col gap-1.5">
-                      <Label htmlFor="address">Dirección *</Label>
-                      <Input
-                        id="address"
-                        placeholder="Ej: Av. Principal 123, Depto 4B"
-                        value={deliveryAddress}
-                        onChange={(e) => setDeliveryAddress(e.target.value)}
-                      />
+                      <section className="cart-panel p-5">
+                        <h2 className="text-sm font-bold mb-4">Forma de entrega</h2>
+                        <div className="grid grid-cols-2 gap-3 mb-4">
+                          {(['retiro', 'despacho'] as DeliveryType[]).map((type) => (
+                            <button
+                              key={type}
+                              type="button"
+                              onClick={() => setDeliveryType(type)}
+                              className={`min-h-16 rounded-[4px] border text-xs font-bold flex items-center justify-center gap-2 ${deliveryType === type ? 'border-red-600 bg-red-50 text-red-700' : 'border-zinc-300'}`}
+                            >
+                              {type === 'retiro' ? <Store className="size-4" /> : <Truck className="size-4" />}
+                              {type === 'retiro' ? 'Retiro en tienda' : 'Despacho Starken'}
+                            </button>
+                          ))}
+                        </div>
+                        {deliveryType === 'retiro' ? (
+                          <div className="space-y-2">
+                            {SUCURSALES.map((sucursal) => (
+                              <label key={sucursal.value} className="flex items-center gap-3 rounded-[4px] border border-zinc-200 px-3 py-3 text-sm cursor-pointer">
+                                <input type="radio" name="sucursal" checked={deliverySucursal === sucursal.value} onChange={() => setDeliverySucursal(sucursal.value)} className="accent-red-600" />
+                                {sucursal.label}
+                              </label>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="grid sm:grid-cols-2 gap-3">
+                            <input className={fieldClass} placeholder="Direccion *" value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)} />
+                            <input className={fieldClass} placeholder="Ciudad *" value={deliveryCity} onChange={(e) => setDeliveryCity(e.target.value)} />
+                          </div>
+                        )}
+                        <input className={`${fieldClass} mt-3`} placeholder="Notas adicionales (opcional)" value={deliveryNotes} onChange={(e) => setDeliveryNotes(e.target.value)} />
+                      </section>
                     </div>
-                    <div className="flex flex-col gap-1.5">
-                      <Label htmlFor="city">Ciudad *</Label>
-                      <Input
-                        id="city"
-                        placeholder="Ej: Santiago"
-                        value={deliveryCity}
-                        onChange={(e) => setDeliveryCity(e.target.value)}
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      El costo de envío Starken se coordinará directamente con la tienda.
-                    </p>
-                  </div>
-                )}
-
-                <div className="flex flex-col gap-1.5 pt-2 border-t">
-                  <Label htmlFor="notes">Notas adicionales (opcional)</Label>
-                  <Input
-                    id="notes"
-                    placeholder="Ej: Timbre no funciona, llamar al llegar"
-                    value={deliveryNotes}
-                    onChange={(e) => setDeliveryNotes(e.target.value)}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Resumen final */}
-            {result && (
-              <Card style={{ animation: 'fadeInUp 0.4s ease 0.15s forwards', opacity: 0 }}>
-                <CardHeader>
-                  <CardTitle className="text-base uppercase tracking-widest">Resumen del pedido</CardTitle>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-2">
-                  {cart.map((item) => (
-                    <div key={item.id} className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">
-                        {item.name} x{item.quantity}
-                      </span>
-                      <span>${(item.price * item.quantity).toLocaleString('es-CL')}</span>
-                    </div>
-                  ))}
-                  {result.appliedDiscounts.map((d, i) => (
-                    <div key={i} className="flex justify-between text-sm text-green-600">
-                      <span>{d.name}</span>
-                      <span>-${d.amount.toLocaleString('es-CL')}</span>
-                    </div>
-                  ))}
-                  <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2">
-                    <span>Total</span>
-                    <span>${result.total.toLocaleString('es-CL')}</span>
-                  </div>
-                  {deliveryType === 'despacho' && (
-                    <p className="text-xs text-muted-foreground pt-1">
-                      * Costo de despacho Starken no incluido — se coordinará con la tienda.
-                    </p>
                   )}
-                </CardContent>
-              </Card>
-            )}
+                </div>
 
-            <Button
-              className="w-full"
-              size="lg"
-              onClick={confirmOrder}
-              disabled={loading}
-              style={{ animation: 'fadeInUp 0.4s ease 0.2s forwards', opacity: 0 }}
-            >
-              {loading ? 'Procesando...' : 'Confirmar pedido'}
-            </Button>
-
-          </div>
-        </>
-      )}
+                <aside className="cart-panel cart-summary p-5">
+                  <h2 className="text-sm font-bold pb-4 border-b border-zinc-200">Resumen del pedido</h2>
+                  <div className="py-4 space-y-3">
+                    <div className="flex justify-between text-sm"><span className="text-zinc-500">Subtotal</span><span className="font-semibold">${(result?.subtotal ?? 0).toLocaleString('es-CL')}</span></div>
+                    {result?.appliedDiscounts.map((discount) => (
+                      <div key={discount.name} className="flex justify-between text-sm text-green-600"><span>{discount.name}</span><span>-${discount.amount.toLocaleString('es-CL')}</span></div>
+                    ))}
+                    <div className="flex justify-between text-sm"><span className="text-zinc-500">Despacho</span><span className="font-semibold">{deliveryType === 'retiro' ? 'Gratis' : 'Por coordinar'}</span></div>
+                  </div>
+                  <div className="flex justify-between items-center border-t border-zinc-200 pt-4 mb-5">
+                    <span className="font-bold">Total</span>
+                    <span className="text-xl font-extrabold text-red-600">${(result?.total ?? 0).toLocaleString('es-CL')}</span>
+                  </div>
+                  {step === 'cart' ? (
+                    <button type="button" onClick={() => setStep('checkout')} className="w-full h-11 rounded-[4px] bg-red-600 hover:bg-red-700 text-white text-sm font-bold">
+                      Continuar con el pedido
+                    </button>
+                  ) : (
+                    <div className="space-y-2">
+                      <button type="button" onClick={confirmOrder} disabled={loading} className="w-full h-11 rounded-[4px] bg-red-600 hover:bg-red-700 disabled:bg-zinc-300 text-white text-sm font-bold">
+                        {loading ? 'Procesando...' : 'Confirmar pedido'}
+                      </button>
+                      <button type="button" onClick={() => setStep('cart')} className="w-full h-10 text-xs font-semibold text-zinc-500 hover:text-red-600">Volver al carrito</button>
+                    </div>
+                  )}
+                  <div className="mt-5 pt-4 border-t border-zinc-100 space-y-3 text-[11px] text-zinc-500">
+                    <p className="flex items-center gap-2"><ShieldCheck className="size-4 text-green-600" /> Compra segura y datos protegidos</p>
+                    <p className="flex items-center gap-2"><Truck className="size-4 text-zinc-500" /> Envios a todo Chile</p>
+                  </div>
+                </aside>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
     </div>
   )
 }

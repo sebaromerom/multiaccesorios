@@ -78,7 +78,10 @@ export default function NewDiscountPage() {
   return (
     <div className="flex justify-center">
       <div className="w-full max-w-lg">
-        <h1 className="text-5xl mb-8">Agregar Descuento</h1>
+        <div className="mb-6">
+          <h1 className="admin-page-title">Agregar descuento</h1>
+          <p className="admin-page-kicker">Configura una nueva regla comercial.</p>
+        </div>
         <Card>
           <CardHeader>
             <CardTitle>Nueva Regla de Descuento</CardTitle>

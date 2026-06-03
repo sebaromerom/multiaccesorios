@@ -10,17 +10,15 @@ interface ProductImageProps {
 export default function ProductImage({ productId, productName, initialImageUrl }: ProductImageProps) {
   const [hasError, setHasError] = useState(false)
 
-  // 1. Construimos la URL determinista basada en el ID (Estrategia de carpetas)
-  // Reemplaza esto con la URL real de tu proyecto Supabase si no usas variable de entorno
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://TU_PROYECTO_SUPABASE.supabase.co'
   const deterministicUrl = `${supabaseUrl}/storage/v1/object/public/products/${productId}/1.jpg`
 
-  // 2. Fallback: Si da 404, usamos la URL de la BD o una imagen "Sin foto" por defecto
-  const fallbackUrl = initialImageUrl || '/no-image-placeholder.jpg' 
+  const primaryUrl = initialImageUrl || deterministicUrl
+  const fallbackUrl = '/no-image-placeholder.jpg'
 
   return (
     <img 
-      src={hasError ? fallbackUrl : deterministicUrl} 
+      src={hasError ? fallbackUrl : primaryUrl} 
       alt={productName}
       onError={() => setHasError(true)}
       loading="lazy"

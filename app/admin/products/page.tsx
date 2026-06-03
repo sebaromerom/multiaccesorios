@@ -5,10 +5,10 @@ import {
   TableHeader, TableRow,
 } from '@/components/ui/table'
 import Link from 'next/link'
-import Image from 'next/image'
 import DeleteProductButton from './DeleteProductButton'
 import { Badge } from '@/components/ui/badge'
 import SyncBsaleButton from '@/components/admin/SyncBsaleButton'
+import EnrichImagesButton from '@/components/admin/EnrichImagesButton'
 import { Category } from '@prisma/client'
 
 const CATEGORIES = ['Carcasa','Lamina','Cargador','Cable','Audifonos','Vapers','Computacion','Otros'] as const
@@ -56,26 +56,24 @@ export default async function ProductsPage({
   }
 
   return (
-    <main className="w-full px-4 md:px-8 py-8 animate-fade-in">
+    <main className="w-full animate-fade-in">
       {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-8">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5 mb-6">
         <div>
-          <h1
-            className="text-5xl md:text-6xl font-black uppercase tracking-tighter text-black leading-none"
-            style={{ transform: 'skewX(-8deg)', fontStyle: 'italic' }}
-          >
-            Productos
-          </h1>
-          <p className="text-zinc-500 mt-2 text-sm uppercase tracking-widest">
+          <h1 className="admin-page-title">Productos</h1>
+          <p className="admin-page-kicker">
             {total} productos en total
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
           <div className="w-full sm:w-auto">
+            <EnrichImagesButton />
+          </div>
+          <div className="w-full sm:w-auto">
             <SyncBsaleButton />
           </div>
           <Link href="/admin/products/new" className="w-full sm:w-auto">
-            <Button className="w-full bg-black hover:bg-white text-white hover:text-black border-2 border-black rounded-none uppercase tracking-widest px-6 py-6 font-bold transition-all duration-300">
+            <Button className="w-full bg-red-600 hover:bg-red-700 text-white border border-red-600 rounded-[4px] px-5 py-5 font-bold text-xs">
               Agregar Producto
             </Button>
           </Link>
@@ -83,18 +81,18 @@ export default async function ProductsPage({
       </div>
 
       {/* FILTROS */}
-      <form method="GET" action="/admin/products" className="flex flex-col sm:flex-row flex-wrap gap-3 mb-6">
+      <form method="GET" action="/admin/products" className="flex flex-col sm:flex-row flex-wrap gap-3 mb-5 bg-white border border-zinc-200 rounded-[6px] p-4">
         <input
           name="q"
           defaultValue={q ?? ''}
           placeholder="Buscar por nombre..."
-          className="h-10 px-4 border-2 border-zinc-200 focus:border-black outline-none text-sm uppercase tracking-wide w-full sm:w-72 transition-colors"
+          className="h-10 px-3 rounded-[4px] border border-zinc-300 focus:border-red-600 outline-none text-sm w-full sm:w-72 transition-colors"
         />
 
         <select
           name="cat"
           defaultValue={cat ?? ''}
-          className="h-10 px-4 border-2 border-zinc-200 focus:border-black outline-none text-sm uppercase tracking-wide bg-white transition-colors w-full sm:w-auto"
+          className="h-10 px-3 rounded-[4px] border border-zinc-300 focus:border-red-600 outline-none text-sm bg-white transition-colors w-full sm:w-auto"
         >
           <option value="">Todas las categorías</option>
           {CATEGORIES.map(c => (
@@ -105,7 +103,7 @@ export default async function ProductsPage({
         <div className="flex gap-3 w-full sm:w-auto">
           <button
             type="submit"
-            className="h-10 flex-1 sm:flex-none px-6 bg-black text-white text-xs uppercase tracking-widest font-bold hover:bg-zinc-800 transition-colors"
+            className="h-10 flex-1 sm:flex-none px-5 rounded-[4px] bg-red-600 text-white text-xs font-bold hover:bg-red-700 transition-colors"
           >
             Buscar
           </button>
@@ -122,10 +120,10 @@ export default async function ProductsPage({
       </form>
 
       {/* TABLA */}
-      <div className="w-full overflow-x-auto border-t-2 border-black -mx-4 px-4 sm:mx-0 sm:px-0">
+      <div className="hidden md:block w-full overflow-x-auto border border-zinc-200 rounded-[6px] bg-white">
         <Table className="w-full min-w-[1000px]">
           <TableHeader>
-            <TableRow className="border-b-2 border-black hover:bg-transparent">
+            <TableRow className="border-b border-zinc-200 bg-zinc-50 hover:bg-zinc-50">
               <TableHead className="w-[80px] py-5 text-black font-black uppercase tracking-tight">Imagen</TableHead>
               <TableHead className="text-black font-black uppercase tracking-tight">Nombre</TableHead>
               <TableHead className="w-[140px] text-black font-black uppercase tracking-tight">Categoría</TableHead>
@@ -148,14 +146,14 @@ export default async function ProductsPage({
                   <TableCell className="py-3">
                     {/* Validación estricta para strings vacíos o URLs corruptas */}
                     {product.imageUrl && product.imageUrl.trim() !== "" && product.imageUrl.startsWith('http') ? (
-                      <Image
+                      <>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
                         src={product.imageUrl}
                         alt={product.name}
-                        width={56}
-                        height={56}
                         className="w-14 h-14 object-cover border border-zinc-200"
-                        unoptimized
                       />
+                      </>
                     ) : (
                       <div className="w-14 h-14 bg-zinc-100 border border-dashed border-zinc-300 flex items-center justify-center text-[10px] uppercase tracking-widest text-zinc-400">
                         N/A
@@ -205,6 +203,39 @@ export default async function ProductsPage({
         </Table>
       </div>
 
+      <div className="md:hidden space-y-3">
+        {products.length === 0 ? (
+          <div className="rounded-[6px] border border-zinc-200 bg-white px-4 py-10 text-center text-sm text-zinc-500">
+            No se encontraron productos
+          </div>
+        ) : products.map((product) => (
+          <article key={product.id} className="rounded-[6px] border border-zinc-200 bg-white p-3">
+            <div className="flex gap-3">
+              {product.imageUrl && product.imageUrl.trim() !== '' && product.imageUrl.startsWith('http') ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={product.imageUrl} alt={product.name} className="w-16 h-16 shrink-0 rounded-[4px] object-contain border border-zinc-200 bg-zinc-50" />
+              ) : (
+                <div className="w-16 h-16 shrink-0 rounded-[4px] border border-dashed border-zinc-300 bg-zinc-50 grid place-items-center text-[10px] text-zinc-400">N/A</div>
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold leading-snug line-clamp-2">{product.name}</p>
+                <p className="mt-1 text-xs text-zinc-500">{product.category || 'Sin categoria'}</p>
+                <div className="mt-2 flex items-center justify-between gap-2">
+                  <span className="text-sm font-extrabold text-red-600">${Number(product.price).toLocaleString('es-CL')}</span>
+                  <span className={`text-[10px] font-bold ${product.stock <= 5 ? 'text-red-600' : 'text-zinc-500'}`}>{product.stock} unid.</span>
+                </div>
+              </div>
+            </div>
+            <div className="mt-3 flex gap-2 border-t border-zinc-100 pt-3">
+              <Link href={`/admin/products/${product.id}${queryString ? `?${queryString}` : ''}`} className="flex-1">
+                <Button variant="outline" size="sm" className="w-full rounded-[4px] text-xs font-bold">Editar</Button>
+              </Link>
+              <DeleteProductButton id={product.id} />
+            </div>
+          </article>
+        ))}
+      </div>
+
       {/* PAGINACIÓN */}
       {totalPages > 1 && (
         <div className="flex flex-col sm:flex-row items-center justify-between mt-6 pt-4 border-t border-zinc-200 gap-4">
@@ -222,7 +253,7 @@ export default async function ProductsPage({
 
             {Array.from({ length: totalPages }, (_, i) => i + 1)
               .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
-              .reduce<(number | '...')[]>((acc, p, i, arr) => {
+              .reduce<(number | '...')[]>((acc, p, i) => {
                 if (i > 0 && p - (acc[acc.length - 1] as number) > 1) acc.push('...')
                 acc.push(p)
                 return acc

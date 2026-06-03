@@ -12,150 +12,105 @@ import {
 export default async function OrdersPage() {
   const orders = await prisma.order.findMany({
     orderBy: { createdAt: 'desc' },
-    include: {
-      items: {
-        include: { product: true },
-      },
-    },
+    include: { items: { include: { product: true } } },
   })
 
-  type OrderWithItems = (typeof orders)[0]
-  type OrderItemWithProduct = NonNullable<OrderWithItems>['items'][0]
+  type Order = (typeof orders)[0]
+  type OrderItem = Order['items'][0]
+
+  const statusLabel = (status: string) =>
+    status === 'completed' ? 'Completada' : status === 'cancelled' ? 'Cancelada' : 'Pendiente'
+
+  const statusClass = (status: string) =>
+    status === 'completed'
+      ? 'bg-green-100 text-green-700'
+      : status === 'cancelled'
+        ? 'bg-red-100 text-red-700'
+        : 'bg-zinc-100 text-zinc-700'
 
   return (
-    <div className="animate-fade-in px-4">
-      <div className="mb-16 mt-8">
-        <h1
-          className="text-7xl text-black font-[900] uppercase tracking-tighter leading-none"
-          style={{ transform: 'skewX(-8deg)', fontStyle: 'italic', display: 'inline-block' }}
-        >
-          Órdenes
-        </h1>
+    <div className="animate-fade-in">
+      <div className="mb-6">
+        <h1 className="admin-page-title">Pedidos</h1>
+        <p className="admin-page-kicker">{orders.length} pedidos registrados</p>
       </div>
 
-      <div className="border-t-4 border-black">
-        <Table>
+      <div className="hidden md:block border border-zinc-200 rounded-[6px] bg-white overflow-x-auto">
+        <Table className="min-w-[900px]">
           <TableHeader>
-            <TableRow className="border-b-2 border-black hover:bg-transparent">
-              <TableHead className="text-black font-black uppercase tracking-tighter text-sm py-4">ID</TableHead>
-              <TableHead className="text-black font-black uppercase tracking-tighter text-sm">Cliente</TableHead>
-              <TableHead className="text-black font-black uppercase tracking-tighter text-sm">Entrega</TableHead>
-              <TableHead className="text-black font-black uppercase tracking-tighter text-sm">Productos</TableHead>
-              <TableHead className="text-black font-black uppercase tracking-tighter text-sm">Total</TableHead>
-              <TableHead className="text-black font-black uppercase tracking-tighter text-sm">Estado</TableHead>
-              <TableHead className="text-black font-black uppercase tracking-tighter text-sm text-right">Fecha</TableHead>
+            <TableRow className="border-b border-zinc-200 bg-zinc-50 hover:bg-zinc-50">
+              <TableHead>ID</TableHead>
+              <TableHead>Cliente</TableHead>
+              <TableHead>Entrega</TableHead>
+              <TableHead>Productos</TableHead>
+              <TableHead>Total</TableHead>
+              <TableHead>Estado</TableHead>
+              <TableHead className="text-right">Fecha</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {orders.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-20 text-zinc-400 font-medium italic text-xl">
-                  No hay órdenes registradas aún.
+                <TableCell colSpan={7} className="py-16 text-center text-sm text-zinc-500">
+                  No hay pedidos registrados aun.
                 </TableCell>
               </TableRow>
             )}
-            {orders.map((order: OrderWithItems) => (
-              <TableRow
-                key={order.id}
-                className="border-b border-zinc-200 group hover:bg-black transition-all duration-200"
-              >
-                {/* ID */}
-                <TableCell className="font-mono text-xs font-bold text-zinc-500 group-hover:text-zinc-400">
-                  #{order.id.slice(0, 8).toUpperCase()}
-                </TableCell>
-
-                {/* Cliente */}
+            {orders.map((order: Order) => (
+              <TableRow key={order.id} className="border-b border-zinc-100 hover:bg-zinc-50">
+                <TableCell className="font-mono text-xs text-zinc-500">#{order.id.slice(0, 8).toUpperCase()}</TableCell>
                 <TableCell>
-                  <p className="font-bold text-sm text-black group-hover:text-white uppercase tracking-tight">
-                    {order.customerName ?? '—'}
+                  <p className="text-sm font-bold">{order.customerName ?? 'Sin nombre'}</p>
+                  {order.customerPhone && <p className="text-xs text-zinc-500">{order.customerPhone}</p>}
+                  {order.customerEmail && <p className="text-xs text-zinc-500">{order.customerEmail}</p>}
+                </TableCell>
+                <TableCell>
+                  <p className="text-sm font-semibold">{order.deliveryType === 'retiro' ? 'Retiro en tienda' : 'Starken'}</p>
+                  <p className="text-xs text-zinc-500">
+                    {order.deliveryType === 'retiro' ? order.deliverySucursal : [order.deliveryAddress, order.deliveryCity].filter(Boolean).join(', ')}
                   </p>
-                  {order.customerPhone && (
-                    <p className="text-xs text-zinc-500 group-hover:text-zinc-400">
-                      📞 {order.customerPhone}
-                    </p>
-                  )}
-                  {order.customerEmail && (
-                    <p className="text-xs text-zinc-500 group-hover:text-zinc-400">
-                      ✉️ {order.customerEmail}
-                    </p>
-                  )}
                 </TableCell>
-
-                {/* Entrega */}
                 <TableCell>
-                  {order.deliveryType === 'retiro' ? (
-                    <div>
-                      <Badge className="rounded-none bg-zinc-800 text-white text-[10px] uppercase tracking-widest mb-1">
-                        🏪 Retiro
-                      </Badge>
-                      <p className="text-xs text-zinc-500 group-hover:text-zinc-400">
-                        {order.deliverySucursal ?? '—'}
-                      </p>
-                    </div>
-                  ) : (
-                    <div>
-                      <Badge className="rounded-none bg-blue-600 text-white text-[10px] uppercase tracking-widest mb-1">
-                        🚚 Starken
-                      </Badge>
-                      <p className="text-xs text-zinc-500 group-hover:text-zinc-400">
-                        {order.deliveryAddress}
-                        {order.deliveryCity ? `, ${order.deliveryCity}` : ''}
-                      </p>
-                    </div>
-                  )}
-                  {order.deliveryNotes && (
-                    <p className="text-xs italic text-zinc-400 group-hover:text-zinc-500 mt-1">
-                      {order.deliveryNotes}
-                    </p>
-                  )}
-                </TableCell>
-
-                {/* Productos */}
-                <TableCell>
-                  {order.items.map((item: OrderItemWithProduct) => (
-                    <div key={item.id} className="text-sm font-bold text-black group-hover:text-white uppercase tracking-tight">
-                      {item.product.name}
-                      <span className="ml-2 text-zinc-500 group-hover:text-zinc-400">x{item.quantity}</span>
-                    </div>
+                  {order.items.map((item: OrderItem) => (
+                    <p key={item.id} className="text-xs text-zinc-700">{item.product.name} x{item.quantity}</p>
                   ))}
                 </TableCell>
-
-                {/* Total */}
-                <TableCell className="font-black text-black group-hover:text-white text-lg">
-                  ${order.total.toLocaleString('es-CL')}
-                </TableCell>
-
-                {/* Estado */}
+                <TableCell className="font-bold">${order.total.toLocaleString('es-CL')}</TableCell>
                 <TableCell>
-                  <Badge
-                    className={`rounded-none uppercase text-[10px] tracking-[0.2em] px-3 py-1 font-bold shadow-none ${
-                      order.status === 'completed'
-                        ? 'bg-black text-white group-hover:bg-white group-hover:text-black'
-                        : order.status === 'cancelled'
-                        ? 'bg-red-600 text-white'
-                        : 'bg-zinc-200 text-zinc-600 group-hover:bg-zinc-800 group-hover:text-zinc-300'
-                    }`}
-                  >
-                    {order.status === 'completed'
-                      ? 'Completada'
-                      : order.status === 'cancelled'
-                      ? 'Cancelada'
-                      : 'Pendiente'}
-                  </Badge>
+                  <Badge className={`rounded-[3px] text-[10px] uppercase ${statusClass(order.status)}`}>{statusLabel(order.status)}</Badge>
                 </TableCell>
-
-                {/* Fecha */}
-                <TableCell className="text-right text-zinc-600 group-hover:text-zinc-400 font-bold text-sm uppercase">
-                  {new Date(order.createdAt).toLocaleDateString('es-CL', {
-                    day: '2-digit',
-                    month: 'short',
-                    year: 'numeric',
-                  })}
+                <TableCell className="text-right text-xs text-zinc-500">
+                  {new Date(order.createdAt).toLocaleDateString('es-CL')}
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
+      </div>
+
+      <div className="md:hidden space-y-3">
+        {orders.length === 0 ? (
+          <div className="rounded-[6px] border border-zinc-200 bg-white px-4 py-10 text-center text-sm text-zinc-500">
+            No hay pedidos registrados aun.
+          </div>
+        ) : orders.map((order: Order) => (
+          <article key={order.id} className="rounded-[6px] border border-zinc-200 bg-white p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-bold">{order.customerName ?? 'Sin nombre'}</p>
+                <p className="mt-1 text-[11px] font-mono text-zinc-500">#{order.id.slice(0, 8).toUpperCase()}</p>
+              </div>
+              <Badge className={`rounded-[3px] text-[10px] uppercase ${statusClass(order.status)}`}>{statusLabel(order.status)}</Badge>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-3 border-t border-zinc-100 pt-3 text-xs">
+              <div><p className="text-zinc-500">Total</p><p className="mt-1 font-bold text-red-600">${order.total.toLocaleString('es-CL')}</p></div>
+              <div><p className="text-zinc-500">Entrega</p><p className="mt-1 font-semibold">{order.deliveryType === 'retiro' ? 'Retiro en tienda' : 'Starken'}</p></div>
+            </div>
+            <div className="mt-3 text-xs text-zinc-600">
+              {order.items.map((item: OrderItem) => <p key={item.id}>{item.product.name} x{item.quantity}</p>)}
+            </div>
+          </article>
+        ))}
       </div>
     </div>
   )

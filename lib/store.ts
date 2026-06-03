@@ -7,6 +7,7 @@ type CartItem = {
   price: number
   quantity: number
   size?: string | null
+  imageUrl?: string | null
 }
 
 type ProductInput = {
@@ -14,6 +15,7 @@ type ProductInput = {
   name: string
   price: number
   stock: number
+  imageUrl?: string | null
 }
 
 type CartState = {
@@ -61,7 +63,7 @@ export const useCartStore = create<CartState>()(
         } else {
           newCart = [
             ...cart,
-            { id: product.id, name: product.name, price: product.price, quantity: 1, size: null }
+            { id: product.id, name: product.name, price: product.price, quantity: 1, size: null, imageUrl: product.imageUrl }
           ]
         }
 

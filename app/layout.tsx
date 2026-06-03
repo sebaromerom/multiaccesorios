@@ -32,7 +32,7 @@ export default function RootLayout({
         <Providers>
           
           {/* Desaparece el NavBar público si el árbol de hijos contiene el Admin */}
-          <div className="[&:-webkit-any(:has(.es-ruta-admin))]:hidden [&:has(.es-ruta-admin)]:hidden">
+          <div className="public-navbar [&:-webkit-any(:has(.es-ruta-admin))]:hidden [&:has(.es-ruta-admin)]:hidden">
             <NavBar />
           </div>
 

@@ -98,9 +98,12 @@ export default function NewProductPage() {
   }
 
   return (
-    <div className="flex justify-center py-10">
+    <div className="flex justify-center">
       <div className="w-full max-w-lg">
-        <h1 className="text-5xl mb-8 tracking-tighter">AGREGAR PRODUCTO</h1>
+        <div className="mb-6">
+          <h1 className="admin-page-title">Agregar producto</h1>
+          <p className="admin-page-kicker">Crea un nuevo producto para el catalogo.</p>
+        </div>
         <Card className="border-border">
           <CardHeader>
             <CardTitle className="text-sm uppercase tracking-widest text-muted-foreground">Detalles del Producto</CardTitle>

@@ -4,12 +4,14 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { useCartStore } from '@/lib/store'
 import { toast } from 'sonner'
+import { ShoppingCart } from 'lucide-react'
 
 type Product = {
   id: string
   name: string
   price: number
   stock: number
+  imageUrl?: string | null
 }
 
 export default function AddToCartButton({ product }: { product: Product }) {
@@ -42,7 +44,7 @@ export default function AddToCartButton({ product }: { product: Product }) {
       onClick={handleAddToCart}
       disabled={availableStock <= 0}
       size="sm"
-      className="w-full"
+      className="w-full h-10 rounded-[4px] bg-red-600 hover:bg-red-700 text-white border border-red-600 font-bold text-xs"
       style={{
         transform: clicked ? 'scale(0.92)' : 'scale(1)',
         transition: 'all 0.15s ease',
@@ -52,7 +54,14 @@ export default function AddToCartButton({ product }: { product: Product }) {
         cursor: availableStock <= 0 ? 'not-allowed' : 'pointer'
       }}
     >
-      {availableStock <= 0 ? 'Agotado' : 'Agregar'}
+      {availableStock <= 0 ? (
+        'Agotado'
+      ) : (
+        <span className="inline-flex items-center gap-2">
+          <ShoppingCart className="size-4" />
+          Agregar
+        </span>
+      )}
     </Button>
   )
 }

@@ -7,34 +7,31 @@ export default async function BusinessAdminPage() {
   const data = await getDetailedMetrics()
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-10 bg-white min-h-screen text-black">
-      <header className="mt-8">
-        <h1
-          className="text-7xl text-black font-black uppercase tracking-tighter leading-none"
-          style={{ transform: 'skewX(-8deg)', fontStyle: 'italic', display: 'inline-block' }}
-        >
-          Dashboard
+    <div className="space-y-6 text-black">
+      <header>
+        <h1 className="admin-page-title">
+          Metricas
         </h1>
-        <p className="text-zinc-400 uppercase tracking-[0.3em] text-xs font-bold mt-4">
+        <p className="admin-page-kicker">
           Panel de control — Multiaccesorios
         </p>
       </header>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {[
           { label: 'Ingresos totales', val: `$${data.totalRevenue.toLocaleString('es-CL')}`, icon: <DollarSign className="text-red-600" size={20}/> },
           { label: 'Ordenes', val: data.orderCount, icon: <ShoppingBag className="text-red-600" size={20}/> },
           { label: 'Ticket promedio', val: `$${Math.round(data.avgOrderValue).toLocaleString('es-CL')}`, icon: <TrendingUp className="text-red-600" size={20}/> },
           { label: 'Stock critico', val: data.lowStockAlerts.length, icon: <AlertTriangle className={data.lowStockAlerts.length > 0 ? 'text-red-600 animate-pulse' : 'text-zinc-300'} size={20}/> },
         ].map((kpi, i) => (
-          <Card key={i} className="bg-white border-2 border-zinc-100 rounded-none shadow-none hover:border-black transition-all duration-300">
+          <Card key={i} className="bg-white border border-zinc-200 rounded-[6px] shadow-none hover:border-red-300 transition-colors">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
               <CardTitle className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{kpi.label}</CardTitle>
               {kpi.icon}
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-black text-black tracking-tighter">{kpi.val}</div>
+              <div className="text-2xl lg:text-3xl font-black text-black break-words">{kpi.val}</div>
             </CardContent>
           </Card>
         ))}
@@ -42,7 +39,7 @@ export default async function BusinessAdminPage() {
 
       {/* VENTAS + MAS VENDIDOS */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <Card className="bg-white border-2 border-zinc-100 rounded-none shadow-none">
+        <Card className="bg-white border border-zinc-200 rounded-[6px] shadow-none">
           <CardHeader className="border-b border-zinc-100">
             <CardTitle className="text-sm font-black uppercase tracking-widest text-black">Ventas por categoria</CardTitle>
           </CardHeader>
@@ -51,7 +48,7 @@ export default async function BusinessAdminPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-white border-2 border-zinc-100 rounded-none shadow-none">
+        <Card className="bg-white border border-zinc-200 rounded-[6px] shadow-none">
           <CardHeader className="border-b border-zinc-100">
             <CardTitle className="text-sm font-black uppercase tracking-widest text-black">Productos mas vendidos</CardTitle>
           </CardHeader>
@@ -62,7 +59,7 @@ export default async function BusinessAdminPage() {
       </div>
 
       {/* STOCK CRITICO */}
-      <Card className="bg-white border-2 border-red-600 rounded-none shadow-none">
+      <Card className="bg-white border border-red-200 rounded-[6px] shadow-none overflow-hidden">
         <CardHeader className="bg-red-600">
           <CardTitle className="text-white flex items-center gap-2 uppercase font-black tracking-widest text-sm">
             <AlertTriangle size={16} fill="white" className="text-red-600"/> Stock critico — menos de 5 unidades
