@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { useState } from 'react'
+import { useRef, useState, type PointerEvent } from 'react'
 import { toast } from 'sonner'
 import {
   BatteryCharging,
@@ -54,6 +54,8 @@ export default function ProductDetail({
   const [quantity, setQuantity] = useState(1)
   const [activeImage, setActiveImage] = useState(0)
   const [clicked, setClicked] = useState(false)
+  const galleryTrackRef = useRef<HTMLDivElement | null>(null)
+  const galleryDragRef = useRef<{ x: number; scrollLeft: number } | null>(null)
 
   const cartItems = useCartStore((state) => state.cart)
   const addToCartStore = useCartStore((state) => state.addToCart)
@@ -69,7 +71,8 @@ export default function ProductDetail({
     : []
 
   const displayImages = variantImages.length > 0 ? variantImages : fallbackImages
-  const primaryImage = displayImages[activeImage] ?? displayImages[0] ?? '/no-image-placeholder.jpg'
+  const safeDisplayImages = displayImages.length > 0 ? displayImages : ['/no-image-placeholder.jpg']
+  const primaryImage = safeDisplayImages[activeImage] ?? safeDisplayImages[0]
 
   const availableStock = (() => {
     if (hasVariants) {
@@ -93,6 +96,55 @@ export default function ProductDetail({
     setSelectedSize(size)
     setActiveImage(0)
     setQuantity(1)
+    galleryTrackRef.current?.scrollTo({ left: 0, behavior: 'auto' })
+  }
+
+  function setGalleryImage(index: number) {
+    const safeIndex = Math.max(0, Math.min(index, safeDisplayImages.length - 1))
+
+    setActiveImage(safeIndex)
+    galleryTrackRef.current?.scrollTo({
+      left: galleryTrackRef.current.clientWidth * safeIndex,
+      behavior: 'smooth',
+    })
+  }
+
+  function syncImageFromScroll() {
+    const track = galleryTrackRef.current
+    if (!track || track.clientWidth === 0) return
+
+    const nextIndex = Math.round(track.scrollLeft / track.clientWidth)
+    setActiveImage(Math.max(0, Math.min(nextIndex, safeDisplayImages.length - 1)))
+  }
+
+  function startGalleryDrag(event: PointerEvent<HTMLDivElement>) {
+    if (safeDisplayImages.length <= 1) return
+
+    galleryDragRef.current = {
+      x: event.clientX,
+      scrollLeft: event.currentTarget.scrollLeft,
+    }
+    event.currentTarget.setPointerCapture(event.pointerId)
+  }
+
+  function moveGalleryDrag(event: PointerEvent<HTMLDivElement>) {
+    const drag = galleryDragRef.current
+    if (!drag) return
+
+    const deltaX = drag.x - event.clientX
+
+    if (Math.abs(deltaX) > 4) {
+      event.preventDefault()
+    }
+
+    event.currentTarget.scrollLeft = drag.scrollLeft + deltaX
+  }
+
+  function endGalleryDrag() {
+    if (!galleryDragRef.current) return
+
+    galleryDragRef.current = null
+    syncImageFromScroll()
   }
 
   function addToCart() {
@@ -133,11 +185,11 @@ export default function ProductDetail({
         <section className="gallery-column" aria-label="Galeria del producto">
           <div className="desktop-thumbs">
             <span className="discount-pill">-15%</span>
-            {displayImages.slice(0, 6).map((image, index) => (
+            {safeDisplayImages.slice(0, 6).map((image, index) => (
               <button
                 key={`${image}-${index}`}
                 type="button"
-                onClick={() => setActiveImage(index)}
+                onClick={() => setGalleryImage(index)}
                 className={`thumb-button${activeImage === index ? ' active' : ''}`}
                 aria-label={`Ver imagen ${index + 1}`}
               >
@@ -147,23 +199,38 @@ export default function ProductDetail({
           </div>
 
           <div className="main-image-card">
-            <Image
-              src={primaryImage}
-              alt={product.name}
-              fill
-              sizes="(max-width: 760px) 100vw, 520px"
-              priority
-              className="main-product-image"
-            />
-            <span className="mobile-slide-count">{Math.min(activeImage + 1, displayImages.length || 1)}/{displayImages.length || 1}</span>
+            <div
+              ref={galleryTrackRef}
+              className="main-image-track"
+              onScroll={syncImageFromScroll}
+              onPointerDown={startGalleryDrag}
+              onPointerMove={moveGalleryDrag}
+              onPointerUp={endGalleryDrag}
+              onPointerCancel={endGalleryDrag}
+              onPointerLeave={endGalleryDrag}
+            >
+              {safeDisplayImages.map((image, index) => (
+                <div key={`${image}-${index}`} className="main-image-slide">
+                  <Image
+                    src={image}
+                    alt={index === 0 ? product.name : `${product.name} imagen ${index + 1}`}
+                    fill
+                    sizes="(max-width: 760px) 100vw, 520px"
+                    priority={index === 0}
+                    className="main-product-image"
+                  />
+                </div>
+              ))}
+            </div>
+            <span className="mobile-slide-count">{Math.min(activeImage + 1, safeDisplayImages.length)}/{safeDisplayImages.length}</span>
           </div>
 
           <div className="gallery-dots">
-            {displayImages.slice(0, 5).map((_, index) => (
+            {safeDisplayImages.slice(0, 5).map((_, index) => (
               <button
                 key={index}
                 type="button"
-                onClick={() => setActiveImage(index)}
+                onClick={() => setGalleryImage(index)}
                 className={activeImage === index ? 'active' : ''}
                 aria-label={`Ir a imagen ${index + 1}`}
               />

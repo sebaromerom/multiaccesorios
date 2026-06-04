@@ -351,6 +351,21 @@ export default async function ProductPage({
           overflow: hidden;
         }
 
+        .main-image-track {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          overflow: hidden;
+          scroll-behavior: smooth;
+        }
+
+        .main-image-slide {
+          position: relative;
+          flex: 0 0 100%;
+          min-width: 100%;
+          height: 100%;
+        }
+
         .mobile-slide-count {
           display: none;
         }
@@ -924,6 +939,26 @@ export default async function ProductPage({
             border-radius: 6px;
           }
 
+          .main-image-track {
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-x: contain;
+            touch-action: pan-y;
+            cursor: grab;
+            user-select: none;
+          }
+
+          .main-image-track::-webkit-scrollbar {
+            display: none;
+          }
+
+          .main-image-slide {
+            scroll-snap-align: center;
+            scroll-snap-stop: always;
+          }
+
           .mobile-slide-count {
             display: block;
             position: absolute;
@@ -964,8 +999,8 @@ export default async function ProductPage({
             margin-bottom: 14px;
           }
 
-          .price-block strong {
-            font-size: 25px;
+          .price-block {
+            display: none;
           }
 
           .payment-line {
