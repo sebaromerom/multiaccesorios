@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { useRef, useState, type PointerEvent } from 'react'
+import { useRef, useState, type PointerEvent, type TouchEvent } from 'react'
 import { toast } from 'sonner'
 import {
   BatteryCharging,
@@ -55,7 +55,14 @@ export default function ProductDetail({
   const [activeImage, setActiveImage] = useState(0)
   const [clicked, setClicked] = useState(false)
   const galleryTrackRef = useRef<HTMLDivElement | null>(null)
-  const galleryDragRef = useRef<{ x: number; scrollLeft: number } | null>(null)
+  const galleryDragRef = useRef<{ startX: number; lastX: number; startIndex: number } | null>(null)
+  const galleryTouchRef = useRef<{
+    startX: number
+    startY: number
+    lastX: number
+    lastY: number
+    startIndex: number
+  } | null>(null)
 
   const cartItems = useCartStore((state) => state.cart)
   const addToCartStore = useCartStore((state) => state.addToCart)
@@ -103,48 +110,83 @@ export default function ProductDetail({
     const safeIndex = Math.max(0, Math.min(index, safeDisplayImages.length - 1))
 
     setActiveImage(safeIndex)
-    galleryTrackRef.current?.scrollTo({
-      left: galleryTrackRef.current.clientWidth * safeIndex,
-      behavior: 'smooth',
-    })
-  }
-
-  function syncImageFromScroll() {
-    const track = galleryTrackRef.current
-    if (!track || track.clientWidth === 0) return
-
-    const nextIndex = Math.round(track.scrollLeft / track.clientWidth)
-    setActiveImage(Math.max(0, Math.min(nextIndex, safeDisplayImages.length - 1)))
   }
 
   function startGalleryDrag(event: PointerEvent<HTMLDivElement>) {
+    if (event.pointerType === 'touch') return
     if (safeDisplayImages.length <= 1) return
 
     galleryDragRef.current = {
-      x: event.clientX,
-      scrollLeft: event.currentTarget.scrollLeft,
+      startX: event.clientX,
+      lastX: event.clientX,
+      startIndex: activeImage,
     }
     event.currentTarget.setPointerCapture(event.pointerId)
   }
 
   function moveGalleryDrag(event: PointerEvent<HTMLDivElement>) {
+    if (event.pointerType === 'touch') return
     const drag = galleryDragRef.current
     if (!drag) return
 
-    const deltaX = drag.x - event.clientX
+    drag.lastX = event.clientX
+    const deltaX = drag.startX - event.clientX
 
     if (Math.abs(deltaX) > 4) {
       event.preventDefault()
     }
-
-    event.currentTarget.scrollLeft = drag.scrollLeft + deltaX
   }
 
   function endGalleryDrag() {
-    if (!galleryDragRef.current) return
+    const drag = galleryDragRef.current
+    if (!drag) return
 
     galleryDragRef.current = null
-    syncImageFromScroll()
+    const deltaX = drag.lastX - drag.startX
+
+    if (Math.abs(deltaX) < 34) return
+
+    setGalleryImage(drag.startIndex + (deltaX < 0 ? 1 : -1))
+  }
+
+  function startGalleryTouch(event: TouchEvent<HTMLDivElement>) {
+    if (safeDisplayImages.length <= 1) return
+
+    const touch = event.touches[0]
+    if (!touch) return
+
+    galleryTouchRef.current = {
+      startX: touch.clientX,
+      startY: touch.clientY,
+      lastX: touch.clientX,
+      lastY: touch.clientY,
+      startIndex: activeImage,
+    }
+  }
+
+  function moveGalleryTouch(event: TouchEvent<HTMLDivElement>) {
+    const touchState = galleryTouchRef.current
+    const touch = event.touches[0]
+    if (!touchState || !touch) return
+
+    touchState.lastX = touch.clientX
+    touchState.lastY = touch.clientY
+  }
+
+  function endGalleryTouch() {
+    const touchState = galleryTouchRef.current
+    if (!touchState) return
+
+    galleryTouchRef.current = null
+    const deltaX = touchState.lastX - touchState.startX
+    const deltaY = touchState.lastY - touchState.startY
+    const isHorizontalSwipe = Math.abs(deltaX) >= 34 && Math.abs(deltaX) > Math.abs(deltaY) * 1.15
+
+    if (!isHorizontalSwipe) {
+      return
+    }
+
+    setGalleryImage(touchState.startIndex + (deltaX < 0 ? 1 : -1))
   }
 
   function addToCart() {
@@ -202,12 +244,16 @@ export default function ProductDetail({
             <div
               ref={galleryTrackRef}
               className="main-image-track"
-              onScroll={syncImageFromScroll}
               onPointerDown={startGalleryDrag}
               onPointerMove={moveGalleryDrag}
               onPointerUp={endGalleryDrag}
               onPointerCancel={endGalleryDrag}
               onPointerLeave={endGalleryDrag}
+              onTouchStart={startGalleryTouch}
+              onTouchMove={moveGalleryTouch}
+              onTouchEnd={endGalleryTouch}
+              onTouchCancel={endGalleryTouch}
+              style={{ transform: `translateX(-${activeImage * 100}%)` }}
             >
               {safeDisplayImages.map((image, index) => (
                 <div key={`${image}-${index}`} className="main-image-slide">

@@ -342,6 +342,12 @@ export default async function ProductPage({
           object-fit: contain;
         }
 
+        .main-product-image {
+          pointer-events: none;
+          user-select: none;
+          -webkit-user-drag: none;
+        }
+
         .main-image-card {
           position: relative;
           aspect-ratio: 1 / .98;
@@ -356,7 +362,8 @@ export default async function ProductPage({
           inset: 0;
           display: flex;
           overflow: hidden;
-          scroll-behavior: smooth;
+          transition: transform .24s ease;
+          will-change: transform;
         }
 
         .main-image-slide {
@@ -940,13 +947,11 @@ export default async function ProductPage({
           }
 
           .main-image-track {
-            overflow-x: auto;
-            scroll-snap-type: x mandatory;
+            overflow: visible;
             scrollbar-width: none;
             -webkit-overflow-scrolling: touch;
             overscroll-behavior-x: contain;
-            touch-action: pan-y;
-            cursor: grab;
+            touch-action: pan-y pinch-zoom;
             user-select: none;
           }
 
@@ -955,8 +960,7 @@ export default async function ProductPage({
           }
 
           .main-image-slide {
-            scroll-snap-align: center;
-            scroll-snap-stop: always;
+            transform: translateZ(0);
           }
 
           .mobile-slide-count {
