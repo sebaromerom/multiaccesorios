@@ -122,6 +122,8 @@ export default function AddToCartWithSize({
               const variantInCart = cart.find((i) => i.id === `${product.id}-${variant.size}`)
               const variantQtyInCart = variantInCart ? variantInCart.quantity : 0
               const isVariantAgotada = variant.stock - variantQtyInCart <= 0
+              const hasOwnVariantImage = Boolean(variant.images?.[0] ?? variant.imageUrl)
+              const variantImage = variant.images?.[0] ?? variant.imageUrl ?? carouselImages[0]
 
               return (
                 <button
@@ -129,7 +131,7 @@ export default function AddToCartWithSize({
                   onClick={() => setSelectedSize(variant.size)}
                   disabled={isVariantAgotada}
                   className={`
-                    px-4 py-2 text-sm tracking-widest border rounded transition-all duration-200
+                    min-h-12 px-3 py-2 text-sm tracking-widest border rounded transition-all duration-200 inline-flex items-center gap-2
                     ${isVariantAgotada
                       ? 'border-border text-muted-foreground opacity-40 cursor-not-allowed line-through'
                       : selectedSize === variant.size
@@ -138,6 +140,14 @@ export default function AddToCartWithSize({
                     }
                   `}
                 >
+                  {variantImage && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={variantImage}
+                      alt=""
+                      className={`size-8 rounded-[3px] bg-white object-contain ${hasOwnVariantImage ? '' : 'opacity-55 grayscale'}`}
+                    />
+                  )}
                   {variant.size}
                 </button>
               )

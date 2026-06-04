@@ -236,12 +236,12 @@ export default async function Home() {
         <nav className="home-nav">
           <Link href="/shop" className="home-all-cats"><span className="inline-flex items-center gap-3"><Menu className="size-4" /> Todas las categorias</span></Link>
           <div className="home-nav-links">
-            <Link href="/shop"><BadgePercent className="inline size-4 mr-1" /> Ofertas</Link>
+            <Link href="/shop?promo=1&page=1"><BadgePercent className="inline size-4 mr-1" /> Ofertas</Link>
             <Link href="/shop?sort=newest">Nuevos</Link>
-            <Link href="/shop">Mas vendidos</Link>
-            <Link href="/shop">Marcas</Link>
-            <Link href="/shop">Blog</Link>
-            <Link href="/shop">Contacto</Link>
+            <Link href="/shop?sort=sales&page=1">Mas vendidos</Link>
+            <Link href="/shop?brand=all&page=1">Marcas</Link>
+            <Link href="#blog">Blog</Link>
+            <Link href="#contacto">Contacto</Link>
           </div>
         </nav>
 
@@ -274,7 +274,7 @@ export default async function Home() {
             <span className="home-hero-discount">HASTA<br />20%<br />OFF</span>
           </section>
 
-          <section className="home-section">
+          <section className="home-section" id="blog">
             <div className="home-section-head"><h2>Explora por categoria</h2><Link href="/shop">Ver todas</Link></div>
             <div className="home-categories">
               {CATEGORIES.map((category) => {
@@ -329,7 +329,7 @@ export default async function Home() {
           </section>
         </div>
 
-        <footer className="home-benefits">
+        <footer className="home-benefits" id="contacto">
           <div className="home-benefit"><Truck className="size-7" /><span>Envios a todo Chile<small>Rapido y seguro</small></span></div>
           <div className="home-benefit"><Clock3 className="size-7" /><span>Despacho 24-48h en Linares<small>Compras antes de las 14:00</small></span></div>
           <div className="home-benefit"><ShieldCheck className="size-7" /><span>Compra segura<small>Sitio protegido SSL</small></span></div>
@@ -340,7 +340,7 @@ export default async function Home() {
       <nav className="home-mobile-nav">
         <Link href="/"><HomeIcon className="size-5" />Inicio</Link>
         <Link href="/shop"><List className="size-5" />Categorias</Link>
-        <Link href="/shop"><Tag className="size-5" />Ofertas</Link>
+        <Link href="/shop?promo=1&page=1"><Tag className="size-5" />Ofertas</Link>
         <Link href="/shop"><Heart className="size-5" />Favoritos</Link>
         <Link href="/admin/login"><User className="size-5" />Cuenta</Link>
       </nav>

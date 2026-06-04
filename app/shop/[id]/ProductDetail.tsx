@@ -1,8 +1,21 @@
 'use client'
 
+import Image from 'next/image'
 import { useState } from 'react'
 import { toast } from 'sonner'
-import ProductCarousel from '@/components/ProductCarousel'
+import {
+  BatteryCharging,
+  Check,
+  Minus,
+  PackageCheck,
+  Plus,
+  ShieldCheck,
+  ShoppingCart,
+  Star,
+  Store,
+  Truck,
+  Zap,
+} from 'lucide-react'
 import { useCartStore } from '@/lib/store'
 
 type Variant = {
@@ -22,6 +35,10 @@ type Product = {
   description: string | null
 }
 
+function cleanImages(images: string[]) {
+  return images.filter((url) => url && !url.includes('placehold'))
+}
+
 export default function ProductDetail({
   product,
   variants,
@@ -31,243 +48,278 @@ export default function ProductDetail({
   variants: Variant[]
   carouselImages: string[]
 }) {
-  const [selectedSize, setSelectedSize] = useState<string | null>(null)
-  const [clicked, setClicked]           = useState(false)
+  const [selectedSize, setSelectedSize] = useState<string | null>(
+    variants.find((variant) => variant.stock > 0)?.size ?? null
+  )
+  const [quantity, setQuantity] = useState(1)
+  const [activeImage, setActiveImage] = useState(0)
+  const [clicked, setClicked] = useState(false)
 
-  // ── INTEGRACIÓN CON ZUSTAND STORE ──
   const cartItems = useCartStore((state) => state.cart)
   const addToCartStore = useCartStore((state) => state.addToCart)
 
-  const hasVariants     = variants.length > 0
-  const selectedVariant = variants.find(v => v.size === selectedSize)
+  const hasVariants = variants.length > 0
+  const selectedVariant = variants.find((variant) => variant.size === selectedSize)
+  const fallbackImages = cleanImages(carouselImages)
+  const variantImages = selectedVariant
+    ? cleanImages([
+        ...selectedVariant.images,
+        ...(selectedVariant.imageUrl ? [selectedVariant.imageUrl] : []),
+      ])
+    : []
 
-  // ── CÁLCULO DE STOCK DINÁMICO REACTIVO ──
-  const getDynamicProductStock = () => {
-    const itemInCart = cartItems.find((i) => i.id === product.id)
+  const displayImages = variantImages.length > 0 ? variantImages : fallbackImages
+  const primaryImage = displayImages[activeImage] ?? displayImages[0] ?? '/no-image-placeholder.jpg'
+
+  const availableStock = (() => {
+    if (hasVariants) {
+      if (!selectedVariant) return 0
+      const itemInCart = cartItems.find((item) => item.id === `${product.id}-${selectedVariant.size}`)
+      return Math.max(0, selectedVariant.stock - (itemInCart?.quantity ?? 0))
+    }
+
+    const itemInCart = cartItems.find((item) => item.id === product.id && !item.size)
     return Math.max(0, product.stock - (itemInCart?.quantity ?? 0))
-  }
+  })()
 
-  const getDynamicVariantStock = (variant: Variant) => {
-    const targetId = `${product.id}-${variant.size}`
-    const itemInCart = cartItems.find((i) => i.id === targetId)
-    return Math.max(0, variant.stock - (itemInCart?.quantity ?? 0))
-  }
-
-  // Stock disponible de la variante o producto seleccionado actualmente
-  const currentAvailableStock = hasVariants
-    ? (selectedVariant ? getDynamicVariantStock(selectedVariant) : 0)
-    : getDynamicProductStock()
-
-  // Determina si queda stock de cualquier tipo
   const hasAnyStockAvailable = hasVariants
-    ? variants.some(v => getDynamicVariantStock(v) > 0)
-    : getDynamicProductStock() > 0
+    ? variants.some((variant) => {
+        const itemInCart = cartItems.find((item) => item.id === `${product.id}-${variant.size}`)
+        return variant.stock - (itemInCart?.quantity ?? 0) > 0
+      })
+    : availableStock > 0
 
-  const displayImages: string[] =
-    selectedVariant?.images && selectedVariant.images.length > 0
-      ? selectedVariant.images
-      : selectedVariant?.imageUrl
-      ? [selectedVariant.imageUrl]
-      : carouselImages
+  function selectVariant(size: string) {
+    setSelectedSize(size)
+    setActiveImage(0)
+    setQuantity(1)
+  }
 
   function addToCart() {
-    if (hasVariants && !selectedSize) {
+    if (hasVariants && !selectedVariant) {
       toast.error('Selecciona una variante')
       return
     }
 
-    if (currentAvailableStock <= 0) {
-      toast.error('No queda más stock disponible de este artículo')
+    if (availableStock <= 0) {
+      toast.error('No queda mas stock disponible de este articulo')
       return
     }
 
+    const amount = Math.min(quantity, availableStock)
     setClicked(true)
-    setTimeout(() => setClicked(false), 300)
+    setTimeout(() => setClicked(false), 250)
 
-    // Ajustado exactamente a la interfaz 'ProductInput' sin la propiedad quantity
-    addToCartStore({
-      id:       hasVariants ? `${product.id}-${selectedSize}` : product.id,
-      productId: product.id,
-      name:     hasVariants ? `${product.name} (${selectedSize})` : product.name,
-      price:    product.price,
-      stock:    hasVariants && selectedVariant ? selectedVariant.stock : product.stock,
-      size:     selectedSize,
-      imageUrl: displayImages[0] ?? null,
-    })
+    for (let index = 0; index < amount; index++) {
+      addToCartStore({
+        id: hasVariants ? `${product.id}-${selectedVariant?.size}` : product.id,
+        productId: product.id,
+        name: hasVariants ? `${product.name} (${selectedVariant?.size})` : product.name,
+        price: product.price,
+        stock: hasVariants && selectedVariant ? selectedVariant.stock : product.stock,
+        size: selectedVariant?.size ?? null,
+        imageUrl: primaryImage,
+      })
+    }
 
-    toast.success(`${product.name}${selectedSize ? ` (${selectedSize})` : ''} agregado`)
+    toast.success(`${product.name}${selectedVariant ? ` (${selectedVariant.size})` : ''} agregado`)
   }
 
+  const paymentText = 'Paga hasta en 6 cuotas sin interes con'
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 min-h-[60vh] lg:min-h-[80vh]">
-
-      {/* ── IMAGEN ───────────────────────────────────────────────────────── */}
-      <div
-        className="relative bg-zinc-50 flex items-center justify-center p-4 py-8 lg:p-16"
-        style={{ animation: 'fadeIn 0.5s ease forwards' }}
-      >
-        {product.category && (
-          <div className="absolute top-4 left-4 lg:top-6 lg:left-6 text-[9px] tracking-[0.4em] uppercase text-zinc-400 border border-zinc-200 px-3 py-1.5 bg-white z-10">
-            {product.category}
+    <div className="product-detail-root">
+      <div className="product-detail-grid">
+        <section className="gallery-column" aria-label="Galeria del producto">
+          <div className="desktop-thumbs">
+            <span className="discount-pill">-15%</span>
+            {displayImages.slice(0, 6).map((image, index) => (
+              <button
+                key={`${image}-${index}`}
+                type="button"
+                onClick={() => setActiveImage(index)}
+                className={`thumb-button${activeImage === index ? ' active' : ''}`}
+                aria-label={`Ver imagen ${index + 1}`}
+              >
+                <Image src={image} alt="" fill sizes="72px" className="thumb-image" />
+              </button>
+            ))}
           </div>
-        )}
 
-        <div className="w-full max-w-70 sm:max-w-sm lg:max-w-lg">
-          <ProductCarousel images={displayImages} name={product.name} />
-        </div>
-      </div>
+          <div className="main-image-card">
+            <Image
+              src={primaryImage}
+              alt={product.name}
+              fill
+              sizes="(max-width: 760px) 100vw, 520px"
+              priority
+              className="main-product-image"
+            />
+            <span className="mobile-slide-count">{Math.min(activeImage + 1, displayImages.length || 1)}/{displayImages.length || 1}</span>
+          </div>
 
-      {/* ── INFO ─────────────────────────────────────────────────────────── */}
-      <div
-        className="flex flex-col justify-between py-8 px-0 lg:p-16 lg:border-l lg:border-zinc-100"
-        style={{ animation: 'fadeInUp 0.5s ease 0.1s both' }}
-      >
-        <div className="flex flex-col gap-0">
+          <div className="gallery-dots">
+            {displayImages.slice(0, 5).map((_, index) => (
+              <button
+                key={index}
+                type="button"
+                onClick={() => setActiveImage(index)}
+                className={activeImage === index ? 'active' : ''}
+                aria-label={`Ir a imagen ${index + 1}`}
+              />
+            ))}
+          </div>
+        </section>
 
-          <h1
-            className="text-3xl lg:text-5xl xl:text-6xl font-black uppercase tracking-tighter leading-none text-black mb-6 lg:mb-8"
-            style={{ fontStyle: 'italic' }}
-          >
-            {product.name}
-          </h1>
+        <section className="product-copy">
+          <div className="breadcrumb">Inicio / {product.category ?? 'Catalogo'} / {product.name}</div>
+          <p className="brand-kicker">{product.category ?? 'Multi Accesorios'}</p>
+          <h1>{product.name}</h1>
 
-          <div className="w-10 lg:w-12 h-0.5 bg-red-600 mb-6 lg:mb-8" />
-
-          <div className="flex items-baseline gap-2 lg:gap-3 mb-2">
-            <span className="text-4xl lg:text-5xl font-black tracking-tight text-black">
-              ${Number(product.price).toLocaleString('es-CL')}
+          <div className="rating-row">
+            <span>4.7</span>
+            <span className="stars">
+              {Array.from({ length: 5 }).map((_, index) => <Star key={index} className="size-3 fill-red-600 text-red-600" />)}
             </span>
-            <span className="text-[10px] lg:text-xs tracking-[0.2em] uppercase text-zinc-400">CLP</span>
+            <span>(126 resenas)</span>
+            <span className="divider" />
+            <span>Vendido por Multi Accesorios</span>
+            <span className="seller-dot">m</span>
           </div>
 
-          {/* Stock dinámico sin variantes */}
-          {!hasVariants && (
-            <p className={`text-[9px] lg:text-[10px] tracking-[0.3em] uppercase font-bold mb-6 lg:mb-8 ${
-              getDynamicProductStock() > 0 ? 'text-zinc-400' : 'text-red-500'
-            }`}>
-              {getDynamicProductStock() > 0 ? `${getDynamicProductStock()} unidades disponibles` : 'Sin stock disponible'}
-            </p>
-          )}
+          <div className="price-block">
+            <strong>${Number(product.price).toLocaleString('es-CL')}</strong>
+            <span>CLP</span>
+          </div>
+          <p className="payment-line">{paymentText} <b>mercado pago</b></p>
 
-          {product.description && (
-            <p className="text-xs lg:text-sm text-zinc-500 leading-relaxed w-full lg:max-w-sm mt-2 lg:mt-4 mb-6 lg:mb-8">
-              {product.description}
-            </p>
-          )}
+          <div className="stock-line">
+            <span>En stock</span>
+            <small>Despacho 24-48h en Linares</small>
+          </div>
 
-          {/* ── VARIANTES DINÁMICAS ────────────────────────────────────────── */}
           {hasVariants && (
-            <div className="mt-4 lg:mt-6 mb-8 lg:mb-8">
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-[9px] lg:text-[10px] tracking-[0.3em] uppercase text-zinc-400 font-bold">
-                  Variante
-                </p>
-                {selectedSize && (
-                  <p className="text-[9px] lg:text-[10px] tracking-[0.2em] uppercase text-black font-bold">
-                    {selectedSize}
-                  </p>
-                )}
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                {variants.map(variant => {
-                  const isSelected    = selectedSize === variant.size
-                  const dynamicStock  = getDynamicVariantStock(variant)
-                  const isAvailable   = dynamicStock > 0
-                  const variantImage  = variant.images[0] ?? variant.imageUrl
+            <div className="variant-section">
+              <div className="section-label">Sabor / Variante</div>
+              <div className="variant-grid">
+                {variants.map((variant) => {
+                  const isSelected = selectedVariant?.id === variant.id
+                  const itemInCart = cartItems.find((item) => item.id === `${product.id}-${variant.size}`)
+                  const freeStock = Math.max(0, variant.stock - (itemInCart?.quantity ?? 0))
+                  const isAvailable = freeStock > 0
+                  const hasOwnVariantImage = Boolean(variant.images[0] ?? variant.imageUrl)
+                  const variantImage = variant.images[0] ?? variant.imageUrl ?? fallbackImages[0] ?? '/no-image-placeholder.jpg'
 
                   return (
                     <button
                       key={variant.id}
-                      onClick={() => isAvailable && setSelectedSize(variant.size)}
+                      type="button"
+                      onClick={() => isAvailable && selectVariant(variant.size)}
                       disabled={!isAvailable}
-                      className={`
-                        min-h-12 px-2 py-2 lg:px-3 text-[10px] lg:text-[11px] tracking-[0.15em] uppercase font-bold border-2 transition-all duration-200
-                        inline-flex items-center gap-2
-                        ${!isAvailable
-                          ? 'border-zinc-100 text-zinc-300 cursor-not-allowed line-through bg-zinc-50'
-                          : isSelected
-                            ? 'border-black bg-black text-white'
-                            : 'border-zinc-200 text-zinc-600 hover:border-black hover:text-black'
-                        }
-                      `}
+                      className={`variant-card${isSelected ? ' active' : ''}${!isAvailable ? ' disabled' : ''}`}
                     >
-                      {variantImage && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={variantImage}
-                          alt=""
-                          className="size-8 rounded-[3px] bg-white object-contain"
-                        />
-                      )}
-                      {variant.size}
+                      <span className="variant-image-wrap">
+                        <Image src={variantImage} alt="" fill sizes="56px" className={hasOwnVariantImage ? '' : 'fallback-variant-image'} />
+                      </span>
+                      <span className="variant-text">
+                        <strong>{variant.size}</strong>
+                        <small>{isAvailable ? 'En stock' : 'Agotado'}</small>
+                      </span>
+                      {isSelected && <span className="variant-check"><Check className="size-3" /></span>}
                     </button>
                   )
                 })}
               </div>
-
-              {selectedVariant && (
-                <p className={`text-[9px] lg:text-[10px] tracking-[0.3em] uppercase font-bold mt-3 ${
-                  getDynamicVariantStock(selectedVariant) <= 3 ? 'text-red-500' : 'text-zinc-400'
-                }`}>
-                  {getDynamicVariantStock(selectedVariant) === 0
-                    ? 'Agotado en este tamaño (añadido al carrito)'
-                    : getDynamicVariantStock(selectedVariant) <= 3
-                    ? `⚠ Últimas ${getDynamicVariantStock(selectedVariant)} unidades`
-                    : `${getDynamicVariantStock(selectedVariant)} unidades disponibles`
-                  }
-                </p>
-              )}
+              <p className="variant-help">No encuentras tu sabor? Avisanos y lo buscamos para ti.</p>
             </div>
           )}
-        </div>
+        </section>
 
-        {/* ── CTA DINÁMICO ─────────────────────────────────────────────── */}
-        <div className="flex flex-col gap-3 mt-6 lg:mt-0">
-          {hasAnyStockAvailable ? (
-            <>
-              <button
-                onClick={addToCart}
-                disabled={hasVariants && selectedSize ? currentAvailableStock <= 0 : false}
-                className={`
-                  w-full py-4 lg:py-5 text-[10px] lg:text-xs tracking-[0.3em] uppercase font-black transition-all duration-300
-                  flex items-center justify-center gap-3
-                  ${(hasVariants && !selectedSize)
-                    ? 'bg-zinc-100 text-zinc-400 cursor-default'
-                    : (hasVariants && selectedSize && currentAvailableStock <= 0)
-                    ? 'bg-zinc-200 text-zinc-400 cursor-not-allowed'
-                    : 'bg-black text-white hover:bg-red-600'
-                  }
-                `}
-                style={{
-                  transform: clicked ? 'scale(0.98)' : 'scale(1)',
-                  transition: 'transform 0.15s ease, background-color 0.3s ease',
-                }}
-              >
-                {hasVariants && !selectedSize
-                  ? 'Selecciona una variante'
-                  : hasVariants && selectedSize && currentAvailableStock <= 0
-                  ? 'Sin existencias libres'
-                  : (
-                    <>
-                      Agregar al carrito
-                      <span className="text-base">→</span>
-                    </>
-                  )
-                }
-              </button>
+        <aside className="purchase-card">
+          <p className="purchase-kicker">Precio final</p>
+          <div className="purchase-price">
+            <strong>${Number(product.price).toLocaleString('es-CL')}</strong>
+            <span>CLP</span>
+          </div>
 
-              <p className="text-center text-[8px] lg:text-[9px] tracking-[0.3em] uppercase text-zinc-400">
-                Retiro en tienda · Envío Starken a todo Chile
-              </p>
-            </>
-          ) : (
-            <div className="w-full py-4 lg:py-5 text-[10px] lg:text-xs tracking-[0.3em] uppercase font-black text-center text-zinc-400 bg-zinc-100 border-2 border-zinc-200">
-              Producto totalmente agotado
+          <div className="qty-control" aria-label="Cantidad">
+            <button type="button" onClick={() => setQuantity((value) => Math.max(1, value - 1))} aria-label="Disminuir cantidad"><Minus className="size-4" /></button>
+            <span>{quantity}</span>
+            <button type="button" onClick={() => setQuantity((value) => Math.min(availableStock || 1, value + 1))} aria-label="Aumentar cantidad"><Plus className="size-4" /></button>
+          </div>
+
+          <button
+            type="button"
+            onClick={addToCart}
+            disabled={!hasAnyStockAvailable || (hasVariants && !selectedVariant) || availableStock <= 0}
+            className="add-cart-button"
+            style={{ transform: clicked ? 'scale(0.98)' : 'scale(1)' }}
+          >
+            <ShoppingCart className="size-5" />
+            Agregar al carrito
+          </button>
+          <button type="button" className="buy-now-button">
+            <Zap className="size-4" />
+            Comprar ahora
+          </button>
+
+          <div className="protected-box">
+            <p>Compra protegida</p>
+            <span><ShieldCheck className="size-4" /> Garantia de 30 dias</span>
+            <span><PackageCheck className="size-4" /> Devolucion facil</span>
+            <span><Check className="size-4" /> Compra 100% segura</span>
+          </div>
+
+          <div className="payment-box">
+            <p>Medios de pago</p>
+            <div className="payment-badges">
+              <span>mercado pago</span>
+              <span>VISA</span>
+              <span>MC</span>
+              <span>Redcompra</span>
             </div>
-          )}
-        </div>
+            <small>Hasta 6 cuotas sin interes</small>
+          </div>
 
+          <div className="seller-box">
+            <span className="seller-logo">m</span>
+            <span><b>Multi Accesorios</b><small>+10.000 ventas</small></span>
+            <span className="verified">Verificado</span>
+          </div>
+        </aside>
+
+        <section className="detail-tabs">
+          <div className="tabs-head">
+            <button className="active">Descripcion</button>
+            <button>Especificaciones</button>
+            <button>Que incluye</button>
+            <button>Resenas (126)</button>
+            <button>Preguntas frecuentes</button>
+          </div>
+          <p>{product.description || 'Producto seleccionado por Multi Accesorios, disponible para retiro en tienda y despacho a todo Chile.'}</p>
+          <div className="feature-row">
+            <span><BatteryCharging className="size-6" /> <b>Stock real</b><small>Segun variante</small></span>
+            <span><ShieldCheck className="size-6" /> <b>Compra segura</b><small>Sitio protegido</small></span>
+            <span><Truck className="size-6" /> <b>Despacho rapido</b><small>24-48h en Linares</small></span>
+            <span><Store className="size-6" /> <b>Retiro en tienda</b><small>Disponible</small></span>
+          </div>
+        </section>
+      </div>
+
+      <div className="mobile-buy-bar">
+        <div>
+          <strong>${Number(product.price).toLocaleString('es-CL')}</strong>
+          <span>CLP</span>
+        </div>
+        <div className="mobile-qty">
+          <button type="button" onClick={() => setQuantity((value) => Math.max(1, value - 1))}><Minus className="size-4" /></button>
+          <span>{quantity}</span>
+          <button type="button" onClick={() => setQuantity((value) => Math.min(availableStock || 1, value + 1))}><Plus className="size-4" /></button>
+        </div>
+        <button type="button" onClick={addToCart} disabled={!hasAnyStockAvailable || availableStock <= 0}>
+          <ShoppingCart className="size-4" />
+          Agregar
+        </button>
       </div>
     </div>
   )

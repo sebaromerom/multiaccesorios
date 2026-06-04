@@ -44,14 +44,22 @@ const PAGE_SIZE = 24
 export default async function ShopPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; cat?: string; page?: string; sort?: string }>
+  searchParams: Promise<{ q?: string; cat?: string; page?: string; sort?: string; promo?: string; brand?: string }>
 }) {
-  const { q, cat, page, sort = 'newest' } = await searchParams
+  const { q, cat, page, sort = 'newest', promo, brand } = await searchParams
   const currentPage = Math.max(1, Number(page || 1))
+  const brandTerms = ['Hoco', 'Baseus', 'MLab', 'Borofone', 'Golf', 'Jellico', 'Fujitel', 'IRM', 'Apple', 'Samsung']
+  const activeDiscountCount = promo === '1'
+    ? await prisma.discountRule.count({ where: { active: true } })
+    : 0
 
   const where = {
     stock: { gt: 0 },
     ...(cat ? { category: cat as Category } : {}),
+    ...(promo === '1' && activeDiscountCount > 0 ? { discounts: { some: { active: true } } } : {}),
+    ...(brand === 'all' ? {
+      OR: brandTerms.map((term) => ({ name: { contains: term, mode: 'insensitive' as const } })),
+    } : {}),
     ...(q ? {
       OR: [
         { name: { contains: q, mode: 'insensitive' as const } },
@@ -65,6 +73,8 @@ export default async function ShopPage({
     sort === 'price_desc' ? { price: 'desc' as const } :
     sort === 'alpha_asc' ? { name: 'asc' as const } :
     sort === 'alpha_desc' ? { name: 'desc' as const } :
+    sort === 'sales' ? { orderItems: { _count: 'desc' as const } } :
+    promo === '1' && activeDiscountCount === 0 ? { price: 'asc' as const } :
     { createdAt: 'desc' as const }
 
   const [products, totalProducts, allAvailableProducts, categoryAggregations] = await Promise.all([
@@ -95,11 +105,13 @@ export default async function ShopPage({
 
   const totalPages = Math.ceil(totalProducts / PAGE_SIZE)
   const selectedCategory = CATEGORIES.find((category) => category.value === cat)
-  const buildUrl = (updates: { cat?: string | null; q?: string | null; page?: string | null; sort?: string | null }) => {
+  const buildUrl = (updates: { cat?: string | null; q?: string | null; page?: string | null; sort?: string | null; promo?: string | null; brand?: string | null }) => {
     const params = new URLSearchParams()
     if (q) params.set('q', q)
     if (cat) params.set('cat', cat)
     if (sort !== 'newest') params.set('sort', sort)
+    if (promo) params.set('promo', promo)
+    if (brand) params.set('brand', brand)
 
     if (updates.q !== undefined) {
       if (updates.q === null) params.delete('q')
@@ -112,6 +124,14 @@ export default async function ShopPage({
     if (updates.sort !== undefined) {
       if (updates.sort === null) params.delete('sort')
       else params.set('sort', updates.sort)
+    }
+    if (updates.promo !== undefined) {
+      if (updates.promo === null) params.delete('promo')
+      else params.set('promo', updates.promo)
+    }
+    if (updates.brand !== undefined) {
+      if (updates.brand === null) params.delete('brand')
+      else params.set('brand', updates.brand)
     }
     if (updates.page !== undefined) {
       if (updates.page === null) params.delete('page')
@@ -131,12 +151,12 @@ export default async function ShopPage({
 
         body:has(.shop-catalog-root) main {
           padding: 0 !important;
-          background: #f6f6f5;
+          background: #fff;
         }
 
         .shop-catalog-root {
           min-height: 100vh;
-          background: #f7f7f6;
+          background: #fff;
           color: #111;
           font-family: var(--font-inter), Inter, system-ui, sans-serif;
           letter-spacing: 0;
@@ -148,6 +168,7 @@ export default async function ShopPage({
           background: #fff;
           min-height: 100vh;
           box-shadow: 0 18px 60px rgba(15, 15, 15, 0.08);
+          overflow: hidden;
         }
 
         .shop-topbar {
@@ -158,9 +179,14 @@ export default async function ShopPage({
           align-items: center;
           justify-content: space-between;
           padding: 0 52px;
-          border-radius: 22px 22px 0 0;
           font-size: 13px;
           font-weight: 600;
+        }
+
+        @media (min-width: 1511px) {
+          .shop-shell {
+            box-shadow: 0 12px 38px rgba(15, 15, 15, 0.06);
+          }
         }
 
         .shop-topbar-group {
@@ -528,8 +554,9 @@ export default async function ShopPage({
 
         .product-grid {
           display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 16px;
+          grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+          gap: 20px;
+          align-items: stretch;
         }
 
         .product-card {
@@ -539,25 +566,27 @@ export default async function ShopPage({
           background: #fff;
           min-width: 0;
           overflow: hidden;
-          transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+          content-visibility: auto;
+          contain-intrinsic-size: 420px;
+          transition: border-color 0.16s ease, background-color 0.16s ease;
         }
 
         .product-card:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 14px 30px rgba(20, 20, 20, 0.08);
           border-color: #d6d6d6;
+          background: #fdfdfd;
         }
 
         .product-img-wrap {
           position: relative;
           display: block;
-          aspect-ratio: 1 / 1.12;
+          aspect-ratio: 1 / 1.04;
           background: #fafafa;
-          padding: 18px;
+          padding: 20px;
           text-decoration: none;
         }
 
         .product-img-inner {
+          position: relative;
           width: 100%;
           height: 100%;
           display: block;
@@ -602,11 +631,11 @@ export default async function ShopPage({
         }
 
         .product-info {
-          padding: 0 16px 16px;
+          padding: 0 18px 18px;
         }
 
         .product-name {
-          min-height: 42px;
+          min-height: 48px;
           display: -webkit-box;
           -webkit-line-clamp: 2;
           -webkit-box-orient: vertical;
@@ -614,9 +643,10 @@ export default async function ShopPage({
           color: #111;
           text-decoration: none;
           font-size: 13px;
-          line-height: 1.35;
+          line-height: 1.42;
           font-weight: 900;
           text-transform: uppercase;
+          overflow-wrap: anywhere;
         }
 
         .product-price {
@@ -624,7 +654,13 @@ export default async function ShopPage({
           color: #e30613;
           font-size: 20px;
           font-weight: 900;
-          margin: 14px 0 16px;
+          margin: 12px 0 16px;
+        }
+
+        @media (min-width: 1420px) {
+          .product-grid {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+          }
         }
 
         .shop-empty {
@@ -932,12 +968,12 @@ export default async function ShopPage({
               <span className="inline-flex items-center gap-12"><Menu className="size-5" /> Todas las categorias</span>
             </Link>
             <div className="shop-nav-links">
-                <Link href="/shop"><BadgePercent className="mr-1 inline size-4" /> Ofertas</Link>
+              <Link href={buildUrl({ promo: '1', brand: null, page: '1' })}><BadgePercent className="mr-1 inline size-4" /> Ofertas</Link>
               <Link href={buildUrl({ sort: 'newest', page: '1' })}>Nuevos</Link>
-              <Link href="/shop">Mas vendidos</Link>
-              <Link href="/shop">Marcas</Link>
-              <Link href="/">Blog</Link>
-              <Link href="/">Contacto</Link>
+              <Link href={buildUrl({ sort: 'sales', page: '1' })}>Mas vendidos</Link>
+              <Link href={buildUrl({ brand: 'all', promo: null, page: '1' })}>Marcas</Link>
+              <Link href="/#blog">Blog</Link>
+              <Link href="/#contacto">Contacto</Link>
             </div>
           </nav>
 
@@ -964,7 +1000,7 @@ export default async function ShopPage({
             {CATEGORIES.map((category) => {
               const Icon = category.icon
               return (
-                <Link key={category.value} href={buildUrl({ cat: category.value, page: '1' })} className={`mobile-cat${cat === category.value ? ' active' : ''}`}>
+                <Link key={category.value} href={buildUrl({ cat: category.value, promo: null, brand: null, page: '1' })} className={`mobile-cat${cat === category.value ? ' active' : ''}`}>
                   <span className="mobile-cat-icon"><Icon className="size-5" /></span>
                   {category.label}
                 </Link>
@@ -989,7 +1025,7 @@ export default async function ShopPage({
                   const Icon = category.icon
                   const count = categoryCounts[category.value] || 0
                   return (
-                    <Link key={category.value} href={buildUrl({ cat: category.value, page: '1' })} className={`shop-side-link${cat === category.value ? ' active' : ''}`}>
+                    <Link key={category.value} href={buildUrl({ cat: category.value, promo: null, brand: null, page: '1' })} className={`shop-side-link${cat === category.value ? ' active' : ''}`}>
                       <span className="shop-side-main"><Icon className="size-4" /> {category.label}</span>
                       <span className="shop-side-count">{count}</span>
                     </Link>
@@ -1002,16 +1038,16 @@ export default async function ShopPage({
             <main>
               <div className="shop-main-head">
                 <div className="shop-title">
-                  <h1>{selectedCategory ? selectedCategory.label : 'Catalogo'}</h1>
+                  <h1>{promo === '1' ? 'Ofertas' : brand === 'all' ? 'Marcas' : selectedCategory ? selectedCategory.label : 'Catalogo'}</h1>
                   <p>{totalProducts} productos disponibles</p>
                 </div>
                 <Suspense><SortSelect value={sort} /></Suspense>
               </div>
 
               <div className="shop-cat-chips">
-                <Link href={buildUrl({ cat: null, page: '1' })} className={`shop-chip${!cat ? ' active' : ''}`}>Todos</Link>
+                <Link href={buildUrl({ cat: null, promo: null, brand: null, page: '1' })} className={`shop-chip${!cat && !promo && !brand ? ' active' : ''}`}>Todos</Link>
                 {CATEGORIES.map((category) => (
-                  <Link key={category.value} href={buildUrl({ cat: category.value, page: '1' })} className={`shop-chip${cat === category.value ? ' active' : ''}`}>
+                  <Link key={category.value} href={buildUrl({ cat: category.value, promo: null, brand: null, page: '1' })} className={`shop-chip${cat === category.value ? ' active' : ''}`}>
                     {category.label} ({categoryCounts[category.value] || 0})
                   </Link>
                 ))}

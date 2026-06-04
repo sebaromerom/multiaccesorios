@@ -1,4 +1,5 @@
 'use client'
+import Image from 'next/image'
 import { useState } from 'react'
 
 interface ProductImageProps {
@@ -17,17 +18,19 @@ export default function ProductImage({ productId, productName, initialImageUrl }
   const fallbackUrl = '/no-image-placeholder.jpg'
 
   return (
-    <img 
-      src={hasError ? fallbackUrl : primaryUrl} 
+    <Image
+      src={hasError ? fallbackUrl : primaryUrl}
       alt={productName}
+      fill
+      sizes="(max-width: 760px) 45vw, (max-width: 1180px) 30vw, (max-width: 1400px) 24vw, 260px"
+      quality={72}
       onError={() => setHasError(true)}
       loading="lazy"
+      decoding="async"
       style={{
-        width: '100%',
-        height: '100%',
         objectFit: 'cover',
         display: 'block',
-        backgroundColor: '#fcfcfc' // Fondo sutil mientras carga
+        backgroundColor: '#fcfcfc',
       }}
     />
   )
