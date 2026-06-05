@@ -1,6 +1,7 @@
 'use client'
 
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { useRef, useState, type PointerEvent, type TouchEvent } from 'react'
 import { toast } from 'sonner'
 import {
@@ -11,7 +12,6 @@ import {
   Plus,
   ShieldCheck,
   ShoppingCart,
-  Star,
   Store,
   Truck,
   Zap,
@@ -49,6 +49,7 @@ export default function ProductDetail({
   variants: Variant[]
   carouselImages: string[]
 }) {
+  const router = useRouter()
   const [selectedSize, setSelectedSize] = useState<string | null>(
     variants.find((variant) => variant.stock > 0)?.size ?? null
   )
@@ -226,12 +227,12 @@ export default function ProductDetail({
   function addToCart() {
     if (hasVariants && !selectedVariant) {
       toast.error('Selecciona una variante')
-      return
+      return false
     }
 
     if (availableStock <= 0) {
       toast.error('No queda mas stock disponible de este articulo')
-      return
+      return false
     }
 
     const amount = Math.min(quantity, availableStock)
@@ -251,6 +252,13 @@ export default function ProductDetail({
     }
 
     toast.success(`${product.name}${selectedVariant ? ` (${selectedVariant.size})` : ''} agregado`)
+    return true
+  }
+
+  function buyNow() {
+    if (addToCart()) {
+      router.push('/shop/cart')
+    }
   }
 
   const paymentText = 'Paga hasta en 6 cuotas sin interes con'
@@ -260,7 +268,6 @@ export default function ProductDetail({
       <div className="product-detail-grid">
         <section className="gallery-column" aria-label="Galeria del producto">
           <div className="desktop-thumbs">
-            <span className="discount-pill">-15%</span>
             {safeDisplayImages.slice(0, 6).map((image, index) => (
               <button
                 key={`${image}-${index}`}
@@ -324,12 +331,6 @@ export default function ProductDetail({
           <h1>{product.name}</h1>
 
           <div className="rating-row">
-            <span>4.7</span>
-            <span className="stars">
-              {Array.from({ length: 5 }).map((_, index) => <Star key={index} className="size-3 fill-red-600 text-red-600" />)}
-            </span>
-            <span>(126 resenas)</span>
-            <span className="divider" />
             <span>Vendido por Multi Accesorios</span>
             <BrandLogo className="seller-dot" alt="" sizes="16px" />
           </div>
@@ -439,7 +440,7 @@ export default function ProductDetail({
             <ShoppingCart className="size-5" />
             Agregar al carrito
           </button>
-          <button type="button" className="buy-now-button">
+          <button type="button" className="buy-now-button" onClick={buyNow}>
             <Zap className="size-4" />
             Comprar ahora
           </button>
@@ -464,7 +465,7 @@ export default function ProductDetail({
 
           <div className="seller-box">
             <BrandLogo className="seller-logo" alt="" sizes="34px" />
-            <span><b>Multi Accesorios</b><small>+10.000 ventas</small></span>
+            <span><b>Multi Accesorios</b><small>Tienda oficial</small></span>
             <span className="verified">Verificado</span>
           </div>
         </aside>
@@ -474,7 +475,6 @@ export default function ProductDetail({
             <button className="active">Descripcion</button>
             <button>Especificaciones</button>
             <button>Que incluye</button>
-            <button>Resenas (126)</button>
             <button>Preguntas frecuentes</button>
           </div>
           <p>{product.description || 'Producto seleccionado por Multi Accesorios, disponible para retiro en tienda y despacho a todo Chile.'}</p>

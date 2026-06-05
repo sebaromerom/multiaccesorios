@@ -307,16 +307,6 @@ export default async function ProductPage({
           align-items: center;
         }
 
-        .discount-pill {
-          align-self: flex-start;
-          background: #e30613;
-          color: #fff;
-          border-radius: 999px;
-          padding: 4px 8px;
-          font-size: 11px;
-          font-weight: 900;
-        }
-
         .thumb-button {
           position: relative;
           width: 74px;
@@ -439,17 +429,6 @@ export default async function ProductPage({
           font-size: 12px;
           font-weight: 700;
           margin-bottom: 26px;
-        }
-
-        .stars {
-          display: inline-flex;
-          gap: 2px;
-        }
-
-        .divider {
-          width: 1px;
-          height: 14px;
-          background: #ddd;
         }
 
         .seller-dot,
@@ -946,7 +925,7 @@ export default async function ProductPage({
             scrollbar-width: none;
             -webkit-overflow-scrolling: touch;
             overscroll-behavior-x: contain;
-            touch-action: pan-y pinch-zoom;
+            touch-action: pan-y;
             user-select: none;
           }
 
@@ -1014,13 +993,14 @@ export default async function ProductPage({
           .variant-grid {
             display: flex;
             overflow-x: auto;
+            overflow-y: hidden;
             gap: 8px;
             margin: 0 -16px;
             padding: 8px 16px 10px;
             scrollbar-width: none;
             -webkit-overflow-scrolling: touch;
             overscroll-behavior-x: contain;
-            touch-action: pan-x pan-y;
+            touch-action: pan-x;
             cursor: grab;
             user-select: none;
           }

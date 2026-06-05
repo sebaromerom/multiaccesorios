@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
@@ -79,7 +80,14 @@ function DropZone({
         <div className="grid grid-cols-3 gap-2">
           {images.map((img, i) => (
             <div key={i} className="relative group aspect-square">
-              <img src={img.url} alt="" className="w-full h-full object-cover rounded border border-zinc-200" />
+              <Image
+                src={img.url}
+                alt=""
+                fill
+                sizes="120px"
+                unoptimized
+                className="rounded border border-zinc-200 object-cover"
+              />
               <button
                 type="button"
                 onClick={() => onRemove(i)}

@@ -622,9 +622,23 @@ export default async function ShopPage({
           top: 16px;
           right: 16px;
           z-index: 2;
+          width: 38px;
+          height: 38px;
+          border-radius: 999px;
+          display: grid;
+          place-items: center;
           color: #606060;
-          background: transparent;
-          border: 0;
+          background: rgba(255, 255, 255, 0.92);
+          border: 1px solid rgba(0, 0, 0, 0.06);
+          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+          line-height: 0;
+        }
+
+        .product-fav svg {
+          width: 22px;
+          height: 22px;
+          display: block;
+          stroke-width: 2.2;
         }
 
         .product-info {
@@ -898,6 +912,13 @@ export default async function ShopPage({
           .product-fav {
             top: 9px;
             right: 9px;
+            width: 32px;
+            height: 32px;
+          }
+
+          .product-fav svg {
+            width: 19px;
+            height: 19px;
           }
 
           .product-info {

@@ -149,7 +149,22 @@ export default async function Home() {
         .home-product-image { position: relative; height: 155px; display: block; padding: 12px; background: #fafafa; }
         .home-product-image img { width: 100%; height: 100%; object-fit: contain; }
         .home-stock { position: absolute; top: 9px; left: 9px; border: 1px solid #bfe7c8; border-radius: 3px; background: #f6fff7; color: #1f9a3f; padding: 3px 6px; font-size: 8px; font-weight: 800; }
-        .home-heart { position: absolute; top: 9px; right: 9px; color: #555; }
+        .home-heart {
+          position: absolute;
+          top: 9px;
+          right: 9px;
+          width: 28px;
+          height: 28px;
+          border-radius: 999px;
+          display: grid;
+          place-items: center;
+          color: #555;
+          background: rgba(255,255,255,.92);
+          border: 1px solid rgba(0,0,0,.06);
+          box-shadow: 0 6px 16px rgba(0,0,0,.08);
+          line-height: 0;
+        }
+        .home-heart svg { width: 16px; height: 16px; display: block; stroke-width: 2.2; }
         .home-product-info { padding: 10px 12px 12px; }
         .home-product-name { height: 34px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; color: #111; text-decoration: none; font-size: 10px; line-height: 1.35; font-weight: 900; text-transform: uppercase; }
         .home-product-price { display: block; margin-top: 10px; color: #e30613; font-size: 15px; font-weight: 900; }
@@ -301,7 +316,7 @@ export default async function Home() {
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={product.imageUrl!} alt={product.name} />
                       <span className="home-stock">En stock</span>
-                      <Heart className="home-heart size-4" />
+                      <span className="home-heart"><Heart /></span>
                     </Link>
                     <div className="home-product-info">
                       <Link href={`/shop/${product.id}`} className="home-product-name">{product.name}</Link>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -129,7 +130,14 @@ export default function NewProductPage() {
                     <div className="grid grid-cols-3 gap-2 w-full">
                       {previews.map((src, i) => (
                         <div key={i} className="relative group aspect-square">
-                          <img src={src} className="w-full h-full object-cover rounded-md" alt="Preview" />
+                          <Image
+                            src={src}
+                            alt="Preview"
+                            fill
+                            sizes="120px"
+                            unoptimized
+                            className="rounded-md object-cover"
+                          />
                           <button
                             type="button"
                             onClick={(e) => { e.stopPropagation(); removeImage(i) }}
