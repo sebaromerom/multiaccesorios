@@ -504,23 +504,28 @@ export default async function ProductPage({
         .variant-grid {
           display: grid;
           grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 12px;
+          gap: 10px;
+          max-height: 250px;
+          overflow-y: auto;
+          padding: 2px 4px 2px 2px;
+          scrollbar-width: thin;
         }
 
         .variant-card {
-          min-height: 78px;
+          min-height: 66px;
           border: 1px solid #e1e1e1;
           border-radius: 8px;
           background: #fff;
           display: grid;
-          grid-template-columns: 48px 1fr;
-          gap: 10px;
+          grid-template-columns: 38px 1fr;
+          gap: 9px;
           align-items: center;
-          padding: 10px;
+          padding: 8px;
           position: relative;
           text-align: left;
           cursor: pointer;
-          contain: layout paint;
+          contain: layout;
+          overflow: hidden;
         }
 
         .variant-card.active {
@@ -535,8 +540,8 @@ export default async function ProductPage({
 
         .variant-image-wrap {
           position: relative;
-          width: 44px;
-          height: 54px;
+          width: 36px;
+          height: 46px;
           border-radius: 5px;
           background: #fafafa;
           overflow: hidden;
@@ -548,11 +553,20 @@ export default async function ProductPage({
         }
 
         .variant-text strong {
-          display: block;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
           color: #111;
-          font-size: 11px;
+          font-size: 10px;
           line-height: 1.22;
           font-weight: 900;
+          overflow-wrap: anywhere;
+        }
+
+        .variant-text {
+          min-width: 0;
+          padding-right: 16px;
         }
 
         .variant-text small {
@@ -569,10 +583,10 @@ export default async function ProductPage({
 
         .variant-check {
           position: absolute;
-          top: -7px;
-          right: -7px;
-          width: 20px;
-          height: 20px;
+          top: 5px;
+          right: 5px;
+          width: 18px;
+          height: 18px;
           border-radius: 999px;
           display: grid;
           place-items: center;
@@ -997,10 +1011,11 @@ export default async function ProductPage({
             gap: 8px;
             margin: 0 -16px;
             padding: 8px 16px 10px;
+            max-height: none;
             scrollbar-width: none;
             -webkit-overflow-scrolling: touch;
             overscroll-behavior-x: contain;
-            touch-action: pan-x;
+            touch-action: pan-x pan-y;
             cursor: grab;
             user-select: none;
           }
@@ -1016,6 +1031,7 @@ export default async function ProductPage({
             gap: 7px;
             padding: 8px;
             transform: translateZ(0);
+            contain: layout;
           }
 
           .variant-card.active {

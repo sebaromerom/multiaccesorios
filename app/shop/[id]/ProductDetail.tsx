@@ -58,9 +58,6 @@ export default function ProductDetail({
   const [clicked, setClicked] = useState(false)
   const galleryTrackRef = useRef<HTMLDivElement | null>(null)
   const galleryDragRef = useRef<{ startX: number; lastX: number; startIndex: number } | null>(null)
-  const variantGridRef = useRef<HTMLDivElement | null>(null)
-  const variantDragRef = useRef<{ startX: number; scrollLeft: number } | null>(null)
-  const variantDidDragRef = useRef(false)
   const galleryTouchRef = useRef<{
     startX: number
     startY: number
@@ -194,33 +191,7 @@ export default function ProductDetail({
     setGalleryImage(touchState.startIndex + (deltaX < 0 ? 1 : -1))
   }
 
-  function startVariantDrag(clientX: number, scrollLeft: number) {
-    variantDragRef.current = { startX: clientX, scrollLeft }
-    variantDidDragRef.current = false
-  }
-
-  function moveVariantDrag(clientX: number, target: HTMLDivElement) {
-    const drag = variantDragRef.current
-    if (!drag) return
-
-    const deltaX = drag.startX - clientX
-
-    if (Math.abs(deltaX) > 5) {
-      variantDidDragRef.current = true
-    }
-
-    target.scrollLeft = drag.scrollLeft + deltaX
-  }
-
-  function endVariantDrag() {
-    variantDragRef.current = null
-    setTimeout(() => {
-      variantDidDragRef.current = false
-    }, 0)
-  }
-
   function handleVariantClick(size: string, isAvailable: boolean) {
-    if (variantDidDragRef.current) return
     if (isAvailable) selectVariant(size)
   }
 
@@ -350,32 +321,7 @@ export default function ProductDetail({
             <div className="variant-section">
               <div className="section-label">Sabor / Variante</div>
               <div
-                ref={variantGridRef}
                 className="variant-grid"
-                onPointerDown={(event) => {
-                  if (event.pointerType === 'touch') return
-                  startVariantDrag(event.clientX, event.currentTarget.scrollLeft)
-                  event.currentTarget.setPointerCapture(event.pointerId)
-                }}
-                onPointerMove={(event) => {
-                  if (event.pointerType === 'touch') return
-                  moveVariantDrag(event.clientX, event.currentTarget)
-                }}
-                onPointerUp={endVariantDrag}
-                onPointerCancel={endVariantDrag}
-                onPointerLeave={endVariantDrag}
-                onTouchStart={(event) => {
-                  const touch = event.touches[0]
-                  if (!touch) return
-                  startVariantDrag(touch.clientX, event.currentTarget.scrollLeft)
-                }}
-                onTouchMove={(event) => {
-                  const touch = event.touches[0]
-                  if (!touch) return
-                  moveVariantDrag(touch.clientX, event.currentTarget)
-                }}
-                onTouchEnd={endVariantDrag}
-                onTouchCancel={endVariantDrag}
               >
                 {variants.map((variant) => {
                   const isSelected = selectedVariant?.id === variant.id
