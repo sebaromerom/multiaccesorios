@@ -19,6 +19,7 @@ import {
   Truck,
 } from 'lucide-react'
 import { useCartStore } from '@/lib/store'
+import BrandLogo from '@/components/BrandLogo'
 
 type DiscountResult = {
   subtotal: number
@@ -144,7 +145,7 @@ export default function CartPage() {
         .cart-root { min-height: 100vh; background: #f6f6f5; color: #171717; font-family: var(--font-inter), Inter, sans-serif; letter-spacing: 0; }
         .cart-shell { max-width: 1510px; min-height: 100vh; margin: 0 auto; background: #fff; box-shadow: 0 18px 60px rgba(15,15,15,.08); }
         .cart-header { height: 82px; display: flex; align-items: center; gap: 42px; padding: 0 52px; border-bottom: 1px solid #e5e5e5; }
-        .cart-mark { width: 42px; height: 42px; border-radius: 6px; background: #e30613; color: white; display: grid; place-items: center; font-size: 27px; font-weight: 900; font-style: italic; }
+        .cart-mark { position: relative; width: 42px; height: 42px; border-radius: 6px; background: #fff; display: block; overflow: hidden; flex: 0 0 auto; }
         .cart-content { max-width: 1120px; margin: 0 auto; padding: 38px 24px 60px; }
         .cart-grid { display: grid; grid-template-columns: minmax(0,1fr) 340px; gap: 26px; align-items: start; }
         .cart-panel { border: 1px solid #e5e5e5; border-radius: 6px; background: #fff; }
@@ -167,7 +168,7 @@ export default function CartPage() {
       <div className="cart-shell">
         <header className="cart-header">
           <Link href="/shop" className="flex items-center gap-3 shrink-0">
-            <span className="cart-mark">m</span>
+            <BrandLogo className="cart-mark" priority sizes="42px" />
             <span className="text-sm font-extrabold leading-tight">MULTI<br />ACCESORIOS</span>
           </Link>
           <Link href="/shop" className="cart-search h-11 flex-1 max-w-2xl rounded-[5px] border border-zinc-300 flex items-center px-4 text-sm text-zinc-400 hover:border-red-300">

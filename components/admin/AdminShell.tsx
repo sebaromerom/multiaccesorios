@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
+import BrandLogo from '@/components/BrandLogo'
 import {
   BarChart3,
   Boxes,
@@ -44,7 +45,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
         .admin-shell { min-height: 100vh; background: #f6f6f5; color: #171717; font-family: var(--font-inter), Inter, sans-serif; letter-spacing: 0; }
         .admin-sidebar { position: fixed; inset: 0 auto 0 0; width: 244px; background: #111; color: #fff; z-index: 50; display: flex; flex-direction: column; }
         .admin-brand { height: 78px; padding: 0 22px; display: flex; align-items: center; gap: 11px; border-bottom: 1px solid #292929; }
-        .admin-brand-mark { width: 36px; height: 36px; border-radius: 6px; background: #e30613; color: #fff; display: grid; place-items: center; font-size: 23px; font-weight: 900; font-style: italic; }
+        .admin-brand-mark { position: relative; width: 36px; height: 36px; border-radius: 6px; background: #fff; display: block; overflow: hidden; flex: 0 0 auto; }
         .admin-nav { padding: 18px 12px; display: flex; flex-direction: column; gap: 4px; }
         .admin-nav-link { display: flex; align-items: center; gap: 11px; min-height: 42px; padding: 0 12px; border-radius: 5px; color: #b7b7b7; font-size: 13px; font-weight: 600; transition: .16s ease; }
         .admin-nav-link:hover { background: #202020; color: #fff; }
@@ -71,7 +72,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 
       <aside className={`admin-sidebar ${open ? 'open' : ''}`}>
         <div className="admin-brand">
-          <span className="admin-brand-mark">m</span>
+          <BrandLogo className="admin-brand-mark" sizes="36px" />
           <div>
             <p className="text-sm font-extrabold leading-tight">MULTI ACCESORIOS</p>
             <p className="text-[10px] text-zinc-400">Panel de administracion</p>

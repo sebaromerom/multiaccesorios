@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import AddToCartButton from '@/app/shop/AddToCartButton'
 import CartHeaderLink from '@/app/shop/CartHeaderLink'
 import HomeSearchBar from '@/app/HomeSearchBar'
+import BrandLogo from '@/components/BrandLogo'
 import {
   BadgePercent,
   Cable,
@@ -105,7 +106,7 @@ export default async function Home() {
         .home-topbar-item { display: inline-flex; gap: 8px; align-items: center; white-space: nowrap; }
         .home-header { display: grid; grid-template-columns: 220px minmax(360px, 1fr) 310px; gap: 24px; align-items: center; padding: 22px 52px 16px; }
         .home-brand { display: inline-flex; align-items: center; gap: 12px; color: #111; text-decoration: none; }
-        .home-brand-mark { width: 52px; height: 52px; border-radius: 8px; display: grid; place-items: center; background: #e30613; color: #fff; font-family: Georgia,serif; font-size: 39px; line-height: 1; font-style: italic; font-weight: 700; }
+        .home-brand-mark { position: relative; width: 52px; height: 52px; border-radius: 8px; display: block; overflow: hidden; background: #fff; flex: 0 0 auto; }
         .home-brand-text { font-size: 21px; line-height: .9; font-weight: 900; }
         .shop-search-control { height: 48px; border: 1px solid #d9d9d9; border-radius: 999px; display: grid; grid-template-columns: 1fr auto auto; align-items: center; overflow: hidden; background: #fff; }
         .shop-search-control input { min-width: 0; height: 100%; border: 0; outline: 0; padding: 0 22px; font-size: 13px; color: #333; }
@@ -170,7 +171,7 @@ export default async function Home() {
           .home-mobile-header { display: block; padding: 16px; border-bottom: 1px solid #ededed; background: #fff; position: sticky; top: 0; z-index: 20; }
           .home-mobile-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
           .home-mobile-actions { display: flex; align-items: center; gap: 18px; }
-          .home-mobile-header .home-brand-mark { width: 42px; height: 42px; font-size: 31px; }
+          .home-mobile-header .home-brand-mark { width: 42px; height: 42px; }
           .home-mobile-header .home-brand-text { font-size: 15px; }
           .home-mobile-header .shop-search-control { height: 42px; border-radius: 5px; }
           .home-mobile-header .shop-search-submit { height: 42px; width: 48px; }
@@ -352,7 +353,7 @@ export default async function Home() {
 function HomeBrand() {
   return (
     <Link href="/" className="home-brand">
-      <span className="home-brand-mark">m</span>
+      <BrandLogo className="home-brand-mark" priority sizes="52px" />
       <span className="home-brand-text">MULTI<br />ACCESORIOS</span>
     </Link>
   )

@@ -16,6 +16,7 @@ import {
 import ProductDetail from './ProductDetail'
 import SearchBar from '../SearchBar'
 import CartHeaderLink from '../CartHeaderLink'
+import BrandLogo from '@/components/BrandLogo'
 
 export const dynamic = 'force-dynamic'
 
@@ -126,18 +127,14 @@ export default async function ProductPage({
         }
 
         .detail-brand-mark {
+          position: relative;
           width: 56px;
           height: 56px;
           border-radius: 10px;
-          background: #e30613;
-          color: #fff;
-          display: grid;
-          place-items: center;
-          font-family: Georgia, serif;
-          font-size: 42px;
-          font-style: italic;
-          font-weight: 700;
-          line-height: 1;
+          background: #fff;
+          display: block;
+          overflow: hidden;
+          flex: 0 0 auto;
         }
 
         .detail-brand-text {
@@ -457,13 +454,11 @@ export default async function ProductPage({
 
         .seller-dot,
         .seller-logo {
-          background: #e30613;
-          color: #fff;
-          display: inline-grid;
-          place-items: center;
-          font-family: Georgia, serif;
-          font-style: italic;
-          font-weight: 900;
+          position: relative;
+          background: #fff;
+          display: inline-block;
+          overflow: hidden;
+          flex: 0 0 auto;
         }
 
         .seller-dot {
@@ -546,6 +541,7 @@ export default async function ProductPage({
           position: relative;
           text-align: left;
           cursor: pointer;
+          contain: layout paint;
         }
 
         .variant-card.active {
@@ -901,7 +897,6 @@ export default async function ProductPage({
             width: 42px;
             height: 42px;
             border-radius: 8px;
-            font-size: 31px;
           }
 
           .mobile-brand .detail-brand-text {
@@ -1020,8 +1015,14 @@ export default async function ProductPage({
             display: flex;
             overflow-x: auto;
             gap: 8px;
-            padding-bottom: 8px;
+            margin: 0 -16px;
+            padding: 8px 16px 10px;
             scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-x: contain;
+            touch-action: pan-x pan-y;
+            cursor: grab;
+            user-select: none;
           }
 
           .variant-grid::-webkit-scrollbar {
@@ -1034,6 +1035,18 @@ export default async function ProductPage({
             grid-template-columns: 36px 1fr;
             gap: 7px;
             padding: 8px;
+            transform: translateZ(0);
+          }
+
+          .variant-card.active {
+            box-shadow: inset 0 0 0 1px rgba(227,6,19,.18);
+          }
+
+          .variant-check {
+            top: 3px;
+            right: 3px;
+            width: 17px;
+            height: 17px;
           }
 
           .variant-image-wrap {
@@ -1128,7 +1141,7 @@ export default async function ProductPage({
 
           <header className="detail-header">
             <Link href="/" className="detail-brand">
-              <span className="detail-brand-mark">m</span>
+              <BrandLogo className="detail-brand-mark" priority sizes="56px" />
               <span className="detail-brand-text">MULTI<br />ACCESORIOS</span>
             </Link>
             <Suspense>
@@ -1157,7 +1170,7 @@ export default async function ProductPage({
             <div className="mobile-detail-top">
               <Link href="/shop" className="mobile-back" aria-label="Volver a la tienda"><ChevronLeft className="size-5" /></Link>
               <Link href="/" className="mobile-brand">
-                <span className="detail-brand-mark">m</span>
+                <BrandLogo className="detail-brand-mark" priority sizes="42px" />
                 <span className="detail-brand-text">MULTI<br />ACCESORIOS</span>
               </Link>
               <CartHeaderLink mobile />

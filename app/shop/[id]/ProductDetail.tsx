@@ -17,6 +17,7 @@ import {
   Zap,
 } from 'lucide-react'
 import { useCartStore } from '@/lib/store'
+import BrandLogo from '@/components/BrandLogo'
 
 type Variant = {
   id: string
@@ -56,6 +57,9 @@ export default function ProductDetail({
   const [clicked, setClicked] = useState(false)
   const galleryTrackRef = useRef<HTMLDivElement | null>(null)
   const galleryDragRef = useRef<{ startX: number; lastX: number; startIndex: number } | null>(null)
+  const variantGridRef = useRef<HTMLDivElement | null>(null)
+  const variantDragRef = useRef<{ startX: number; scrollLeft: number } | null>(null)
+  const variantDidDragRef = useRef(false)
   const galleryTouchRef = useRef<{
     startX: number
     startY: number
@@ -189,6 +193,36 @@ export default function ProductDetail({
     setGalleryImage(touchState.startIndex + (deltaX < 0 ? 1 : -1))
   }
 
+  function startVariantDrag(clientX: number, scrollLeft: number) {
+    variantDragRef.current = { startX: clientX, scrollLeft }
+    variantDidDragRef.current = false
+  }
+
+  function moveVariantDrag(clientX: number, target: HTMLDivElement) {
+    const drag = variantDragRef.current
+    if (!drag) return
+
+    const deltaX = drag.startX - clientX
+
+    if (Math.abs(deltaX) > 5) {
+      variantDidDragRef.current = true
+    }
+
+    target.scrollLeft = drag.scrollLeft + deltaX
+  }
+
+  function endVariantDrag() {
+    variantDragRef.current = null
+    setTimeout(() => {
+      variantDidDragRef.current = false
+    }, 0)
+  }
+
+  function handleVariantClick(size: string, isAvailable: boolean) {
+    if (variantDidDragRef.current) return
+    if (isAvailable) selectVariant(size)
+  }
+
   function addToCart() {
     if (hasVariants && !selectedVariant) {
       toast.error('Selecciona una variante')
@@ -297,7 +331,7 @@ export default function ProductDetail({
             <span>(126 resenas)</span>
             <span className="divider" />
             <span>Vendido por Multi Accesorios</span>
-            <span className="seller-dot">m</span>
+            <BrandLogo className="seller-dot" alt="" sizes="16px" />
           </div>
 
           <div className="price-block">
@@ -314,7 +348,34 @@ export default function ProductDetail({
           {hasVariants && (
             <div className="variant-section">
               <div className="section-label">Sabor / Variante</div>
-              <div className="variant-grid">
+              <div
+                ref={variantGridRef}
+                className="variant-grid"
+                onPointerDown={(event) => {
+                  if (event.pointerType === 'touch') return
+                  startVariantDrag(event.clientX, event.currentTarget.scrollLeft)
+                  event.currentTarget.setPointerCapture(event.pointerId)
+                }}
+                onPointerMove={(event) => {
+                  if (event.pointerType === 'touch') return
+                  moveVariantDrag(event.clientX, event.currentTarget)
+                }}
+                onPointerUp={endVariantDrag}
+                onPointerCancel={endVariantDrag}
+                onPointerLeave={endVariantDrag}
+                onTouchStart={(event) => {
+                  const touch = event.touches[0]
+                  if (!touch) return
+                  startVariantDrag(touch.clientX, event.currentTarget.scrollLeft)
+                }}
+                onTouchMove={(event) => {
+                  const touch = event.touches[0]
+                  if (!touch) return
+                  moveVariantDrag(touch.clientX, event.currentTarget)
+                }}
+                onTouchEnd={endVariantDrag}
+                onTouchCancel={endVariantDrag}
+              >
                 {variants.map((variant) => {
                   const isSelected = selectedVariant?.id === variant.id
                   const itemInCart = cartItems.find((item) => item.id === `${product.id}-${variant.size}`)
@@ -327,12 +388,19 @@ export default function ProductDetail({
                     <button
                       key={variant.id}
                       type="button"
-                      onClick={() => isAvailable && selectVariant(variant.size)}
+                      onClick={() => handleVariantClick(variant.size, isAvailable)}
                       disabled={!isAvailable}
                       className={`variant-card${isSelected ? ' active' : ''}${!isAvailable ? ' disabled' : ''}`}
                     >
                       <span className="variant-image-wrap">
-                        <Image src={variantImage} alt="" fill sizes="56px" className={hasOwnVariantImage ? '' : 'fallback-variant-image'} />
+                        <Image
+                          src={variantImage}
+                          alt=""
+                          fill
+                          sizes="(max-width: 760px) 34px, 56px"
+                          draggable={false}
+                          className={hasOwnVariantImage ? '' : 'fallback-variant-image'}
+                        />
                       </span>
                       <span className="variant-text">
                         <strong>{variant.size}</strong>
@@ -395,7 +463,7 @@ export default function ProductDetail({
           </div>
 
           <div className="seller-box">
-            <span className="seller-logo">m</span>
+            <BrandLogo className="seller-logo" alt="" sizes="34px" />
             <span><b>Multi Accesorios</b><small>+10.000 ventas</small></span>
             <span className="verified">Verificado</span>
           </div>

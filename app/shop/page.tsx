@@ -5,6 +5,7 @@ import Link from 'next/link'
 import SearchBar from './SearchBar'
 import CartHeaderLink from './CartHeaderLink'
 import SortSelect from './SortSelect'
+import BrandLogo from '@/components/BrandLogo'
 import { Suspense } from 'react'
 import { Category } from '@prisma/client'
 import {
@@ -222,18 +223,14 @@ export default async function ShopPage({
         }
 
         .shop-brand-mark {
+          position: relative;
           width: 56px;
           height: 56px;
           border-radius: 10px;
-          background: #e30613;
-          color: #fff;
-          display: grid;
-          place-items: center;
-          font-family: Georgia, serif;
-          font-size: 42px;
-          font-style: italic;
-          font-weight: 700;
-          line-height: 1;
+          background: #fff;
+          display: block;
+          overflow: hidden;
+          flex: 0 0 auto;
         }
 
         .shop-brand-text {
@@ -769,7 +766,6 @@ export default async function ShopPage({
           .shop-mobile-header .shop-brand-mark {
             width: 42px;
             height: 42px;
-            font-size: 31px;
             border-radius: 8px;
           }
 
@@ -949,7 +945,7 @@ export default async function ShopPage({
 
           <header className="shop-header">
             <Link href="/" className="shop-brand">
-              <span className="shop-brand-mark">m</span>
+              <BrandLogo className="shop-brand-mark" priority sizes="56px" />
               <span className="shop-brand-text">MULTI<br />ACCESORIOS</span>
             </Link>
 
@@ -980,7 +976,7 @@ export default async function ShopPage({
           <header className="shop-mobile-header">
             <div className="shop-mobile-top">
               <Link href="/" className="shop-brand">
-                <span className="shop-brand-mark">m</span>
+                <BrandLogo className="shop-brand-mark" priority sizes="42px" />
                 <span className="shop-brand-text">MULTI<br />ACCESORIOS</span>
               </Link>
               <div className="shop-mobile-actions">

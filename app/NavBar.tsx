@@ -2,6 +2,7 @@
 
 import { useState } from 'react'; // Eliminamos useEffect
 import Link from 'next/link';
+import BrandLogo from '@/components/BrandLogo';
 
 export default function NavBar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -16,8 +17,9 @@ export default function NavBar() {
           
           {/* LOGO */}
           <div className="flex-shrink-0">
-            <Link href="/" onClick={closeMenu} className="text-xl md:text-2xl font-bold tracking-wider text-black block leading-tight">
-              MULTI <br className="sm:hidden" /> ACCESORIOS
+            <Link href="/" onClick={closeMenu} className="flex items-center gap-3 text-xl md:text-2xl font-bold tracking-wider text-black leading-tight">
+              <BrandLogo className="relative block h-11 w-11 overflow-hidden rounded-lg bg-white" priority sizes="44px" />
+              <span>MULTI <br className="sm:hidden" /> ACCESORIOS</span>
             </Link>
           </div>
 
