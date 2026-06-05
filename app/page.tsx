@@ -53,11 +53,13 @@ export default async function Home() {
         ],
       },
       orderBy: { stock: 'desc' },
+      include: { variants: { select: { id: true }, take: 1 } },
       take: 8,
     }),
     prisma.product.findMany({
       where: { stock: { gt: 0 }, imageUrl: { not: null }, category: { in: ['Carcasa', 'Audifonos', 'Cargador', 'Cable', 'Otros'] } },
       orderBy: { createdAt: 'desc' },
+      include: { variants: { select: { id: true }, take: 1 } },
       take: 10,
     }),
     prisma.product.groupBy({
@@ -67,7 +69,7 @@ export default async function Home() {
     }),
     prisma.discountRule.findFirst({
       where: { active: true, productId: { not: null }, product: { stock: { gt: 0 }, imageUrl: { not: null } } },
-      include: { product: true },
+      include: { product: { include: { variants: { select: { id: true }, take: 1 } } } },
       orderBy: { createdAt: 'desc' },
     }),
   ])
@@ -82,17 +84,17 @@ export default async function Home() {
     return acc
   }, {} as Record<string, number>)
 
-  const offerProduct = activeDiscount?.product ?? trending[0]
-  const offerPrice = activeDiscount?.type === 'percentage'
+  const offerProduct = activeDiscount?.product ?? trending[0] ?? null
+  const offerPrice = offerProduct && activeDiscount?.type === 'percentage'
     ? Math.max(0, offerProduct.price * (1 - activeDiscount.value / 100))
-    : activeDiscount?.type === 'fixed'
+    : offerProduct && activeDiscount?.type === 'fixed'
       ? Math.max(0, offerProduct.price - activeDiscount.value)
-      : offerProduct.price
+      : offerProduct?.price ?? 0
   const offerBadge = activeDiscount?.type === 'percentage'
     ? `-${activeDiscount.value}%`
     : activeDiscount?.type === '2x1'
       ? '2X1'
-      : activeDiscount ? 'OFERTA' : '-20%'
+      : activeDiscount ? 'OFERTA' : null
 
   return (
     <div className="home-marketplace">
@@ -130,6 +132,11 @@ export default async function Home() {
         .home-hero h1 span { color: #e30613; }
         .home-hero-benefits { display: flex; gap: 24px; }
         .home-hero-benefit { display: flex; align-items: center; gap: 8px; font-size: 10px; font-weight: 800; color: #555; }
+        .home-hero-actions { display: flex; align-items: center; gap: 10px; margin-top: 22px; }
+        .home-primary-cta,
+        .home-secondary-cta { height: 38px; padding: 0 18px; border-radius: 5px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; font-size: 11px; font-weight: 900; }
+        .home-primary-cta { background: #e30613; color: #fff; }
+        .home-secondary-cta { border: 1px solid #ddd; color: #111; background: #fff; }
         .home-hero-products { position: absolute; inset: 0 2% 0 45%; display: flex; align-items: flex-end; justify-content: center; gap: 2px; }
         .home-hero-products img { width: 24%; height: 80%; object-fit: contain; filter: drop-shadow(0 12px 12px rgba(0,0,0,.12)); }
         .home-hero-products img:nth-child(2) { height: 92%; }
@@ -196,11 +203,13 @@ export default async function Home() {
           .home-hero-kicker { font-size: 7px; }
           .home-hero h1 { margin: 8px 0 14px; font-size: 17px; }
           .home-hero-benefits { display: none; }
+          .home-hero-actions { margin-top: 0; }
+          .home-secondary-cta { display: none; }
           .home-hero-products { inset: 0 -5% 0 48%; }
           .home-hero-products img { width: 30%; height: 72%; }
           .home-hero-products img:nth-child(2) { height: 82%; }
           .home-hero-discount { display: none; }
-          .home-hero-copy .home-offer-link { display: inline-flex !important; height: 30px; margin-top: 0; padding: 0 12px; font-size: 9px; }
+          .home-hero-copy .home-primary-cta { height: 30px; padding: 0 12px; font-size: 9px; }
           .home-categories { display: flex; gap: 12px; overflow-x: auto; scrollbar-width: none; margin-right: -14px; padding-right: 14px; }
           .home-categories::-webkit-scrollbar { display: none; }
           .home-category { flex: 0 0 74px; min-height: 76px; gap: 7px; font-size: 9px; }
@@ -279,7 +288,12 @@ export default async function Home() {
                 <span className="home-hero-benefit"><ShieldCheck className="size-5" /> Compra segura</span>
                 <span className="home-hero-benefit"><PackageCheck className="size-5" /> Garantia y cambios</span>
               </div>
-              <Link href="/shop" className="home-offer-link hidden">Ver productos</Link>
+              <div className="home-hero-actions">
+                <Link href="/shop" className="home-primary-cta">Comprar ahora</Link>
+                <Link href={activeDiscount ? '/shop?promo=1&page=1' : '/shop?sort=newest'} className="home-secondary-cta">
+                  {activeDiscount ? 'Ver ofertas' : 'Ver nuevos'}
+                </Link>
+              </div>
             </div>
             <div className="home-hero-products">
               {heroProducts.slice(0, 3).map((product) => (
@@ -287,7 +301,7 @@ export default async function Home() {
                 <img key={product.id} src={product.imageUrl!} alt={product.name} />
               ))}
             </div>
-            <span className="home-hero-discount">HASTA<br />20%<br />OFF</span>
+            {activeDiscount && offerBadge && <span className="home-hero-discount">{offerBadge}</span>}
           </section>
 
           <section className="home-section" id="blog">
@@ -307,36 +321,46 @@ export default async function Home() {
           </section>
 
           <section className="home-section">
-            <div className="home-section-head"><h2>Productos en tendencia</h2><Link href="/shop">Ver todos</Link></div>
+            <div className="home-section-head"><h2>Productos destacados</h2><Link href="/shop">Ver todos</Link></div>
             <div className="home-trending-layout">
               <div className="home-product-grid">
-                {trending.map((product) => (
-                  <article key={product.id} className="home-product-card">
-                    <Link href={`/shop/${product.id}`} className="home-product-image">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={product.imageUrl!} alt={product.name} />
-                      <span className="home-stock">En stock</span>
-                      <span className="home-heart"><Heart /></span>
-                    </Link>
-                    <div className="home-product-info">
-                      <Link href={`/shop/${product.id}`} className="home-product-name">{product.name}</Link>
-                      <span className="home-product-price">${product.price.toLocaleString('es-CL')}</span>
-                      <AddToCartButton product={{ id: product.id, name: product.name, price: product.price, stock: product.stock, imageUrl: product.imageUrl }} />
-                    </div>
-                  </article>
-                ))}
+                {trending.map((product) => {
+                  const hasVariants = product.variants.length > 0
+
+                  return (
+                    <article key={product.id} className="home-product-card">
+                      <Link href={`/shop/${product.id}`} className="home-product-image">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={product.imageUrl!} alt={product.name} />
+                        <span className="home-stock">En stock</span>
+                        <span className="home-heart"><Heart /></span>
+                      </Link>
+                      <div className="home-product-info">
+                        <Link href={`/shop/${product.id}`} className="home-product-name">{product.name}</Link>
+                        <span className="home-product-price">${product.price.toLocaleString('es-CL')}</span>
+                        {hasVariants ? (
+                          <Link href={`/shop/${product.id}`} className="h-10 rounded-[4px] border border-red-600 text-red-600 flex items-center justify-center text-xs font-black no-underline">
+                            Ver opciones
+                          </Link>
+                        ) : (
+                          <AddToCartButton product={{ id: product.id, name: product.name, price: product.price, stock: product.stock, imageUrl: product.imageUrl }} />
+                        )}
+                      </div>
+                    </article>
+                  )
+                })}
               </div>
 
               {offerProduct && (
                 <aside className="home-offer">
-                  <p className="home-offer-kicker">Oferta flash <Zap className="inline size-3" /></p>
+                  <p className="home-offer-kicker">{activeDiscount ? 'Oferta activa' : 'Producto destacado'} <Zap className="inline size-3" /></p>
                   <h3>{offerProduct.name}</h3>
                   <div className="home-offer-price">
                     {activeDiscount && <del>${offerProduct.price.toLocaleString('es-CL')}</del>}
                     <strong>${offerPrice.toLocaleString('es-CL')}</strong>
-                    <span className="ml-2 rounded-[3px] bg-white px-2 py-1 text-[9px] font-bold text-red-600">{offerBadge}</span>
+                    {offerBadge && <span className="ml-2 rounded-[3px] bg-white px-2 py-1 text-[9px] font-bold text-red-600">{offerBadge}</span>}
                   </div>
-                  <Link href={`/shop/${offerProduct.id}`} className="home-offer-link">Ver oferta</Link>
+                  <Link href={`/shop/${offerProduct.id}`} className="home-offer-link">{activeDiscount ? 'Ver oferta' : 'Ver producto'}</Link>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={offerProduct.imageUrl!} alt={offerProduct.name} className="home-offer-product" />
                 </aside>
