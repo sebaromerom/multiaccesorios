@@ -40,7 +40,26 @@ const CATEGORIES = [
   { value: 'Otros', label: 'Hogar', icon: Home },
 ] as const
 
+const CATEGORY_SEARCH_ALIASES: Record<Category, string[]> = {
+  Carcasa: ['carcasa', 'carcasas', 'case', 'cases', 'funda', 'fundas'],
+  Lamina: ['lamina', 'laminas', 'protector', 'protector pantalla', 'vidrio'],
+  Cargador: ['cargador', 'cargadores', 'carga', 'charger'],
+  Cable: ['cable', 'cables', 'usb', 'tipo c', 'lightning'],
+  Audifonos: ['audifono', 'audifonos', 'audio', 'bluetooth', 'tws', 'auricular', 'auriculares'],
+  Vapers: ['vaper', 'vapers', 'vape', 'vapeo', 'desechable', 'desechables', 'puff', 'puffs'],
+  Computacion: ['computacion', 'computo', 'tech', 'pc', 'notebook', 'laptop'],
+  Otros: ['otros', 'hogar', 'oficina', 'accesorio', 'accesorios'],
+}
+
 const PAGE_SIZE = 24
+
+function normalizeSearch(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+}
 
 export default async function ShopPage({
   searchParams,
@@ -49,6 +68,15 @@ export default async function ShopPage({
 }) {
   const { q, cat, page, sort = 'newest', promo, brand } = await searchParams
   const currentPage = Math.max(1, Number(page || 1))
+  const normalizedQuery = normalizeSearch(q ?? '')
+  const categoryMatches = normalizedQuery
+    ? CATEGORIES
+      .filter((category) => {
+        const aliases = CATEGORY_SEARCH_ALIASES[category.value as Category] ?? []
+        return [category.value, category.label, ...aliases].some((term) => normalizeSearch(term).includes(normalizedQuery))
+      })
+      .map((category) => category.value as Category)
+    : []
   const brandTerms = ['Hoco', 'Baseus', 'MLab', 'Borofone', 'Golf', 'Jellico', 'Fujitel', 'IRM', 'Apple', 'Samsung']
   const activeDiscountCount = promo === '1'
     ? await prisma.discountRule.count({ where: { active: true } })
@@ -65,6 +93,7 @@ export default async function ShopPage({
       OR: [
         { name: { contains: q, mode: 'insensitive' as const } },
         { description: { contains: q, mode: 'insensitive' as const } },
+        ...(categoryMatches.length > 0 ? [{ category: { in: categoryMatches } }] : []),
       ],
     } : {}),
   }
@@ -971,7 +1000,7 @@ export default async function ShopPage({
             </Link>
 
             <Suspense>
-              <SearchBar />
+              <SearchBar key={`desktop-${q ?? ''}`} initialQuery={q ?? ''} />
             </Suspense>
 
             <div className="shop-header-actions">
@@ -1005,7 +1034,7 @@ export default async function ShopPage({
               </div>
             </div>
             <Suspense>
-              <SearchBar />
+              <SearchBar key={`mobile-${q ?? ''}`} initialQuery={q ?? ''} />
             </Suspense>
           </header>
 

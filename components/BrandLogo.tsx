@@ -21,7 +21,7 @@ export default function BrandLogo({
         fill
         priority={priority}
         sizes={sizes}
-        style={{ objectFit: 'cover' }}
+        style={{ objectFit: 'contain' }}
       />
     </span>
   )

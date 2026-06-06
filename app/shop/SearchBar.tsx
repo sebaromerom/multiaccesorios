@@ -4,16 +4,17 @@ import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Search } from 'lucide-react'
 
-export default function SearchBar({ instant = true }: { instant?: boolean }) {
+export default function SearchBar({ instant = true, initialQuery = '' }: { instant?: boolean; initialQuery?: string }) {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [query, setQuery] = useState(searchParams.get('q') ?? '')
+  const paramsString = searchParams.toString()
+  const [query, setQuery] = useState(initialQuery)
 
   useEffect(() => {
     if (!instant) return
 
     const timeout = setTimeout(() => {
-      const params = new URLSearchParams(searchParams.toString())
+      const params = new URLSearchParams(paramsString)
 
       if (query.trim()) {
         params.set('q', query.trim())
@@ -22,11 +23,14 @@ export default function SearchBar({ instant = true }: { instant?: boolean }) {
         params.delete('q')
       }
 
-      router.push(`/shop${params.toString() ? `?${params.toString()}` : ''}`)
+      const nextParams = params.toString()
+      if (nextParams !== paramsString) {
+        router.replace(`/shop${nextParams ? `?${nextParams}` : ''}`)
+      }
     }, 300)
 
     return () => clearTimeout(timeout)
-  }, [instant, query, router, searchParams])
+  }, [instant, paramsString, query, router])
 
   function submitSearch() {
     const params = new URLSearchParams()
