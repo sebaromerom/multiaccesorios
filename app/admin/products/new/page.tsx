@@ -103,7 +103,7 @@ export default function NewProductPage() {
       <div className="w-full max-w-lg">
         <div className="mb-6">
           <h1 className="admin-page-title">Agregar producto</h1>
-          <p className="admin-page-kicker">Crea un nuevo producto para el catalogo.</p>
+          <p className="admin-page-kicker">Crea un nuevo producto para el catálogo.</p>
         </div>
         <Card className="border-border">
           <CardHeader>

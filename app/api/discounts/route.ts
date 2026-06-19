@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
+import { adminUnauthorizedResponse, isAdminRequest } from '@/lib/admin-auth'
 
 export async function GET() {
   const discounts = await prisma.discountRule.findMany({
@@ -9,6 +10,10 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  if (!(await isAdminRequest())) {
+    return adminUnauthorizedResponse()
+  }
+
   const body = await req.json()
 
   const discount = await prisma.discountRule.create({

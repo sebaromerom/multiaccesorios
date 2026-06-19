@@ -24,7 +24,7 @@ const NAV_ITEMS = [
   { href: '/admin/products', label: 'Productos', icon: Boxes },
   { href: '/admin/orders', label: 'Pedidos', icon: ReceiptText },
   { href: '/admin/discounts', label: 'Descuentos', icon: Tag },
-  { href: '/admin/metrics', label: 'Metricas', icon: BarChart3 },
+  { href: '/admin/metrics', label: 'Métricas', icon: BarChart3 },
 ]
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
@@ -75,13 +75,13 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
           <BrandLogo className="admin-brand-mark" sizes="36px" />
           <div>
             <p className="text-sm font-extrabold leading-tight">MULTI ACCESORIOS</p>
-            <p className="text-[10px] text-zinc-400">Panel de administracion</p>
+            <p className="text-[10px] text-zinc-400">Panel de administración</p>
           </div>
           <button
             type="button"
             className="admin-sidebar-close ml-auto text-zinc-400 hover:text-white"
             onClick={() => setOpen(false)}
-            aria-label="Cerrar menu"
+            aria-label="Cerrar menú"
           >
             <X className="size-5" />
           </button>
@@ -134,8 +134,8 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
               <Menu className="size-5" />
             </button>
             <div>
-              <p className="text-sm font-bold">{current?.label ?? 'Administracion'}</p>
-              <p className="text-[11px] text-zinc-500 hidden sm:block">Gestion de tienda y catalogo</p>
+              <p className="text-sm font-bold">{current?.label ?? 'Administración'}</p>
+              <p className="text-[11px] text-zinc-500 hidden sm:block">Gestión de tienda y catálogo</p>
             </div>
           </div>
           <div className="flex items-center gap-2 text-xs font-semibold text-zinc-500">

@@ -1,10 +1,15 @@
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
+import { adminUnauthorizedResponse, isAdminRequest } from '@/lib/admin-auth'
 
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  if (!(await isAdminRequest())) {
+    return adminUnauthorizedResponse()
+  }
+
   const { id } = await params
   const body = await req.json()
 
@@ -27,6 +32,10 @@ export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  if (!(await isAdminRequest())) {
+    return adminUnauthorizedResponse()
+  }
+
   const { id } = await params
 
   await prisma.discountRule.delete({ where: { id } })

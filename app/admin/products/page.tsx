@@ -9,6 +9,7 @@ import DeleteProductButton from './DeleteProductButton'
 import { Badge } from '@/components/ui/badge'
 import SyncBsaleButton from '@/components/admin/SyncBsaleButton'
 import EnrichImagesButton from '@/components/admin/EnrichImagesButton'
+import SafeProductImage from '@/components/SafeProductImage'
 import { Category } from '@prisma/client'
 
 const CATEGORIES = ['Carcasa','Lamina','Cargador','Cable','Audifonos','Vapers','Computacion','Otros'] as const
@@ -145,20 +146,15 @@ export default async function ProductsPage({
                 <TableRow key={product.id} className="border-b border-zinc-100 hover:bg-zinc-50 transition-colors">
                   <TableCell className="py-3">
                     {/* Validación estricta para strings vacíos o URLs corruptas */}
-                    {product.imageUrl && product.imageUrl.trim() !== "" && product.imageUrl.startsWith('http') ? (
-                      <>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
+                    <div className="relative h-14 w-14 overflow-hidden border border-zinc-200 bg-zinc-50">
+                      <SafeProductImage
                         src={product.imageUrl}
                         alt={product.name}
-                        className="w-14 h-14 object-cover border border-zinc-200"
+                        fill
+                        sizes="56px"
+                        imageClassName="object-contain"
                       />
-                      </>
-                    ) : (
-                      <div className="w-14 h-14 bg-zinc-100 border border-dashed border-zinc-300 flex items-center justify-center text-[10px] uppercase tracking-widest text-zinc-400">
-                        N/A
-                      </div>
-                    )}
+                    </div>
                   </TableCell>
 
                   <TableCell>
@@ -211,12 +207,15 @@ export default async function ProductsPage({
         ) : products.map((product) => (
           <article key={product.id} className="rounded-[6px] border border-zinc-200 bg-white p-3">
             <div className="flex gap-3">
-              {product.imageUrl && product.imageUrl.trim() !== '' && product.imageUrl.startsWith('http') ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={product.imageUrl} alt={product.name} className="w-16 h-16 shrink-0 rounded-[4px] object-contain border border-zinc-200 bg-zinc-50" />
-              ) : (
-                <div className="w-16 h-16 shrink-0 rounded-[4px] border border-dashed border-zinc-300 bg-zinc-50 grid place-items-center text-[10px] text-zinc-400">N/A</div>
-              )}
+              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-[4px] border border-zinc-200 bg-zinc-50">
+                <SafeProductImage
+                  src={product.imageUrl}
+                  alt={product.name}
+                  fill
+                  sizes="64px"
+                  imageClassName="object-contain"
+                />
+              </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-bold leading-snug line-clamp-2">{product.name}</p>
                 <p className="mt-1 text-xs text-zinc-500">{product.category || 'Sin categoria'}</p>

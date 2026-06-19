@@ -10,7 +10,7 @@ export default async function BusinessAdminPage() {
     <div className="space-y-6 text-black">
       <header>
         <h1 className="admin-page-title">
-          Metricas
+          Métricas
         </h1>
         <p className="admin-page-kicker">
           Panel de control — Multiaccesorios

@@ -78,6 +78,19 @@ model Order {
   id               String       @id @default(cuid())
   total            Float
   status           String       @default("pending")
+  paymentMethod    String       @default("transfer")
+  paymentStatus    String       @default("pending_payment")
+  paymentProvider  String       @default("manual")
+  paymentReference String?
+  paymentUrl       String?
+  webpayToken       String?
+  webpayBuyOrder    String?
+  webpaySessionId   String?
+  webpayResponseCode Int?
+  webpayAuthorizationCode String?
+  webpayCardLastDigits String?
+  webpayInstallmentsNumber Int?
+  paidAt           DateTime?
   // Datos del cliente
   customerName     String?
   customerPhone    String?

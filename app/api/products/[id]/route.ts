@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
+import { adminUnauthorizedResponse, isAdminRequest } from '@/lib/admin-auth'
 
 interface VariantImageInput {
   url: string
@@ -16,6 +17,10 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    if (!(await isAdminRequest())) {
+      return adminUnauthorizedResponse()
+    }
+
     const { id } = await params
     const body = await req.json()
 
@@ -92,6 +97,10 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    if (!(await isAdminRequest())) {
+      return adminUnauthorizedResponse()
+    }
+
     const { id } = await params
 
     await prisma.$transaction([

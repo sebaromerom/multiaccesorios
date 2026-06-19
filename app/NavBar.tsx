@@ -27,7 +27,6 @@ export default function NavBar() {
           <div className="hidden md:flex space-x-8 text-sm font-medium tracking-wide text-gray-700">
             <Link href="/shop" className="hover:text-black transition-colors">Tienda</Link>
             <Link href="/shop/cart" className="hover:text-black transition-colors">Carrito</Link>
-            <Link href="/admin" className="hover:text-black transition-colors">Admin</Link>
           </div>
 
           {/* BOTÓN HAMBURGUESA */}
@@ -61,9 +60,6 @@ export default function NavBar() {
         </Link>
         <Link href="/shop/cart" onClick={closeMenu} className="block text-base font-medium text-gray-700 hover:text-black py-2 transition-colors">
           Carrito
-        </Link>
-        <Link href="/admin" onClick={closeMenu} className="block text-base font-medium text-gray-700 hover:text-black py-2 transition-colors">
-          Admin
         </Link>
       </div>
     </nav>

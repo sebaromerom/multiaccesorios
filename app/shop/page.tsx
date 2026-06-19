@@ -31,13 +31,13 @@ export const dynamic = 'force-dynamic'
 
 const CATEGORIES = [
   { value: 'Carcasa', label: 'Carcasas', icon: Smartphone },
-  { value: 'Lamina', label: 'Laminas', icon: PanelsTopLeft },
-  { value: 'Audifonos', label: 'Audio', icon: Headphones },
+  { value: 'Lamina', label: 'Láminas', icon: PanelsTopLeft },
+  { value: 'Audifonos', label: 'Audífonos', icon: Headphones },
   { value: 'Cable', label: 'Cables', icon: Cable },
   { value: 'Cargador', label: 'Cargadores', icon: Zap },
   { value: 'Vapers', label: 'Vapers', icon: Sparkles },
-  { value: 'Computacion', label: 'Tech', icon: Laptop },
-  { value: 'Otros', label: 'Hogar', icon: Home },
+  { value: 'Computacion', label: 'Cómputo', icon: Laptop },
+  { value: 'Otros', label: 'Otros', icon: Home },
 ] as const
 
 const CATEGORY_SEARCH_ALIASES: Record<Category, string[]> = {
@@ -387,12 +387,15 @@ export default async function ShopPage({
         .shop-nav-links {
           display: flex;
           align-items: center;
-          gap: 34px;
+          gap: clamp(18px, 2.1vw, 34px);
           font-size: 13px;
           font-weight: 800;
         }
 
         .shop-nav-links a {
+          display: inline-flex;
+          align-items: center;
+          white-space: nowrap;
           color: #111;
           text-decoration: none;
         }
@@ -984,7 +987,7 @@ export default async function ShopPage({
         <div className="shop-shell">
           <div className="shop-topbar">
             <div className="shop-topbar-group">
-              <span className="shop-topbar-item"><Truck className="size-4 text-red-500" /> Envios a todo Chile</span>
+              <span className="shop-topbar-item"><Truck className="size-4 text-red-500" /> Envíos a todo Chile</span>
               <span className="shop-topbar-item"><Clock3 className="size-4" /> Despacho 24-48h en Linares</span>
             </div>
             <div className="shop-topbar-group">
@@ -1011,14 +1014,15 @@ export default async function ShopPage({
 
           <nav className="shop-nav">
             <Link href="/shop" className="shop-all-cats">
-              <span className="inline-flex items-center gap-12"><Menu className="size-5" /> Todas las categorias</span>
+              <span className="inline-flex items-center gap-12"><Menu className="size-5" /> Todas las categorías</span>
             </Link>
             <div className="shop-nav-links">
               <Link href={buildUrl({ promo: '1', brand: null, page: '1' })}><BadgePercent className="mr-1 inline size-4" /> Ofertas</Link>
               <Link href={buildUrl({ sort: 'newest', page: '1' })}>Nuevos</Link>
-              <Link href={buildUrl({ sort: 'sales', page: '1' })}>Mas vendidos</Link>
+              <Link href={buildUrl({ sort: 'sales', page: '1' })}>Más vendidos</Link>
               <Link href={buildUrl({ brand: 'all', promo: null, page: '1' })}>Marcas</Link>
               <Link href="/#blog">Blog</Link>
+              {' '}
               <Link href="/#contacto">Contacto</Link>
             </div>
           </nav>
@@ -1062,7 +1066,7 @@ export default async function ShopPage({
           <div className="shop-content">
             <aside className="shop-sidebar">
               <section className="shop-panel">
-                <div className="shop-panel-title">Categorias</div>
+                <div className="shop-panel-title">Categorías</div>
                 <Link href={buildUrl({ cat: null, page: '1' })} className={`shop-side-link${!cat ? ' active' : ''}`}>
                   <span className="shop-side-main"><BadgePercent className="size-4" /> Todos los productos</span>
                   <span className="shop-side-count">{allAvailableProducts}</span>
@@ -1084,7 +1088,7 @@ export default async function ShopPage({
             <main>
               <div className="shop-main-head">
                 <div className="shop-title">
-                  <h1>{promo === '1' ? 'Ofertas' : brand === 'all' ? 'Marcas' : selectedCategory ? selectedCategory.label : 'Catalogo'}</h1>
+                  <h1>{promo === '1' ? 'Ofertas' : brand === 'all' ? 'Marcas' : selectedCategory ? selectedCategory.label : 'Catálogo'}</h1>
                   <p>{totalProducts} productos disponibles</p>
                 </div>
                 <Suspense><SortSelect value={sort} /></Suspense>
@@ -1181,10 +1185,10 @@ export default async function ShopPage({
           </div>
 
           <footer className="shop-benefits">
-            <div className="shop-benefit"><Truck className="size-8" /><span>Envios a todo Chile<small>Rapido y seguro</small></span></div>
+            <div className="shop-benefit"><Truck className="size-8" /><span>Envíos a todo Chile<small>Rápido y seguro</small></span></div>
             <div className="shop-benefit"><Clock3 className="size-8" /><span>Despacho 24-48h en Linares<small>Compras antes de las 14:00</small></span></div>
             <div className="shop-benefit"><ShieldCheck className="size-8" /><span>Compra segura<small>Sitio protegido SSL</small></span></div>
-            <div className="shop-benefit"><PackageCheck className="size-8" /><span>Garantia y cambios<small>Hasta 30 dias</small></span></div>
+            <div className="shop-benefit"><PackageCheck className="size-8" /><span>Garantía y cambios<small>Hasta 30 días</small></span></div>
           </footer>
         </div>
       </div>

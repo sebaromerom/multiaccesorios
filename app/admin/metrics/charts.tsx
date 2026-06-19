@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
   PieChart, Pie, Legend,
@@ -7,12 +8,28 @@ import {
 
 const REDS = ['#ef4444', '#b91c1c', '#991b1b', '#7f1d1d', '#450a0a', '#dc2626', '#f87171', '#fca5a5']
 
+function ChartFrame({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setMounted(true))
+
+    return () => cancelAnimationFrame(frame)
+  }, [])
+
+  if (!mounted) {
+    return <div className="h-[300px] w-full min-w-0" aria-hidden="true" />
+  }
+
+  return <div className="h-[300px] w-full min-w-0">{children}</div>
+}
+
 export function SalesByCategoryChart({ data }: { data: { name: string; value: number }[] }) {
   if (!data || data.length === 0) {
     return <div className="h-[300px] flex items-center justify-center text-zinc-400 text-sm">Sin datos</div>
   }
   return (
-    <div className="h-[300px] w-full">
+    <ChartFrame>
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie data={data} dataKey="value" nameKey="name" innerRadius={60} outerRadius={100} paddingAngle={3}>
@@ -27,7 +44,7 @@ export function SalesByCategoryChart({ data }: { data: { name: string; value: nu
           <Legend />
         </PieChart>
       </ResponsiveContainer>
-    </div>
+    </ChartFrame>
   )
 }
 
@@ -37,7 +54,7 @@ export function BestSellersChart({ data }: { data: { name: string; quantity: num
   }
   const truncated = data.map(d => ({ ...d, shortName: d.name.length > 20 ? d.name.slice(0, 20) + '...' : d.name }))
   return (
-    <div className="h-[300px] w-full">
+    <ChartFrame>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={truncated} layout="vertical" margin={{ left: 10, right: 20 }}>
           <XAxis type="number" tick={{ fontSize: 11, fill: '#71717a' }} />
@@ -49,6 +66,6 @@ export function BestSellersChart({ data }: { data: { name: string; quantity: num
           <Bar dataKey="quantity" fill="#ef4444" radius={0} />
         </BarChart>
       </ResponsiveContainer>
-    </div>
+    </ChartFrame>
   )
 }

@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import AdminShell from '@/components/admin/AdminShell'
 
 export const metadata: Metadata = {
-  title: 'Panel de Administracion - Multi Accesorios',
-  description: 'Gestion de inventario y ordenes',
+  title: 'Panel de Administración - Multi Accesorios',
+  description: 'Gestión de inventario y órdenes',
 }
 
 export default function AdminLayout({

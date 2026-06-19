@@ -4,6 +4,7 @@ import AddToCartButton from '@/app/shop/AddToCartButton'
 import CartHeaderLink from '@/app/shop/CartHeaderLink'
 import HomeSearchBar from '@/app/HomeSearchBar'
 import BrandLogo from '@/components/BrandLogo'
+import SafeProductImage from '@/components/SafeProductImage'
 import {
   BadgePercent,
   Cable,
@@ -29,12 +30,12 @@ export const revalidate = 0
 
 const CATEGORIES = [
   { value: 'Carcasa', label: 'Carcasas', icon: Smartphone },
-  { value: 'Lamina', label: 'Laminas', icon: PanelsTopLeft },
-  { value: 'Audifonos', label: 'Audifonos', icon: Headphones },
+  { value: 'Lamina', label: 'Láminas', icon: PanelsTopLeft },
+  { value: 'Audifonos', label: 'Audífonos', icon: Headphones },
   { value: 'Cargador', label: 'Cargadores', icon: Zap },
   { value: 'Cable', label: 'Cables', icon: Cable },
   { value: 'Vapers', label: 'Vapers', icon: Sparkles },
-  { value: 'Computacion', label: 'Computo', icon: Laptop },
+  { value: 'Computacion', label: 'Cómputo', icon: Laptop },
   { value: 'Otros', label: 'Otros', icon: Sparkles },
 ] as const
 
@@ -126,8 +127,8 @@ export default async function Home() {
         .home-nav { height: 64px; padding: 0 52px; display: flex; align-items: center; gap: 34px; border-bottom: 1px solid #ededed; }
         .home-all-cats { height: 42px; min-width: 220px; padding: 0 16px; border-radius: 5px; background: #111; color: #fff; display: inline-flex; justify-content: space-between; align-items: center; text-decoration: none; font-size: 12px; font-weight: 800; transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease; }
         .home-all-cats:hover { transform: translateY(-1px); background: #050505; box-shadow: 0 10px 24px rgba(0,0,0,.16); }
-        .home-nav-links { display: flex; gap: 32px; align-items: center; font-size: 12px; font-weight: 800; }
-        .home-nav-links a { position: relative; color: #111; text-decoration: none; transition: color .16s ease; }
+        .home-nav-links { display: flex; gap: clamp(18px, 2.1vw, 32px); align-items: center; font-size: 12px; font-weight: 800; }
+        .home-nav-links a { position: relative; display: inline-flex; align-items: center; white-space: nowrap; color: #111; text-decoration: none; transition: color .16s ease; }
         .home-nav-links a::after { content: ""; position: absolute; left: 0; right: 0; bottom: -9px; height: 2px; border-radius: 999px; background: currentColor; transform: scaleX(0); transform-origin: left; transition: transform .18s ease; }
         .home-nav-links a:hover::after { transform: scaleX(1); }
         .home-nav-links a:first-child { color: #e30613; }
@@ -154,10 +155,10 @@ export default async function Home() {
         .home-secondary-cta { border: 1px solid #ddd; color: #111; background: #fff; }
         .home-secondary-cta:hover { border-color: #111; transform: translateY(-1px); box-shadow: 0 10px 22px rgba(0,0,0,.08); }
         .home-hero-products { position: absolute; inset: 0 2% 0 45%; display: flex; align-items: flex-end; justify-content: center; gap: 2px; }
-        .home-hero-products img { width: 24%; height: 80%; object-fit: contain; filter: drop-shadow(0 12px 12px rgba(0,0,0,.12)); animation: homeProductFloat 5.2s ease-in-out infinite; transform-origin: center bottom; will-change: transform; }
-        .home-hero-products img:nth-child(2) { height: 92%; }
-        .home-hero-products img:nth-child(2) { animation-delay: .25s; }
-        .home-hero-products img:nth-child(3) { height: 68%; animation-delay: .5s; }
+        .home-hero-product { position: relative; width: 24%; height: 80%; filter: drop-shadow(0 12px 12px rgba(0,0,0,.12)); animation: homeProductFloat 5.2s ease-in-out infinite; transform-origin: center bottom; will-change: transform; }
+        .home-hero-product img { object-fit: contain; }
+        .home-hero-product:nth-child(2) { height: 92%; animation-delay: .25s; }
+        .home-hero-product:nth-child(3) { height: 68%; animation-delay: .5s; }
         .home-hero-discount { position: absolute; z-index: 4; top: 24px; right: 17%; width: 66px; height: 66px; border-radius: 50%; background: #e30613; color: #fff; display: grid; place-items: center; text-align: center; font-size: 13px; font-weight: 900; line-height: 1; box-shadow: 0 14px 26px rgba(227,6,19,.28); animation: homeBadgePop .5s .45s ease both, homeBadgePulse 2.8s 1.2s ease-in-out infinite; }
         .home-section { margin-top: 22px; animation: homeRise .52s ease both; }
         .home-section:nth-of-type(2) { animation-delay: .12s; }
@@ -206,7 +207,8 @@ export default async function Home() {
         .home-offer:hover::before { transform: translateX(120%); }
         .home-offer-kicker { color: #e30613; font-size: 10px; font-weight: 900; text-transform: uppercase; }
         .home-offer h3 { margin-top: 10px; font-size: 24px; line-height: 1; font-weight: 900; }
-        .home-offer-product { position: absolute; right: 0; bottom: 0; width: 56%; height: 70%; object-fit: contain; filter: drop-shadow(0 10px 10px rgba(0,0,0,.15)); transition: transform .24s ease; }
+        .home-offer-product { position: absolute; right: 0; bottom: 0; width: 56%; height: 70%; filter: drop-shadow(0 10px 10px rgba(0,0,0,.15)); transition: transform .24s ease; }
+        .home-offer-product img { object-fit: contain; }
         .home-offer:hover .home-offer-product { transform: translateY(-4px) scale(1.03); }
         .home-offer-price { position: relative; z-index: 2; margin-top: 18px; }
         .home-offer-price del { display: block; color: #999; font-size: 10px; }
@@ -237,8 +239,8 @@ export default async function Home() {
           .home-hero-actions { margin-top: 0; }
           .home-secondary-cta { display: none; }
           .home-hero-products { inset: 0 -5% 0 48%; }
-          .home-hero-products img { width: 30%; height: 72%; }
-          .home-hero-products img:nth-child(2) { height: 82%; }
+          .home-hero-product { width: 30%; height: 72%; }
+          .home-hero-product:nth-child(2) { height: 82%; }
           .home-hero-discount { display: none; }
           .home-hero-copy .home-primary-cta { height: 30px; padding: 0 12px; font-size: 9px; }
           .home-categories { display: flex; gap: 12px; overflow-x: auto; scrollbar-width: none; margin-right: -14px; padding-right: 14px; }
@@ -309,7 +311,7 @@ export default async function Home() {
       <div className="home-shell">
         <div className="home-topbar">
           <div className="home-topbar-group">
-            <span className="home-topbar-item"><Truck className="size-4 text-red-500" /> Envios a todo Chile</span>
+            <span className="home-topbar-item"><Truck className="size-4 text-red-500" /> Envíos a todo Chile</span>
             <span className="home-topbar-item"><Clock3 className="size-4" /> Despacho 24-48h en Linares</span>
           </div>
           <div className="home-topbar-group">
@@ -328,13 +330,14 @@ export default async function Home() {
         </header>
 
         <nav className="home-nav">
-          <Link href="/shop" className="home-all-cats"><span className="inline-flex items-center gap-3"><Menu className="size-4" /> Todas las categorias</span></Link>
+          <Link href="/shop" className="home-all-cats"><span className="inline-flex items-center gap-3"><Menu className="size-4" /> Todas las categorías</span></Link>
           <div className="home-nav-links">
             <Link href="/shop?promo=1&page=1"><BadgePercent className="inline size-4 mr-1" /> Ofertas</Link>
             <Link href="/shop?sort=newest">Nuevos</Link>
-            <Link href="/shop?sort=sales&page=1">Mas vendidos</Link>
+            <Link href="/shop?sort=sales&page=1">Más vendidos</Link>
             <Link href="/shop?brand=all&page=1">Marcas</Link>
             <Link href="#blog">Blog</Link>
+            {' '}
             <Link href="#contacto">Contacto</Link>
           </div>
         </nav>
@@ -342,7 +345,7 @@ export default async function Home() {
         <header className="home-mobile-header">
           <div className="home-mobile-top">
             <HomeBrand />
-            <div className="home-mobile-actions"><CartHeaderLink mobile /><Link href="/shop" aria-label="Abrir catalogo"><Menu className="size-6 text-black" /></Link></div>
+            <div className="home-mobile-actions"><CartHeaderLink mobile /><Link href="/shop" aria-label="Abrir catálogo"><Menu className="size-6 text-black" /></Link></div>
           </div>
           <HomeSearchBar />
         </header>
@@ -350,12 +353,12 @@ export default async function Home() {
         <div className="home-content">
           <section className="home-hero">
             <div className="home-hero-copy">
-              <p className="home-hero-kicker">Tecnologia que te conecta</p>
+              <p className="home-hero-kicker">Tecnología que te conecta</p>
               <h1>Todo lo que necesitas,<br /><span>en un solo lugar.</span></h1>
               <div className="home-hero-benefits">
-                <span className="home-hero-benefit"><Truck className="size-5" /> Envios rapidos</span>
+                <span className="home-hero-benefit"><Truck className="size-5" /> Envíos rápidos</span>
                 <span className="home-hero-benefit"><ShieldCheck className="size-5" /> Compra segura</span>
-                <span className="home-hero-benefit"><PackageCheck className="size-5" /> Garantia y cambios</span>
+                <span className="home-hero-benefit"><PackageCheck className="size-5" /> Garantía y cambios</span>
               </div>
               <div className="home-hero-actions">
                 <Link href="/shop" className="home-primary-cta">Comprar ahora</Link>
@@ -366,15 +369,16 @@ export default async function Home() {
             </div>
             <div className="home-hero-products">
               {heroProducts.slice(0, 3).map((product) => (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img key={product.id} src={product.imageUrl!} alt={product.name} />
+                <span key={product.id} className="home-hero-product">
+                  <SafeProductImage src={product.imageUrl} alt={product.name} fill sizes="180px" />
+                </span>
               ))}
             </div>
             {activeDiscount && offerBadge && <span className="home-hero-discount">{offerBadge}</span>}
           </section>
 
           <section className="home-section" id="blog">
-            <div className="home-section-head"><h2>Explora por categoria</h2><Link href="/shop">Ver todas</Link></div>
+            <div className="home-section-head"><h2>Explora por categoría</h2><Link href="/shop">Ver todas</Link></div>
             <div className="home-categories">
               {CATEGORIES.map((category) => {
                 const Icon = category.icon
@@ -399,8 +403,7 @@ export default async function Home() {
                   return (
                     <article key={product.id} className="home-product-card">
                       <Link href={`/shop/${product.id}`} className="home-product-image">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={product.imageUrl!} alt={product.name} />
+                        <SafeProductImage src={product.imageUrl} alt={product.name} fill sizes="180px" />
                         <span className="home-stock">En stock</span>
                         <span className="home-heart"><Heart /></span>
                       </Link>
@@ -430,8 +433,9 @@ export default async function Home() {
                     {offerBadge && <span className="ml-2 rounded-[3px] bg-white px-2 py-1 text-[9px] font-bold text-red-600">{offerBadge}</span>}
                   </div>
                   <Link href={`/shop/${offerProduct.id}`} className="home-offer-link">{activeDiscount ? 'Ver oferta' : 'Ver producto'}</Link>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={offerProduct.imageUrl!} alt={offerProduct.name} className="home-offer-product" />
+                  <span className="home-offer-product">
+                    <SafeProductImage src={offerProduct.imageUrl} alt={offerProduct.name} fill sizes="180px" />
+                  </span>
                 </aside>
               )}
             </div>
@@ -439,16 +443,16 @@ export default async function Home() {
         </div>
 
         <footer className="home-benefits" id="contacto">
-          <div className="home-benefit"><Truck className="size-7" /><span>Envios a todo Chile<small>Rapido y seguro</small></span></div>
+          <div className="home-benefit"><Truck className="size-7" /><span>Envíos a todo Chile<small>Rápido y seguro</small></span></div>
           <div className="home-benefit"><Clock3 className="size-7" /><span>Despacho 24-48h en Linares<small>Compras antes de las 14:00</small></span></div>
           <div className="home-benefit"><ShieldCheck className="size-7" /><span>Compra segura<small>Sitio protegido SSL</small></span></div>
-          <div className="home-benefit"><PackageCheck className="size-7" /><span>Garantia y cambios<small>Hasta 30 dias</small></span></div>
+          <div className="home-benefit"><PackageCheck className="size-7" /><span>Garantía y cambios<small>Hasta 30 días</small></span></div>
         </footer>
       </div>
 
       <nav className="home-mobile-nav">
         <Link href="/"><HomeIcon className="size-5" />Inicio</Link>
-        <Link href="/shop"><List className="size-5" />Categorias</Link>
+        <Link href="/shop"><List className="size-5" />Categorías</Link>
         <Link href="/shop?promo=1&page=1"><Tag className="size-5" />Ofertas</Link>
         <Link href="/shop"><Heart className="size-5" />Favoritos</Link>
         <Link href="/admin/login"><User className="size-5" />Cuenta</Link>

@@ -1,6 +1,5 @@
 'use client'
 
-import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useRef, useState, type PointerEvent, type TouchEvent } from 'react'
 import { toast } from 'sonner'
@@ -18,6 +17,7 @@ import {
 } from 'lucide-react'
 import { useCartStore } from '@/lib/store'
 import BrandLogo from '@/components/BrandLogo'
+import SafeProductImage from '@/components/SafeProductImage'
 
 type Variant = {
   id: string
@@ -80,7 +80,7 @@ export default function ProductDetail({
     : []
 
   const displayImages = variantImages.length > 0 ? variantImages : fallbackImages
-  const safeDisplayImages = displayImages.length > 0 ? displayImages : ['/no-image-placeholder.jpg']
+  const safeDisplayImages = displayImages.length > 0 ? displayImages : [null]
   const primaryImage = safeDisplayImages[activeImage] ?? safeDisplayImages[0]
 
   const availableStock = (() => {
@@ -100,6 +100,18 @@ export default function ProductDetail({
         return variant.stock - (itemInCart?.quantity ?? 0) > 0
       })
     : availableStock > 0
+  const variantLabel =
+    product.category === 'Vapers'
+      ? 'Sabor / Variante'
+      : product.category === 'Carcasa' || product.category === 'Lamina'
+        ? 'Modelo / Variante'
+        : product.category === 'Audifonos'
+          ? 'Color / Variante'
+          : 'Variante'
+  const variantHelp =
+    product.category === 'Vapers'
+      ? 'No encuentras tu sabor? Avísanos y lo buscamos para ti.'
+      : 'No encuentras tu modelo? Avísanos y lo buscamos para ti.'
 
   function selectVariant(size: string) {
     setSelectedSize(size)
@@ -232,7 +244,7 @@ export default function ProductDetail({
     }
   }
 
-  const paymentText = 'Paga hasta en 6 cuotas sin interes con'
+  const paymentText = 'Paga hasta en 6 cuotas sin interés con'
 
   return (
     <div className="product-detail-root">
@@ -247,7 +259,7 @@ export default function ProductDetail({
                 className={`thumb-button${activeImage === index ? ' active' : ''}`}
                 aria-label={`Ver imagen ${index + 1}`}
               >
-                <Image src={image} alt="" fill sizes="72px" className="thumb-image" />
+                <SafeProductImage src={image} alt="" fill sizes="72px" imageClassName="thumb-image" />
               </button>
             ))}
           </div>
@@ -269,13 +281,13 @@ export default function ProductDetail({
             >
               {safeDisplayImages.map((image, index) => (
                 <div key={`${image}-${index}`} className="main-image-slide">
-                  <Image
+                  <SafeProductImage
                     src={image}
                     alt={index === 0 ? product.name : `${product.name} imagen ${index + 1}`}
                     fill
                     sizes="(max-width: 760px) 100vw, 520px"
                     priority={index === 0}
-                    className="main-product-image"
+                    imageClassName="main-product-image"
                   />
                 </div>
               ))}
@@ -297,7 +309,7 @@ export default function ProductDetail({
         </section>
 
         <section className="product-copy">
-          <div className="breadcrumb">Inicio / {product.category ?? 'Catalogo'} / {product.name}</div>
+          <div className="breadcrumb">Inicio / {product.category ?? 'Catálogo'} / {product.name}</div>
           <p className="brand-kicker">{product.category ?? 'Multi Accesorios'}</p>
           <h1>{product.name}</h1>
 
@@ -319,7 +331,7 @@ export default function ProductDetail({
 
           {hasVariants && (
             <div className="variant-section">
-              <div className="section-label">Sabor / Variante</div>
+              <div className="section-label">{variantLabel}</div>
               <div
                 className="variant-grid"
               >
@@ -329,7 +341,7 @@ export default function ProductDetail({
                   const freeStock = Math.max(0, variant.stock - (itemInCart?.quantity ?? 0))
                   const isAvailable = freeStock > 0
                   const hasOwnVariantImage = Boolean(variant.images[0] ?? variant.imageUrl)
-                  const variantImage = variant.images[0] ?? variant.imageUrl ?? fallbackImages[0] ?? '/no-image-placeholder.jpg'
+                  const variantImage = variant.images[0] ?? variant.imageUrl ?? fallbackImages[0] ?? null
 
                   return (
                     <button
@@ -340,13 +352,12 @@ export default function ProductDetail({
                       className={`variant-card${isSelected ? ' active' : ''}${!isAvailable ? ' disabled' : ''}`}
                     >
                       <span className="variant-image-wrap">
-                        <Image
+                        <SafeProductImage
                           src={variantImage}
                           alt=""
                           fill
                           sizes="(max-width: 760px) 34px, 56px"
-                          draggable={false}
-                          className={hasOwnVariantImage ? '' : 'fallback-variant-image'}
+                          imageClassName={hasOwnVariantImage ? '' : 'fallback-variant-image'}
                         />
                       </span>
                       <span className="variant-text">
@@ -358,7 +369,7 @@ export default function ProductDetail({
                   )
                 })}
               </div>
-              <p className="variant-help">No encuentras tu sabor? Avisanos y lo buscamos para ti.</p>
+              <p className="variant-help">{variantHelp}</p>
             </div>
           )}
         </section>
@@ -393,8 +404,8 @@ export default function ProductDetail({
 
           <div className="protected-box">
             <p>Compra protegida</p>
-            <span><ShieldCheck className="size-4" /> Garantia de 30 dias</span>
-            <span><PackageCheck className="size-4" /> Devolucion facil</span>
+            <span><ShieldCheck className="size-4" /> Garantía de 30 días</span>
+            <span><PackageCheck className="size-4" /> Devolución fácil</span>
             <span><Check className="size-4" /> Compra 100% segura</span>
           </div>
 
@@ -406,7 +417,7 @@ export default function ProductDetail({
               <span>MC</span>
               <span>Redcompra</span>
             </div>
-            <small>Hasta 6 cuotas sin interes</small>
+            <small>Hasta 6 cuotas sin interés</small>
           </div>
 
           <div className="seller-box">
@@ -418,16 +429,16 @@ export default function ProductDetail({
 
         <section className="detail-tabs">
           <div className="tabs-head">
-            <button className="active">Descripcion</button>
+            <button className="active">Descripción</button>
             <button>Especificaciones</button>
-            <button>Que incluye</button>
+            <button>Qué incluye</button>
             <button>Preguntas frecuentes</button>
           </div>
           <p>{product.description || 'Producto seleccionado por Multi Accesorios, disponible para retiro en tienda y despacho a todo Chile.'}</p>
           <div className="feature-row">
-            <span><BatteryCharging className="size-6" /> <b>Stock real</b><small>Segun variante</small></span>
+            <span><BatteryCharging className="size-6" /> <b>Stock real</b><small>Según variante</small></span>
             <span><ShieldCheck className="size-6" /> <b>Compra segura</b><small>Sitio protegido</small></span>
-            <span><Truck className="size-6" /> <b>Despacho rapido</b><small>24-48h en Linares</small></span>
+            <span><Truck className="size-6" /> <b>Despacho rápido</b><small>24-48h en Linares</small></span>
             <span><Store className="size-6" /> <b>Retiro en tienda</b><small>Disponible</small></span>
           </div>
         </section>

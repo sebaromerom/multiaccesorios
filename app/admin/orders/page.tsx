@@ -19,14 +19,60 @@ export default async function OrdersPage() {
   type OrderItem = Order['items'][0]
 
   const statusLabel = (status: string) =>
-    status === 'completed' ? 'Completada' : status === 'cancelled' ? 'Cancelada' : 'Pendiente'
+    status === 'completed' ? 'Completada' :
+    status === 'paid' ? 'Pagada' :
+    status === 'paid_stock_review' ? 'Pagada - revisar stock' :
+    status === 'payment_failed' ? 'Pago fallido' :
+    status === 'payment_cancelled' || status === 'cancelled' ? 'Cancelada' :
+    'Pendiente'
 
   const statusClass = (status: string) =>
-    status === 'completed'
+    status === 'completed' || status === 'paid'
       ? 'bg-green-100 text-green-700'
-      : status === 'cancelled'
+      : status === 'payment_failed' || status === 'payment_cancelled' || status === 'cancelled'
         ? 'bg-red-100 text-red-700'
+        : status === 'paid_stock_review'
+          ? 'bg-amber-100 text-amber-700'
         : 'bg-zinc-100 text-zinc-700'
+
+  const paymentLabel = (method: string, status: string) => {
+    const methodLabel =
+      method === 'webpay'
+        ? 'Webpay'
+        : method === 'pay_on_pickup'
+        ? 'Pago al retirar'
+        : method === 'payment_link'
+          ? 'Link de pago'
+          : 'Transferencia'
+
+    const statusLabel =
+      status === 'paid'
+        ? 'Pagado'
+        : status === 'failed'
+          ? 'Fallido'
+          : status === 'cancelled'
+            ? 'Cancelado'
+          : status === 'webpay_create_failed'
+            ? 'Inicio fallido'
+          : status === 'webpay_pending'
+            ? 'Webpay pendiente'
+        : status === 'pay_on_pickup'
+          ? 'Al retirar'
+          : status === 'payment_link_pending'
+            ? 'Link pendiente'
+            : 'Pendiente'
+
+    return `${methodLabel} - ${statusLabel}`
+  }
+
+  const paymentClass = (status: string) =>
+    status === 'paid'
+      ? 'bg-green-100 text-green-700'
+      : status === 'failed' || status === 'cancelled' || status === 'webpay_create_failed'
+        ? 'bg-red-100 text-red-700'
+      : status === 'pay_on_pickup'
+        ? 'bg-blue-100 text-blue-700'
+        : 'bg-amber-100 text-amber-700'
 
   return (
     <div className="animate-fade-in">
@@ -44,6 +90,7 @@ export default async function OrdersPage() {
               <TableHead>Entrega</TableHead>
               <TableHead>Productos</TableHead>
               <TableHead>Total</TableHead>
+              <TableHead>Pago</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead className="text-right">Fecha</TableHead>
             </TableRow>
@@ -51,7 +98,7 @@ export default async function OrdersPage() {
           <TableBody>
             {orders.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="py-16 text-center text-sm text-zinc-500">
+                <TableCell colSpan={8} className="py-16 text-center text-sm text-zinc-500">
                   No hay pedidos registrados aun.
                 </TableCell>
               </TableRow>
@@ -76,6 +123,12 @@ export default async function OrdersPage() {
                   ))}
                 </TableCell>
                 <TableCell className="font-bold">${order.total.toLocaleString('es-CL')}</TableCell>
+                <TableCell>
+                  <Badge className={`rounded-[3px] text-[10px] uppercase ${paymentClass(order.paymentStatus)}`}>
+                    {paymentLabel(order.paymentMethod, order.paymentStatus)}
+                  </Badge>
+                  {order.paymentReference && <p className="mt-1 font-mono text-[10px] text-zinc-400">{order.paymentReference}</p>}
+                </TableCell>
                 <TableCell>
                   <Badge className={`rounded-[3px] text-[10px] uppercase ${statusClass(order.status)}`}>{statusLabel(order.status)}</Badge>
                 </TableCell>
@@ -105,6 +158,11 @@ export default async function OrdersPage() {
             <div className="mt-4 grid grid-cols-2 gap-3 border-t border-zinc-100 pt-3 text-xs">
               <div><p className="text-zinc-500">Total</p><p className="mt-1 font-bold text-red-600">${order.total.toLocaleString('es-CL')}</p></div>
               <div><p className="text-zinc-500">Entrega</p><p className="mt-1 font-semibold">{order.deliveryType === 'retiro' ? 'Retiro en tienda' : 'Starken'}</p></div>
+              <div className="col-span-2">
+                <p className="text-zinc-500">Pago</p>
+                <p className="mt-1 font-semibold">{paymentLabel(order.paymentMethod, order.paymentStatus)}</p>
+                {order.paymentReference && <p className="mt-1 font-mono text-[10px] text-zinc-400">{order.paymentReference}</p>}
+              </div>
             </div>
             <div className="mt-3 text-xs text-zinc-600">
               {order.items.map((item: OrderItem) => <p key={item.id}>{item.product.name} x{item.quantity}</p>)}

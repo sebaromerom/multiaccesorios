@@ -262,12 +262,15 @@ export default async function ProductPage({
         .detail-nav-links {
           display: flex;
           align-items: center;
-          gap: 34px;
+          gap: clamp(18px, 2.1vw, 34px);
           font-size: 13px;
           font-weight: 800;
         }
 
         .detail-nav-links a {
+          display: inline-flex;
+          align-items: center;
+          white-space: nowrap;
           color: #111;
           text-decoration: none;
         }
@@ -1126,7 +1129,7 @@ export default async function ProductPage({
         <div className="detail-shell">
           <div className="detail-topbar">
             <div>
-              <span><Truck className="size-4 text-red-500" /> Envios a todo Chile</span>
+              <span><Truck className="size-4 text-red-500" /> Envíos a todo Chile</span>
               <span><Clock3 className="size-4" /> Despacho 24-48h en Linares</span>
             </div>
             <div>
@@ -1151,13 +1154,14 @@ export default async function ProductPage({
           </header>
 
           <nav className="detail-nav">
-            <Link href="/shop" className="detail-all-cats"><span className="inline-flex items-center gap-12"><Menu className="size-5" /> Todas las categorias</span></Link>
+            <Link href="/shop" className="detail-all-cats"><span className="inline-flex items-center gap-12"><Menu className="size-5" /> Todas las categorías</span></Link>
             <div className="detail-nav-links">
               <Link href="/shop?promo=1&page=1"><BadgePercent className="mr-1 inline size-4" /> Ofertas</Link>
               <Link href="/shop?sort=newest">Nuevos</Link>
-              <Link href="/shop?sort=sales&page=1">Mas vendidos</Link>
+              <Link href="/shop?sort=sales&page=1">Más vendidos</Link>
               <Link href="/shop?brand=all&page=1">Marcas</Link>
               <Link href="/#blog">Blog</Link>
+              {' '}
               <Link href="/#contacto">Contacto</Link>
             </div>
           </nav>

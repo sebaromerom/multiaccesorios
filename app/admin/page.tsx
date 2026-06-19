@@ -11,8 +11,9 @@ import {
 } from 'lucide-react'
 
 export default async function AdminPage() {
-  const [productCount, orderCount, pendingOrders, discountCount, missingImages] = await Promise.all([
+  const [productCount, availableProductCount, orderCount, pendingOrders, discountCount, missingImages] = await Promise.all([
     prisma.product.count(),
+    prisma.product.count({ where: { stock: { gt: 0 } } }),
     prisma.order.count(),
     prisma.order.count({ where: { status: 'pending' } }),
     prisma.discountRule.count({ where: { active: true } }),
@@ -24,17 +25,17 @@ export default async function AdminPage() {
   ])
 
   const sections = [
-    { href: '/admin/products', label: 'Productos', detail: 'Catalogo, stock e imagenes', value: productCount, icon: Boxes },
+    { href: '/admin/products', label: 'Productos', detail: `${productCount} cargados en catálogo`, value: availableProductCount, icon: Boxes },
     { href: '/admin/orders', label: 'Pedidos', detail: 'Ventas y entregas', value: orderCount, icon: ReceiptText },
     { href: '/admin/discounts', label: 'Descuentos', detail: 'Reglas comerciales activas', value: discountCount, icon: Tag },
-    { href: '/admin/metrics', label: 'Metricas', detail: 'Rendimiento de la tienda', value: 'Ver', icon: CircleDollarSign },
+    { href: '/admin/metrics', label: 'Métricas', detail: 'Rendimiento de la tienda', value: 'Ver', icon: CircleDollarSign },
   ]
 
   return (
     <main>
       <div className="mb-7">
         <h1 className="admin-page-title">Resumen del negocio</h1>
-        <p className="admin-page-kicker">Control rapido del catalogo y las ventas de Multi Accesorios.</p>
+        <p className="admin-page-kicker">Control rápido del catálogo y las ventas de Multi Accesorios.</p>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-7">
@@ -64,12 +65,12 @@ export default async function AdminPage() {
         <section className="bg-white border border-zinc-200 rounded-[6px]">
           <div className="px-5 py-4 border-b border-zinc-200">
             <h2 className="text-sm font-bold">Acciones frecuentes</h2>
-            <p className="text-[11px] text-zinc-500 mt-1">Atajos para las tareas del dia.</p>
+            <p className="text-[11px] text-zinc-500 mt-1">Atajos para las tareas del día.</p>
           </div>
           <div className="divide-y divide-zinc-100">
             <Link href="/admin/products/new" className="flex items-center gap-3 px-5 py-4 hover:bg-zinc-50">
               <Boxes className="size-4 text-red-600" />
-              <span className="text-sm font-semibold">Agregar un producto al catalogo</span>
+              <span className="text-sm font-semibold">Agregar un producto al catálogo</span>
               <ArrowRight className="ml-auto size-4 text-zinc-400" />
             </Link>
             <Link href="/admin/orders" className="flex items-center gap-3 px-5 py-4 hover:bg-zinc-50">
@@ -79,7 +80,7 @@ export default async function AdminPage() {
             </Link>
             <Link href="/admin/discounts/new" className="flex items-center gap-3 px-5 py-4 hover:bg-zinc-50">
               <Tag className="size-4 text-red-600" />
-              <span className="text-sm font-semibold">Crear una promocion</span>
+              <span className="text-sm font-semibold">Crear una promoción</span>
               <ArrowRight className="ml-auto size-4 text-zinc-400" />
             </Link>
           </div>
@@ -92,13 +93,13 @@ export default async function AdminPage() {
           <p className="text-3xl font-extrabold">{missingImages}</p>
           <h2 className="text-sm font-bold mt-1">Productos sin imagen cargada</h2>
           <p className="text-xs text-zinc-500 mt-2 leading-relaxed">
-            Revisa los productos que aun necesitan una fotografia confiable.
+            Revisa los productos que aún necesitan una fotografía confiable.
           </p>
           <Link
             href="/admin/products"
             className="mt-5 h-10 rounded-[4px] bg-red-600 hover:bg-red-700 text-white text-xs font-bold flex items-center justify-center gap-2"
           >
-            Revisar catalogo
+            Revisar catálogo
             <ArrowRight className="size-4" />
           </Link>
         </aside>
