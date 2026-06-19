@@ -6,6 +6,8 @@ import SearchBar from './SearchBar'
 import CartHeaderLink from './CartHeaderLink'
 import SortSelect from './SortSelect'
 import BrandLogo from '@/components/BrandLogo'
+import SafeProductImage from '@/components/SafeProductImage'
+import { getActiveBanner } from '@/lib/marketing'
 import { Suspense } from 'react'
 import { Category } from '@prisma/client'
 import {
@@ -107,7 +109,7 @@ export default async function ShopPage({
     promo === '1' && activeDiscountCount === 0 ? { price: 'asc' as const } :
     { createdAt: 'desc' as const }
 
-  const [products, totalProducts, allAvailableProducts, categoryAggregations] = await Promise.all([
+  const [products, totalProducts, allAvailableProducts, categoryAggregations, shopBanner] = await Promise.all([
     prisma.product.findMany({
       where,
       orderBy,
@@ -126,6 +128,7 @@ export default async function ShopPage({
       _count: { id: true },
       where: { stock: { gt: 0 } },
     }),
+    getActiveBanner('shop_top'),
   ])
 
   const categoryCounts = categoryAggregations.reduce((acc, curr) => {
@@ -410,6 +413,71 @@ export default async function ShopPage({
           gap: 32px;
           padding: 26px 52px 42px;
           background: #fff;
+        }
+
+        .shop-campaign {
+          margin: 26px 52px 0;
+          min-height: 150px;
+          border-radius: 8px;
+          background: #111;
+          color: #fff;
+          position: relative;
+          overflow: hidden;
+          display: flex;
+          align-items: center;
+          padding: 28px 34px;
+        }
+
+        .shop-campaign-copy {
+          position: relative;
+          z-index: 2;
+          max-width: 48%;
+        }
+
+        .shop-campaign-copy p {
+          color: #ff4d57;
+          font-size: 10px;
+          font-weight: 900;
+          letter-spacing: .08em;
+          text-transform: uppercase;
+        }
+
+        .shop-campaign-copy h2 {
+          margin-top: 8px;
+          font-size: 26px;
+          line-height: 1.05;
+          font-weight: 950;
+        }
+
+        .shop-campaign-copy small {
+          display: block;
+          margin-top: 8px;
+          color: #e5e5e5;
+          font-size: 12px;
+          font-weight: 700;
+        }
+
+        .shop-campaign-link {
+          margin-top: 16px;
+          height: 34px;
+          padding: 0 15px;
+          border-radius: 4px;
+          background: #e30613;
+          color: #fff;
+          display: inline-flex;
+          align-items: center;
+          text-decoration: none;
+          font-size: 11px;
+          font-weight: 900;
+        }
+
+        .shop-campaign-media {
+          position: absolute;
+          inset: 10px 24px 10px 48%;
+        }
+
+        .shop-campaign-media img {
+          object-fit: contain;
         }
 
         .shop-panel {
@@ -915,6 +983,28 @@ export default async function ShopPage({
             background: #fff;
           }
 
+          .shop-campaign {
+            margin: 12px 16px 16px;
+            min-height: 122px;
+            padding: 18px 16px;
+          }
+
+          .shop-campaign-copy {
+            max-width: 56%;
+          }
+
+          .shop-campaign-copy h2 {
+            font-size: 17px;
+          }
+
+          .shop-campaign-copy small {
+            display: none;
+          }
+
+          .shop-campaign-media {
+            inset: 14px -8px 10px 52%;
+          }
+
           .shop-main-head {
             display: none;
           }
@@ -1062,6 +1152,25 @@ export default async function ShopPage({
             <span>{totalProducts} productos</span>
             <Suspense><SortSelect value={sort} mobile /></Suspense>
           </div>
+
+          {shopBanner && (
+            <section className="shop-campaign">
+              <div className="shop-campaign-copy">
+                <p>{shopBanner.eyebrow ?? 'Campaña activa'}</p>
+                <h2>{shopBanner.title}</h2>
+                {shopBanner.subtitle && <small>{shopBanner.subtitle}</small>}
+                <Link href={shopBanner.href} className="shop-campaign-link">Ver campaña</Link>
+              </div>
+              <span className="shop-campaign-media">
+                <SafeProductImage
+                  src={shopBanner.imageUrl ?? shopBanner.mobileImageUrl}
+                  alt={shopBanner.title}
+                  fill
+                  sizes="(max-width: 760px) 42vw, 380px"
+                />
+              </span>
+            </section>
+          )}
 
           <div className="shop-content">
             <aside className="shop-sidebar">

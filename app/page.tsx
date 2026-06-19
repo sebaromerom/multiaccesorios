@@ -5,6 +5,7 @@ import CartHeaderLink from '@/app/shop/CartHeaderLink'
 import HomeSearchBar from '@/app/HomeSearchBar'
 import BrandLogo from '@/components/BrandLogo'
 import SafeProductImage from '@/components/SafeProductImage'
+import { getActiveBanner } from '@/lib/marketing'
 import {
   BadgePercent,
   Cable,
@@ -40,7 +41,7 @@ const CATEGORIES = [
 ] as const
 
 export default async function Home() {
-  const [featuredProducts, fallbackProducts, categoryCounts, activeDiscount] = await Promise.all([
+  const [featuredProducts, fallbackProducts, categoryCounts, activeDiscount, heroBanner, secondaryBanner] = await Promise.all([
     prisma.product.findMany({
       where: {
         stock: { gt: 0 },
@@ -73,6 +74,8 @@ export default async function Home() {
       include: { product: { include: { variants: { select: { id: true }, take: 1 } } } },
       orderBy: { createdAt: 'desc' },
     }),
+    getActiveBanner('home_hero'),
+    getActiveBanner('home_secondary'),
   ])
 
   const trending = [...featuredProducts, ...fallbackProducts]
@@ -155,6 +158,8 @@ export default async function Home() {
         .home-secondary-cta { border: 1px solid #ddd; color: #111; background: #fff; }
         .home-secondary-cta:hover { border-color: #111; transform: translateY(-1px); box-shadow: 0 10px 22px rgba(0,0,0,.08); }
         .home-hero-products { position: absolute; inset: 0 2% 0 45%; display: flex; align-items: flex-end; justify-content: center; gap: 2px; }
+        .home-hero-banner-media { position: absolute; inset: 16px 4% 16px 48%; filter: drop-shadow(0 14px 20px rgba(0,0,0,.14)); }
+        .home-hero-banner-media img { object-fit: contain; }
         .home-hero-product { position: relative; width: 24%; height: 80%; filter: drop-shadow(0 12px 12px rgba(0,0,0,.12)); animation: homeProductFloat 5.2s ease-in-out infinite; transform-origin: center bottom; will-change: transform; }
         .home-hero-product img { object-fit: contain; }
         .home-hero-product:nth-child(2) { height: 92%; animation-delay: .25s; }
@@ -239,6 +244,7 @@ export default async function Home() {
           .home-hero-actions { margin-top: 0; }
           .home-secondary-cta { display: none; }
           .home-hero-products { inset: 0 -5% 0 48%; }
+          .home-hero-banner-media { inset: 20px -5% 12px 53%; }
           .home-hero-product { width: 30%; height: 72%; }
           .home-hero-product:nth-child(2) { height: 82%; }
           .home-hero-discount { display: none; }
@@ -353,27 +359,42 @@ export default async function Home() {
         <div className="home-content">
           <section className="home-hero">
             <div className="home-hero-copy">
-              <p className="home-hero-kicker">Tecnología que te conecta</p>
-              <h1>Todo lo que necesitas,<br /><span>en un solo lugar.</span></h1>
+              <p className="home-hero-kicker">{heroBanner?.eyebrow ?? 'Tecnología que te conecta'}</p>
+              {heroBanner ? (
+                <h1>{heroBanner.title}<br />{heroBanner.subtitle && <span>{heroBanner.subtitle}</span>}</h1>
+              ) : (
+                <h1>Todo lo que necesitas,<br /><span>en un solo lugar.</span></h1>
+              )}
               <div className="home-hero-benefits">
                 <span className="home-hero-benefit"><Truck className="size-5" /> Envíos rápidos</span>
                 <span className="home-hero-benefit"><ShieldCheck className="size-5" /> Compra segura</span>
                 <span className="home-hero-benefit"><PackageCheck className="size-5" /> Garantía y cambios</span>
               </div>
               <div className="home-hero-actions">
-                <Link href="/shop" className="home-primary-cta">Comprar ahora</Link>
+                <Link href={heroBanner?.href ?? '/shop'} className="home-primary-cta">Comprar ahora</Link>
                 <Link href={activeDiscount ? '/shop?promo=1&page=1' : '/shop?sort=newest'} className="home-secondary-cta">
                   {activeDiscount ? 'Ver ofertas' : 'Ver nuevos'}
                 </Link>
               </div>
             </div>
-            <div className="home-hero-products">
-              {heroProducts.slice(0, 3).map((product) => (
-                <span key={product.id} className="home-hero-product">
-                  <SafeProductImage src={product.imageUrl} alt={product.name} fill sizes="180px" />
-                </span>
-              ))}
-            </div>
+            {heroBanner?.imageUrl || heroBanner?.mobileImageUrl ? (
+              <span className="home-hero-banner-media">
+                <SafeProductImage
+                  src={heroBanner.imageUrl ?? heroBanner.mobileImageUrl}
+                  alt={heroBanner.title}
+                  fill
+                  sizes="(max-width: 760px) 46vw, 420px"
+                />
+              </span>
+            ) : (
+              <div className="home-hero-products">
+                {heroProducts.slice(0, 3).map((product) => (
+                  <span key={product.id} className="home-hero-product">
+                    <SafeProductImage src={product.imageUrl} alt={product.name} fill sizes="180px" />
+                  </span>
+                ))}
+              </div>
+            )}
             {activeDiscount && offerBadge && <span className="home-hero-discount">{offerBadge}</span>}
           </section>
 
@@ -423,18 +444,26 @@ export default async function Home() {
                 })}
               </div>
 
-              {offerProduct && (
+              {(secondaryBanner || offerProduct) && (
                 <aside className="home-offer">
-                  <p className="home-offer-kicker">{activeDiscount ? 'Oferta activa' : 'Producto destacado'} <Zap className="inline size-3" /></p>
-                  <h3>{offerProduct.name}</h3>
-                  <div className="home-offer-price">
-                    {activeDiscount && <del>${offerProduct.price.toLocaleString('es-CL')}</del>}
-                    <strong>${offerPrice.toLocaleString('es-CL')}</strong>
-                    {offerBadge && <span className="ml-2 rounded-[3px] bg-white px-2 py-1 text-[9px] font-bold text-red-600">{offerBadge}</span>}
-                  </div>
-                  <Link href={`/shop/${offerProduct.id}`} className="home-offer-link">{activeDiscount ? 'Ver oferta' : 'Ver producto'}</Link>
+                  <p className="home-offer-kicker">{secondaryBanner?.eyebrow ?? (activeDiscount ? 'Oferta activa' : 'Producto destacado')} <Zap className="inline size-3" /></p>
+                  <h3>{secondaryBanner?.title ?? offerProduct?.name}</h3>
+                  {!secondaryBanner && offerProduct && (
+                    <div className="home-offer-price">
+                      {activeDiscount && <del>${offerProduct.price.toLocaleString('es-CL')}</del>}
+                      <strong>${offerPrice.toLocaleString('es-CL')}</strong>
+                      {offerBadge && <span className="ml-2 rounded-[3px] bg-white px-2 py-1 text-[9px] font-bold text-red-600">{offerBadge}</span>}
+                    </div>
+                  )}
+                  {secondaryBanner?.subtitle && <p className="relative z-[2] mt-3 max-w-[48%] text-xs font-bold text-zinc-600">{secondaryBanner.subtitle}</p>}
+                  <Link href={secondaryBanner?.href ?? `/shop/${offerProduct?.id}`} className="home-offer-link">{secondaryBanner ? 'Ver campaña' : activeDiscount ? 'Ver oferta' : 'Ver producto'}</Link>
                   <span className="home-offer-product">
-                    <SafeProductImage src={offerProduct.imageUrl} alt={offerProduct.name} fill sizes="180px" />
+                    <SafeProductImage
+                      src={secondaryBanner?.imageUrl ?? secondaryBanner?.mobileImageUrl ?? offerProduct?.imageUrl}
+                      alt={secondaryBanner?.title ?? offerProduct?.name ?? 'Campaña'}
+                      fill
+                      sizes="180px"
+                    />
                   </span>
                 </aside>
               )}

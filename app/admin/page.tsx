@@ -5,18 +5,33 @@ import {
   Boxes,
   CircleDollarSign,
   ImageOff,
+  Megaphone,
   PackageCheck,
   ReceiptText,
   Tag,
 } from 'lucide-react'
+import { isMissingMarketingBannerTable } from '@/lib/marketing'
+
+async function countActiveCampaigns() {
+  try {
+    return await prisma.marketingBanner.count({ where: { active: true } })
+  } catch (error) {
+    if (isMissingMarketingBannerTable(error)) {
+      return 0
+    }
+
+    throw error
+  }
+}
 
 export default async function AdminPage() {
-  const [productCount, availableProductCount, orderCount, pendingOrders, discountCount, missingImages] = await Promise.all([
+  const [productCount, availableProductCount, orderCount, pendingOrders, discountCount, activeCampaigns, missingImages] = await Promise.all([
     prisma.product.count(),
     prisma.product.count({ where: { stock: { gt: 0 } } }),
     prisma.order.count(),
     prisma.order.count({ where: { status: 'pending' } }),
     prisma.discountRule.count({ where: { active: true } }),
+    countActiveCampaigns(),
     prisma.product.count({
       where: {
         OR: [{ imageUrl: null }, { imageUrl: '' }],
@@ -28,6 +43,7 @@ export default async function AdminPage() {
     { href: '/admin/products', label: 'Productos', detail: `${productCount} cargados en catálogo`, value: availableProductCount, icon: Boxes },
     { href: '/admin/orders', label: 'Pedidos', detail: 'Ventas y entregas', value: orderCount, icon: ReceiptText },
     { href: '/admin/discounts', label: 'Descuentos', detail: 'Reglas comerciales activas', value: discountCount, icon: Tag },
+    { href: '/admin/marketing', label: 'Marketing', detail: 'Campañas y banners activos', value: activeCampaigns, icon: Megaphone },
     { href: '/admin/metrics', label: 'Métricas', detail: 'Rendimiento de la tienda', value: 'Ver', icon: CircleDollarSign },
   ]
 
@@ -38,7 +54,7 @@ export default async function AdminPage() {
         <p className="admin-page-kicker">Control rápido del catálogo y las ventas de Multi Accesorios.</p>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-7">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-7">
         {sections.map((section) => {
           const Icon = section.icon
           return (
@@ -81,6 +97,11 @@ export default async function AdminPage() {
             <Link href="/admin/discounts/new" className="flex items-center gap-3 px-5 py-4 hover:bg-zinc-50">
               <Tag className="size-4 text-red-600" />
               <span className="text-sm font-semibold">Crear una promoción</span>
+              <ArrowRight className="ml-auto size-4 text-zinc-400" />
+            </Link>
+            <Link href="/admin/marketing/new" className="flex items-center gap-3 px-5 py-4 hover:bg-zinc-50">
+              <Megaphone className="size-4 text-red-600" />
+              <span className="text-sm font-semibold">Publicar un banner</span>
               <ArrowRight className="ml-auto size-4 text-zinc-400" />
             </Link>
           </div>

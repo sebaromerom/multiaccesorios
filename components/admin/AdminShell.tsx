@@ -8,6 +8,7 @@ import {
   BarChart3,
   Boxes,
   ChevronRight,
+  Megaphone,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -24,6 +25,7 @@ const NAV_ITEMS = [
   { href: '/admin/products', label: 'Productos', icon: Boxes },
   { href: '/admin/orders', label: 'Pedidos', icon: ReceiptText },
   { href: '/admin/discounts', label: 'Descuentos', icon: Tag },
+  { href: '/admin/marketing', label: 'Marketing', icon: Megaphone },
   { href: '/admin/metrics', label: 'Métricas', icon: BarChart3 },
 ]
 

@@ -127,3 +127,20 @@ model DiscountRule {
   product     Product? @relation(fields: [productId], references: [id])
   createdAt   DateTime @default(now())
 }
+
+model MarketingBanner {
+  id             String    @id @default(cuid())
+  title          String
+  subtitle       String?
+  eyebrow        String?
+  imageUrl       String?
+  mobileImageUrl String?
+  href           String
+  position       String
+  active         Boolean   @default(true)
+  priority       Int       @default(0)
+  startsAt       DateTime?
+  endsAt         DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
