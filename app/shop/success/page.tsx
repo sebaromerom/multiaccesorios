@@ -50,13 +50,13 @@ export default async function SuccessPage({
       : 'Orden confirmada'
   const message =
     payment === 'failed'
-      ? 'No pudimos confirmar el pago. El pedido quedo registrado para revision.'
+      ? 'No pudimos confirmar el pago. El pedido quedó registrado para revisión.'
       : payment === 'cancelled'
         ? 'El pago fue cancelado antes de finalizar.'
         : payment === 'unknown'
           ? 'No encontramos una orden asociada a este retorno de pago.'
           : payment === 'approved_stock_review'
-            ? 'Webpay aprobo el pago. El equipo revisara el stock antes de preparar la entrega.'
+            ? 'Webpay aprobó el pago. El equipo revisará el stock antes de preparar la entrega.'
             : 'Tu orden fue registrada exitosamente.'
 
   return (
@@ -117,12 +117,12 @@ export default async function SuccessPage({
           </div>
           {order.status === 'paid_stock_review' && (
             <p className="mt-4 rounded-[4px] bg-amber-50 px-3 py-3 text-xs font-semibold text-amber-900">
-              El pago fue aprobado, pero el stock necesita revision manual antes de preparar el pedido.
+              El pago fue aprobado, pero el stock necesita revisión manual antes de preparar el pedido.
             </p>
           )}
           {order.paymentMethod === 'transfer' && (
             <p className="mt-4 rounded-[4px] bg-green-50 px-3 py-3 text-xs font-semibold text-green-900">
-              Envia el comprobante por WhatsApp indicando tu referencia para confirmar el pedido.
+              Envía el comprobante por WhatsApp indicando tu referencia para confirmar el pedido.
             </p>
           )}
         </div>

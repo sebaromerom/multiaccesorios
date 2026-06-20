@@ -10,12 +10,14 @@ import {
   BadgePercent,
   Cable,
   Clock3,
+  CreditCard,
   Headphones,
   Heart,
   Home as HomeIcon,
   Laptop,
   List,
   Menu,
+  MapPin,
   PackageCheck,
   PanelsTopLeft,
   ShieldCheck,
@@ -220,6 +222,12 @@ export default async function Home() {
         .home-offer-price strong { color: #e30613; font-size: 18px; }
         .home-offer-link { position: relative; z-index: 2; margin-top: 16px; height: 36px; padding: 0 16px; border-radius: 4px; background: #e30613; color: #fff; display: inline-flex; align-items: center; text-decoration: none; font-size: 10px; font-weight: 800; transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease; }
         .home-offer-link:hover { background: #c90510; transform: translateY(-1px); box-shadow: 0 12px 24px rgba(227,6,19,.2); }
+        .home-support { margin: 30px 52px 0; border: 1px solid #e8e8e8; border-radius: 8px; background: #fff; display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); overflow: hidden; }
+        .home-support-item { min-height: 102px; padding: 20px 18px; border-right: 1px solid #ededed; display: flex; align-items: flex-start; gap: 12px; }
+        .home-support-item:last-child { border-right: 0; }
+        .home-support-icon { width: 34px; height: 34px; border-radius: 999px; background: #f6f6f6; display: grid; place-items: center; color: #e30613; flex: 0 0 auto; }
+        .home-support-item strong { display: block; font-size: 12px; font-weight: 900; }
+        .home-support-item span { display: block; margin-top: 5px; color: #666; font-size: 10px; font-weight: 650; line-height: 1.45; }
         .home-benefits { margin-top: 30px; border-top: 1px solid #ededed; display: grid; grid-template-columns: repeat(4,1fr); gap: 20px; padding: 22px 52px; }
         .home-benefit { display: flex; align-items: center; gap: 12px; font-size: 12px; font-weight: 900; transition: transform .16s ease; }
         .home-benefit:hover { transform: translateY(-2px); }
@@ -264,6 +272,13 @@ export default async function Home() {
           .home-offer { margin-top: 16px; min-height: 138px; padding: 18px 14px; }
           .home-offer h3 { font-size: 16px; max-width: 42%; }
           .home-offer-product { width: 48%; height: 86%; }
+          .home-support { margin: 18px 14px 0; grid-template-columns: 1fr 1fr; }
+          .home-support-item { min-height: 88px; padding: 14px 12px; border-right: 1px solid #ededed; border-bottom: 1px solid #ededed; }
+          .home-support-item:nth-child(2n) { border-right: 0; }
+          .home-support-item:nth-last-child(-n+2) { border-bottom: 0; }
+          .home-support-icon { width: 30px; height: 30px; }
+          .home-support-item strong { font-size: 10px; }
+          .home-support-item span { font-size: 9px; }
           .home-benefits { display: none; }
           .home-mobile-nav { position: fixed; z-index: 30; display: grid; grid-template-columns: repeat(5,1fr); bottom: 0; left: 0; right: 0; height: 64px; border-top: 1px solid #ddd; background: #fff; }
           .home-mobile-nav a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: #555; text-decoration: none; font-size: 9px; font-weight: 700; }
@@ -470,6 +485,25 @@ export default async function Home() {
             </div>
           </section>
         </div>
+
+        <section className="home-support" aria-label="Condiciones de compra">
+          <div className="home-support-item">
+            <span className="home-support-icon"><MapPin className="size-4" /></span>
+            <p><strong>Retiro en Linares</strong><span>Locales en Chacabuco 479 y Chacabuco 456, según disponibilidad.</span></p>
+          </div>
+          <div className="home-support-item">
+            <span className="home-support-icon"><CreditCard className="size-4" /></span>
+            <p><strong>Pagos seguros</strong><span>Webpay, transferencia, link de pago o pago al retirar.</span></p>
+          </div>
+          <div className="home-support-item">
+            <span className="home-support-icon"><Truck className="size-4" /></span>
+            <p><strong>Despacho coordinado</strong><span>Validamos stock y coordinamos entrega antes de preparar el pedido.</span></p>
+          </div>
+          <div className="home-support-item">
+            <span className="home-support-icon"><PackageCheck className="size-4" /></span>
+            <p><strong>Compra protegida</strong><span>Cambios y garantía sujetos a revisión del producto y boleta.</span></p>
+          </div>
+        </section>
 
         <footer className="home-benefits" id="contacto">
           <div className="home-benefit"><Truck className="size-7" /><span>Envíos a todo Chile<small>Rápido y seguro</small></span></div>

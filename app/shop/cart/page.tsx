@@ -100,7 +100,7 @@ export default function CartPage() {
   const checkoutIssues = [
     !customerName.trim() ? 'Falta tu nombre' : null,
     phoneDigits.length < 9 ? 'Falta un teléfono válido' : null,
-    deliveryType === 'despacho' && !deliveryAddress.trim() ? 'Falta la direccion' : null,
+    deliveryType === 'despacho' && !deliveryAddress.trim() ? 'Falta la dirección' : null,
     deliveryType === 'despacho' && !deliveryCity.trim() ? 'Falta la ciudad' : null,
   ].filter((issue): issue is string => Boolean(issue))
   const checkoutReady = Boolean(result) && checkoutIssues.length === 0 && !loading
@@ -110,7 +110,7 @@ export default function CartPage() {
     paymentMethod === 'payment_link' ? 'Solicitar link de pago' :
     'Confirmar pedido'
   const paymentNextStep =
-    paymentMethod === 'webpay' ? 'Seras redirigido a Transbank.' :
+    paymentMethod === 'webpay' ? 'Serás redirigido a Transbank.' :
     paymentMethod === 'pay_on_pickup' ? 'Pagas al retirar en tienda.' :
     paymentMethod === 'payment_link' ? 'Te enviaremos el link al teléfono indicado.' :
     'Te indicaremos los datos para transferir.'
@@ -185,7 +185,7 @@ export default function CartPage() {
     if (!customerPhone.trim() || customerPhone.replace(/\D/g, '').length < 9) {
       return toast.error('Ingresa un teléfono válido'), false
     }
-    if (deliveryType === 'despacho' && !deliveryAddress.trim()) return toast.error('Ingresa tu direccion'), false
+    if (deliveryType === 'despacho' && !deliveryAddress.trim()) return toast.error('Ingresa tu dirección'), false
     if (deliveryType === 'despacho' && !deliveryCity.trim()) return toast.error('Ingresa la ciudad'), false
     return true
   }
@@ -248,7 +248,7 @@ export default function CartPage() {
 
     if (paymentMethod === 'webpay') {
       if (!order.url || !order.token) {
-        toast.error('Webpay no entrego los datos de redireccion. Intenta nuevamente.')
+        toast.error('Webpay no entregó los datos de redirección. Intenta nuevamente.')
         setLoading(false)
         return
       }
