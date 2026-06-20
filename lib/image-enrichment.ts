@@ -90,7 +90,39 @@ const STOPWORDS = new Set([
   'colores',
   'unidad',
   'unidades',
+  'original',
+  'generico',
+  'compatible',
 ])
+
+const PRECISE_VARIANT_CATEGORIES = new Set<Category>([
+  Category.Carcasa,
+  Category.Audifonos,
+  Category.Cargador,
+])
+
+const COLOR_SYNONYMS: Record<string, string[]> = {
+  blanco: ['white', 'blanca'],
+  blanca: ['white', 'blanco'],
+  negro: ['black', 'negra'],
+  negra: ['black', 'negro'],
+  rosado: ['pink', 'rosa'],
+  rosa: ['pink', 'rosado'],
+  morado: ['purple', 'lila'],
+  azul: ['blue'],
+  rojo: ['red'],
+  verde: ['green'],
+  gris: ['gray', 'grey'],
+  transparente: ['clear', 'crystal', 'transparente'],
+}
+
+const CONNECTOR_SYNONYMS: Record<string, string[]> = {
+  ip: ['iphone', 'lightning', 'apple'],
+  typoc: ['tipo c', 'type c', 'usb c', 'usb-c'],
+  tipo: ['type'],
+  c: ['usb c', 'usb-c', 'type c'],
+  micro: ['microusb', 'micro usb', 'usb micro'],
+}
 
 function normalizeText(value: string): string {
   return value
@@ -102,10 +134,80 @@ function normalizeText(value: string): string {
     .trim()
 }
 
+function normalizeVariantValue(value: string): string {
+  return normalizeText(value)
+    .replace(/\biph\b/g, 'iphone')
+    .replace(/\bip\b/g, 'iphone')
+    .replace(/\btypo\s*c\b/g, 'tipo c')
+    .replace(/\btype\s*c\b/g, 'tipo c')
+    .replace(/\busb\s*c\b/g, 'usb c')
+    .replace(/\busb-c\b/g, 'usb c')
+    .replace(/\bto\b/g, 'a')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 function getTokens(value: string): string[] {
   return normalizeText(value)
     .split(' ')
     .filter((token) => token.length >= 2 && !STOPWORDS.has(token))
+}
+
+function getVariantMatchTerms(variantName: string): string[] {
+  const normalizedVariant = normalizeVariantValue(variantName)
+  const tokens = getTokens(normalizedVariant)
+  const terms = new Set<string>(tokens)
+
+  for (const token of tokens) {
+    for (const synonym of COLOR_SYNONYMS[token] ?? []) {
+      terms.add(normalizeText(synonym))
+    }
+    for (const synonym of CONNECTOR_SYNONYMS[token] ?? []) {
+      for (const synonymToken of getTokens(synonym)) {
+        terms.add(synonymToken)
+      }
+    }
+  }
+
+  const modelMatch = normalizedVariant.match(/\b(?:iphone\s*)?\d{1,2}\s*(?:pro\s*max|pro|plus|max)?\b/)
+  if (modelMatch) {
+    for (const token of getTokens(modelMatch[0])) {
+      terms.add(token)
+    }
+  }
+
+  return [...terms].filter(Boolean)
+}
+
+function hasAnyTermMatch(terms: string[], candidateTitle: string): boolean {
+  const candidate = normalizeVariantValue(candidateTitle)
+  const candidateTokens = new Set(getTokens(candidate))
+
+  return terms.some((term) => {
+    const normalizedTerm = normalizeVariantValue(term)
+    if (!normalizedTerm) return false
+    if (candidate.includes(normalizedTerm)) return true
+    return getTokens(normalizedTerm).some((token) => candidateTokens.has(token))
+  })
+}
+
+function matchesCategoryIntent(category: Category | null | undefined, candidateTitle: string): boolean {
+  if (!category || !PRECISE_VARIANT_CATEGORIES.has(category)) return true
+
+  const title = normalizeText(candidateTitle)
+  if (category === Category.Carcasa) {
+    return /\b(carcasa|funda|case|cover|magsafe)\b/.test(title) && !/\b(lamina|vidrio|protector pantalla)\b/.test(title)
+  }
+
+  if (category === Category.Audifonos) {
+    return /\b(audifono|audifonos|auricular|auriculares|headphone|headphones|earbuds|airpods|tws|bluetooth)\b/.test(title)
+  }
+
+  if (category === Category.Cargador) {
+    return /\b(cargador|charger|adaptador|powerbank|power bank|carga|pd|usb|tipo c|type c|wireless|inalambrico)\b/.test(title)
+  }
+
+  return true
 }
 
 function buildSearchQuery(productName: string, category?: Category | null): string {
@@ -199,6 +301,50 @@ function buildSearchQueries(productName: string, category?: Category | null): st
     .map((query) => query.trim())
     .filter(Boolean)
     .filter((query, index, queries) => queries.indexOf(query) === index)
+}
+
+function buildVariantSearchQueries(
+  productName: string,
+  variantName: string,
+  category?: Category | null
+): string[] {
+  const normalizedProduct = normalizeText(productName)
+    .replace(/\bsku\b\s*[:#-]?\s*\w+/g, '')
+    .replace(/\bcod(?:igo)?\b\s*[:#-]?\s*\w+/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+  const normalizedVariant = normalizeVariantValue(variantName)
+  const combined = `${normalizedProduct} ${normalizedVariant}`.trim()
+  const queries = new Set<string>([
+    `${productName} ${variantName}`.trim(),
+    combined,
+    `${combined} ${category ? CATEGORY_TERMS[category] : 'accesorio celular'}`.trim(),
+  ])
+
+  if (category === Category.Carcasa) {
+    const descriptor = normalizedProduct
+      .replace(/\bcarcasas?\b/g, '')
+      .replace(/\bcelular\b/g, '')
+      .trim()
+    queries.add(`carcasa ${descriptor} ${normalizedVariant}`.trim())
+    queries.add(`funda ${normalizedVariant} ${descriptor}`.trim())
+    queries.add(`case ${normalizedVariant} ${descriptor}`.trim())
+  }
+
+  if (category === Category.Audifonos) {
+    queries.add(`audifonos ${combined}`.trim())
+    queries.add(`tws ${combined}`.trim())
+  }
+
+  if (category === Category.Cargador) {
+    queries.add(`cargador ${combined}`.trim())
+    queries.add(`charger ${combined}`.trim())
+    queries.add(`adaptador ${normalizedVariant} ${normalizedProduct}`.trim())
+  }
+
+  return [...queries]
+    .map((query) => query.replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
 }
 
 function isGenericFallbackImageUrl(url: string | null | undefined): boolean {
@@ -403,20 +549,23 @@ export async function getVariantImages(
   variantName: string,
   category?: Category | null
 ): Promise<string[]> {
-  const variantTokens = getTokens(variantName)
-  if (variantTokens.length === 0) return []
+  const variantTerms = getVariantMatchTerms(variantName)
+  if (variantTerms.length === 0) return []
 
   const combinedName = `${productName} ${variantName}`.trim()
   const hasVariantToken = (title: string) => {
-    const titleTokens = new Set(getTokens(title))
-    return variantTokens.some((token) => titleTokens.has(token))
+    return hasAnyTermMatch(variantTerms, title)
   }
 
   try {
-    for (const query of buildSearchQueries(combinedName, category)) {
+    for (const query of buildVariantSearchQueries(productName, variantName, category)) {
       const mercadoLibreCandidates = await fetchMercadoLibreCandidates(combinedName, category, query)
       const bestCatalogMatches = mercadoLibreCandidates
-        .filter((candidate) => candidate.score >= 0.4 && hasVariantToken(candidate.title))
+        .filter((candidate) =>
+          candidate.score >= 0.34 &&
+          hasVariantToken(candidate.title) &&
+          matchesCategoryIntent(category, candidate.title)
+        )
         .sort((a, b) => b.score - a.score)
         .slice(0, 4)
 
@@ -426,7 +575,7 @@ export async function getVariantImages(
 
       const duckDuckGoCandidates = await fetchDuckDuckGoCandidates(combinedName, query)
       const bestWebMatches = duckDuckGoCandidates
-        .filter((candidate) => hasVariantToken(candidate.title))
+        .filter((candidate) => hasVariantToken(candidate.title) && matchesCategoryIntent(category, candidate.title))
         .slice(0, 4)
 
       if (bestWebMatches.length > 0) {
