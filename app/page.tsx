@@ -9,14 +9,15 @@ import { getActiveBanner } from '@/lib/marketing'
 import {
   BadgePercent,
   Cable,
+  Camera,
   Clock3,
-  CreditCard,
   Headphones,
   Heart,
   Home as HomeIcon,
   Laptop,
   List,
   Menu,
+  MessageCircle,
   MapPin,
   PackageCheck,
   PanelsTopLeft,
@@ -26,10 +27,16 @@ import {
   Tag,
   Truck,
   User,
+  Wrench,
   Zap,
 } from 'lucide-react'
 
 export const revalidate = 0
+
+const WHATSAPP_URL = 'https://wa.me/56953102476'
+const INSTAGRAM_URL = 'https://www.instagram.com/multiaccesorios.cl/'
+const MAP_CHACABUCO_479 = 'https://maps.app.goo.gl/jicd2cJFi37D6Qs96'
+const MAP_CHACABUCO_456 = 'https://maps.app.goo.gl/uRC2hoVc8ssf1TTU7'
 
 const CATEGORIES = [
   { value: 'Carcasa', label: 'Carcasas', icon: Smartphone },
@@ -111,7 +118,8 @@ export default async function Home() {
         .home-shell { max-width: 1510px; min-height: 100vh; margin: 0 auto; background: #fff; box-shadow: 0 18px 60px rgba(15,15,15,.08); overflow: hidden; animation: homeShellIn .45s ease both; }
         .home-topbar { height: 44px; padding: 0 52px; background: #111; color: #fff; display: flex; align-items: center; justify-content: space-between; border-radius: 22px 22px 0 0; font-size: 12px; font-weight: 600; }
         .home-topbar-group { display: flex; gap: 34px; align-items: center; }
-        .home-topbar-item { display: inline-flex; gap: 8px; align-items: center; white-space: nowrap; }
+        .home-topbar-item { display: inline-flex; gap: 8px; align-items: center; white-space: nowrap; color: inherit; text-decoration: none; }
+        .home-topbar-item[href]:hover { color: #ff4d57; }
         .home-header { display: grid; grid-template-columns: 220px minmax(360px, 1fr) 310px; gap: 24px; align-items: center; padding: 22px 52px 16px; }
         .home-brand { display: inline-flex; align-items: center; gap: 12px; color: #111; text-decoration: none; }
         .home-brand-mark { position: relative; width: 52px; height: 52px; border-radius: 8px; display: block; overflow: hidden; background: #fff; flex: 0 0 auto; }
@@ -223,8 +231,9 @@ export default async function Home() {
         .home-offer-link { position: relative; z-index: 2; margin-top: 16px; height: 36px; padding: 0 16px; border-radius: 4px; background: #e30613; color: #fff; display: inline-flex; align-items: center; text-decoration: none; font-size: 10px; font-weight: 800; transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease; }
         .home-offer-link:hover { background: #c90510; transform: translateY(-1px); box-shadow: 0 12px 24px rgba(227,6,19,.2); }
         .home-support { margin: 30px 52px 0; border: 1px solid #e8e8e8; border-radius: 8px; background: #fff; display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); overflow: hidden; }
-        .home-support-item { min-height: 102px; padding: 20px 18px; border-right: 1px solid #ededed; display: flex; align-items: flex-start; gap: 12px; }
+        .home-support-item { min-height: 102px; padding: 20px 18px; border-right: 1px solid #ededed; display: flex; align-items: flex-start; gap: 12px; color: #111; text-decoration: none; transition: background-color .16s ease, transform .16s ease; }
         .home-support-item:last-child { border-right: 0; }
+        .home-support-item:hover { background: #fafafa; transform: translateY(-1px); }
         .home-support-icon { width: 34px; height: 34px; border-radius: 999px; background: #f6f6f6; display: grid; place-items: center; color: #e30613; flex: 0 0 auto; }
         .home-support-item strong { display: block; font-size: 12px; font-weight: 900; }
         .home-support-item span { display: block; margin-top: 5px; color: #666; font-size: 10px; font-weight: 650; line-height: 1.45; }
@@ -336,8 +345,8 @@ export default async function Home() {
             <span className="home-topbar-item"><Clock3 className="size-4" /> Despacho 24-48h en Linares</span>
           </div>
           <div className="home-topbar-group">
-            <span className="home-topbar-item">Centro de ayuda</span>
-            <span className="home-topbar-item">Contacto</span>
+            <a href={WHATSAPP_URL} target="_blank" rel="noreferrer" className="home-topbar-item"><MessageCircle className="size-4" /> WhatsApp</a>
+            <a href={INSTAGRAM_URL} target="_blank" rel="noreferrer" className="home-topbar-item"><Camera className="size-4" /> Instagram</a>
           </div>
         </div>
 
@@ -486,23 +495,23 @@ export default async function Home() {
           </section>
         </div>
 
-        <section className="home-support" aria-label="Condiciones de compra">
-          <div className="home-support-item">
+        <section className="home-support" aria-label="Condiciones de compra y contacto">
+          <a href={MAP_CHACABUCO_479} target="_blank" rel="noreferrer" className="home-support-item">
             <span className="home-support-icon"><MapPin className="size-4" /></span>
-            <p><strong>Retiro en Linares</strong><span>Locales en Chacabuco 479 y Chacabuco 456, según disponibilidad.</span></p>
-          </div>
-          <div className="home-support-item">
-            <span className="home-support-icon"><CreditCard className="size-4" /></span>
-            <p><strong>Pagos seguros</strong><span>Webpay, transferencia, link de pago o pago al retirar.</span></p>
-          </div>
-          <div className="home-support-item">
-            <span className="home-support-icon"><Truck className="size-4" /></span>
-            <p><strong>Despacho coordinado</strong><span>Validamos stock y coordinamos entrega antes de preparar el pedido.</span></p>
-          </div>
-          <div className="home-support-item">
-            <span className="home-support-icon"><PackageCheck className="size-4" /></span>
-            <p><strong>Compra protegida</strong><span>Cambios y garantía sujetos a revisión del producto y boleta.</span></p>
-          </div>
+            <p><strong>Retiro en Linares</strong><span>Chacabuco 479. Atención de lunes a sábado, 09:00 a 19:00.</span></p>
+          </a>
+          <a href={MAP_CHACABUCO_456} target="_blank" rel="noreferrer" className="home-support-item">
+            <span className="home-support-icon"><Wrench className="size-4" /></span>
+            <p><strong>Servicio técnico</strong><span>Sucursal Chacabuco 456 para soporte y revisión de equipos.</span></p>
+          </a>
+          <a href={WHATSAPP_URL} target="_blank" rel="noreferrer" className="home-support-item">
+            <span className="home-support-icon"><MessageCircle className="size-4" /></span>
+            <p><strong>WhatsApp oficial</strong><span>Escríbenos al +56 9 5310 2476 para disponibilidad y entrega.</span></p>
+          </a>
+          <a href={INSTAGRAM_URL} target="_blank" rel="noreferrer" className="home-support-item">
+            <span className="home-support-icon"><Camera className="size-4" /></span>
+            <p><strong>Instagram</strong><span>Sigue novedades, atención y contenido de Multi Accesorios Linares.</span></p>
+          </a>
         </section>
 
         <footer className="home-benefits" id="contacto">

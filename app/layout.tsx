@@ -12,21 +12,34 @@ const bebasNeue = Bebas_Neue({
   variable: '--font-bebas',
 })
 
-const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://multiaccesorios.vercel.app'
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://multiaccesorios.cl'
+const logoUrl = `${siteUrl}/multi.jpeg`
+const phone = '+56953102476'
+const instagramUrl = 'https://www.instagram.com/multiaccesorios.cl/'
 const siteDescription =
-  'Accesorios tech, carcasas, láminas, cargadores, cables, audio y vapers con retiro en Linares y despacho a todo Chile.'
+  'Accesorios tech, carcasas, láminas, cargadores, cables, audio, vapers y servicio técnico con retiro en Linares y despacho a todo Chile.'
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: 'Multi Accesorios | Accesorios tech en Linares',
+    default: 'Multi Accesorios Linares | Accesorios tech y servicio técnico',
     template: '%s | Multi Accesorios',
   },
   description: siteDescription,
   applicationName: 'Multi Accesorios',
-  keywords: ['Multi Accesorios', 'accesorios tech', 'carcasas', 'láminas', 'cargadores', 'Linares'],
+  authors: [{ name: 'Multiaccesorios Linares SpA' }],
+  keywords: [
+    'Multi Accesorios',
+    'accesorios celulares Linares',
+    'carcasas iPhone',
+    'láminas',
+    'cargadores',
+    'servicio técnico celulares Linares',
+    'Chacabuco 479',
+    'Chacabuco 456',
+  ],
   openGraph: {
-    title: 'Multi Accesorios',
+    title: 'Multi Accesorios Linares | Accesorios y servicio técnico',
     description: siteDescription,
     url: siteUrl,
     siteName: 'Multi Accesorios',
@@ -36,7 +49,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Multi Accesorios',
+    title: 'Multi Accesorios Linares',
     description: siteDescription,
     images: ['/multi.jpeg'],
   },
@@ -49,20 +62,67 @@ export const metadata: Metadata = {
   },
 }
 
-const organizationJsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'Store',
-  name: 'Multi Accesorios',
-  url: siteUrl,
-  image: `${siteUrl}/multi.jpeg`,
-  areaServed: ['Linares', 'Chile'],
-  address: {
-    '@type': 'PostalAddress',
-    addressLocality: 'Linares',
-    addressCountry: 'CL',
+const localBusinessJsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'MobilePhoneStore',
+    '@id': `${siteUrl}/#sucursal-1`,
+    name: 'Multi Accesorios Linares - Sucursal 1',
+    url: siteUrl,
+    image: logoUrl,
+    telephone: phone,
+    priceRange: '$$',
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: 'Chacabuco 479',
+      addressLocality: 'Linares',
+      addressRegion: 'Maule',
+      postalCode: '3581417',
+      addressCountry: 'CL',
+    },
+    geo: {
+      '@type': 'GeoCoordinates',
+      latitude: -35.846925,
+      longitude: -71.596092,
+    },
+    hasMap: 'https://maps.app.goo.gl/jicd2cJFi37D6Qs96',
+    openingHoursSpecification: {
+      '@type': 'OpeningHoursSpecification',
+      dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+      opens: '09:00',
+      closes: '19:00',
+    },
+    sameAs: [instagramUrl],
+    paymentAccepted: ['Webpay', 'Transferencia', 'Pago al retirar'],
   },
-  paymentAccepted: ['Webpay', 'Transferencia', 'Pago al retirar'],
-}
+  {
+    '@context': 'https://schema.org',
+    '@type': 'MobilePhoneStore',
+    '@id': `${siteUrl}/#servicio-tecnico`,
+    name: 'Multi Accesorios Linares - Servicio Técnico',
+    url: siteUrl,
+    image: logoUrl,
+    telephone: phone,
+    priceRange: '$$',
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: 'Chacabuco 456',
+      addressLocality: 'Linares',
+      addressRegion: 'Maule',
+      postalCode: '3581412',
+      addressCountry: 'CL',
+    },
+    hasMap: 'https://maps.app.goo.gl/uRC2hoVc8ssf1TTU7',
+    openingHoursSpecification: {
+      '@type': 'OpeningHoursSpecification',
+      dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+      opens: '09:00',
+      closes: '19:00',
+    },
+    sameAs: [instagramUrl],
+    paymentAccepted: ['Webpay', 'Transferencia', 'Pago al retirar'],
+  },
+]
 
 export default function RootLayout({
   children,
@@ -75,7 +135,7 @@ export default function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(organizationJsonLd).replace(/</g, '\\u003c'),
+            __html: JSON.stringify(localBusinessJsonLd).replace(/</g, '\\u003c'),
           }}
         />
         <Providers>

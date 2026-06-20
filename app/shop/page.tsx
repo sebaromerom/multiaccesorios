@@ -92,6 +92,23 @@ function hasUsableImage(product: CatalogProduct) {
   })
 }
 
+function isUsableImageUrl(url?: string | null) {
+  return Boolean(url && !url.includes('placehold'))
+}
+
+function getVariantPreviewImage(product: CatalogProduct) {
+  const candidates = [...product.variants]
+    .filter((variant) => variant.stock > 0)
+    .sort((a, b) => b.stock - a.stock)
+    .flatMap((variant) => [
+      variant.imageUrl,
+      ...variant.images.map((image) => image.url),
+    ])
+    .filter((url): url is string => isUsableImageUrl(url))
+
+  return candidates.find((url) => url !== product.imageUrl) ?? candidates[0] ?? null
+}
+
 function commercialPopularityScore(product: CatalogProduct) {
   const sales = product._count.orderItems
   const hasVariants = product.variants.some((variant) => variant.stock > 0)
@@ -1291,14 +1308,10 @@ export default async function ShopPage({
               ) : (
                 <div className="product-grid">
                   {products.map((product) => {
-                    const firstVariantImage = product.variants
-                      .filter((variant) => variant.stock > 0)
-                      .flatMap((variant) => [
-                        variant.imageUrl,
-                        ...variant.images.map((image) => image.url),
-                      ])
-                      .find((url): url is string => Boolean(url && !url.includes('placehold')))
-                    const cardImage = product.imageUrl || firstVariantImage || null
+                    const variantPreviewImage = getVariantPreviewImage(product)
+                    const cardImage = product.variants.length > 0
+                      ? variantPreviewImage ?? product.imageUrl ?? null
+                      : product.imageUrl ?? null
 
                     return (
                     <article key={product.id} className="product-card">
