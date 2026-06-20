@@ -214,6 +214,10 @@ export default async function ProductPage({
         .shop-cart-icon-link {
           position: relative;
           display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 40px;
+          min-height: 40px;
           color: #111;
         }
 
@@ -376,15 +380,32 @@ export default async function ProductPage({
         }
 
         .gallery-dots button {
+          width: 40px;
+          height: 40px;
+          border-radius: 999px;
+          border: 0;
+          background: transparent;
+          cursor: pointer;
+          position: relative;
+        }
+
+        .gallery-dots button::after {
+          content: "";
+          position: absolute;
+          left: 50%;
+          top: 50%;
           width: 8px;
           height: 8px;
           border-radius: 999px;
-          border: 0;
           background: #c8c8c8;
-          cursor: pointer;
+          transform: translate(-50%, -50%);
         }
 
         .gallery-dots button.active {
+          width: 40px;
+        }
+
+        .gallery-dots button.active::after {
           width: 26px;
           background: #111;
         }
@@ -876,9 +897,13 @@ export default async function ProductPage({
           }
 
           .mobile-back {
+            width: 40px;
+            height: 40px;
             color: #111;
             display: grid;
             place-items: center;
+            border-radius: 999px;
+            text-decoration: none;
           }
 
           .mobile-brand {

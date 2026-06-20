@@ -42,7 +42,7 @@ export default async function SuccessPage({
       : payment === 'cancelled'
         ? 'Pago cancelado'
         : payment === 'unknown'
-          ? 'Operacion no encontrada'
+          ? 'Operación no encontrada'
           : 'Gracias por tu compra'
   const kicker =
     payment === 'failed' || payment === 'cancelled' || payment === 'unknown'
@@ -88,7 +88,7 @@ export default async function SuccessPage({
           className="mb-10 rounded-[6px] border border-zinc-200 bg-white p-5 text-left"
           style={{ animation: 'fadeInUp 0.5s ease 0.35s forwards', opacity: 0 }}
         >
-          <p className="text-xs font-bold uppercase tracking-widest text-zinc-400">Operacion</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-zinc-400">Operación</p>
           <div className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
             <div>
               <p className="text-zinc-500">Pedido</p>

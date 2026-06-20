@@ -99,7 +99,7 @@ export default function CartPage() {
   const phoneDigits = customerPhone.replace(/\D/g, '')
   const checkoutIssues = [
     !customerName.trim() ? 'Falta tu nombre' : null,
-    phoneDigits.length < 9 ? 'Falta un telefono valido' : null,
+    phoneDigits.length < 9 ? 'Falta un teléfono válido' : null,
     deliveryType === 'despacho' && !deliveryAddress.trim() ? 'Falta la direccion' : null,
     deliveryType === 'despacho' && !deliveryCity.trim() ? 'Falta la ciudad' : null,
   ].filter((issue): issue is string => Boolean(issue))
@@ -112,7 +112,7 @@ export default function CartPage() {
   const paymentNextStep =
     paymentMethod === 'webpay' ? 'Seras redirigido a Transbank.' :
     paymentMethod === 'pay_on_pickup' ? 'Pagas al retirar en tienda.' :
-    paymentMethod === 'payment_link' ? 'Te enviaremos el link al telefono indicado.' :
+    paymentMethod === 'payment_link' ? 'Te enviaremos el link al teléfono indicado.' :
     'Te indicaremos los datos para transferir.'
 
   useEffect(() => {
@@ -183,7 +183,7 @@ export default function CartPage() {
   function validateCheckout() {
     if (!customerName.trim()) return toast.error('Ingresa tu nombre completo'), false
     if (!customerPhone.trim() || customerPhone.replace(/\D/g, '').length < 9) {
-      return toast.error('Ingresa un telefono valido'), false
+      return toast.error('Ingresa un teléfono válido'), false
     }
     if (deliveryType === 'despacho' && !deliveryAddress.trim()) return toast.error('Ingresa tu direccion'), false
     if (deliveryType === 'despacho' && !deliveryCity.trim()) return toast.error('Ingresa la ciudad'), false
@@ -337,7 +337,7 @@ export default function CartPage() {
           {cart.length === 0 ? (
             <div className="cart-panel text-center py-20 px-5">
               <ShoppingCart className="size-10 text-zinc-300 mx-auto mb-4" />
-              <h1 className="text-2xl font-extrabold">Tu carrito esta vacio</h1>
+              <h1 className="text-2xl font-extrabold">Tu carrito está vacío</h1>
               <p className="text-sm text-zinc-500 mt-2 mb-6">Agrega productos para comenzar tu pedido.</p>
               <Link href="/shop" className="inline-flex h-11 px-6 rounded-[4px] bg-red-600 hover:bg-red-700 text-white text-sm font-bold items-center">
                 Ver productos
@@ -406,7 +406,7 @@ export default function CartPage() {
                         <h2 className="text-sm font-bold mb-4">Tus datos</h2>
                         <div className="grid sm:grid-cols-2 gap-3">
                           <input className={fieldClass} placeholder="Nombre completo *" value={customerName} onChange={(e) => setCustomerName(e.target.value)} autoComplete="name" />
-                          <input className={fieldClass} type="tel" inputMode="tel" placeholder="Telefono *" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} autoComplete="tel" />
+                          <input className={fieldClass} type="tel" inputMode="tel" placeholder="Teléfono *" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} autoComplete="tel" />
                           <input className={`${fieldClass} sm:col-span-2`} type="email" inputMode="email" placeholder="Email (opcional)" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} autoComplete="email" />
                         </div>
                       </section>
@@ -437,7 +437,7 @@ export default function CartPage() {
                           </div>
                         ) : (
                           <div className="grid sm:grid-cols-2 gap-3">
-                            <input className={fieldClass} placeholder="Direccion *" value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)} autoComplete="street-address" />
+                            <input className={fieldClass} placeholder="Dirección *" value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)} autoComplete="street-address" />
                             <input className={fieldClass} placeholder="Ciudad *" value={deliveryCity} onChange={(e) => setDeliveryCity(e.target.value)} autoComplete="address-level2" />
                           </div>
                         )}
@@ -445,7 +445,7 @@ export default function CartPage() {
                       </section>
 
                       <section className="cart-panel p-5">
-                        <h2 className="text-sm font-bold mb-4">Metodo de pago</h2>
+                        <h2 className="text-sm font-bold mb-4">Método de pago</h2>
                         <div className="grid gap-3">
                           {PAYMENT_METHODS.map((method) => {
                             const Icon = method.icon
@@ -470,24 +470,24 @@ export default function CartPage() {
                           <div className="mt-4 rounded-[4px] border border-green-200 bg-green-50 px-3 py-3 text-xs text-green-900">
                             <p className="font-bold">Datos de transferencia</p>
                             <p className="mt-1">Multi Accesorios SpA - Banco por definir</p>
-                            <p>Envia el comprobante por WhatsApp indicando el numero de pedido.</p>
+                            <p>Envía el comprobante por WhatsApp indicando el número de pedido.</p>
                           </div>
                         )}
                         {paymentMethod === 'payment_link' && (
                           <div className="mt-4 rounded-[4px] border border-blue-200 bg-blue-50 px-3 py-3 text-xs text-blue-900">
                             <p className="font-bold">Link de pago manual</p>
-                            <p className="mt-1">El pedido queda pendiente y el equipo envia el link al telefono registrado.</p>
+                            <p className="mt-1">El pedido queda pendiente y el equipo envía el link al teléfono registrado.</p>
                           </div>
                         )}
                         {paymentMethod === 'webpay' && (
                           <div className="mt-4 rounded-[4px] border border-red-200 bg-red-50 px-3 py-3 text-xs text-red-900">
                             <p className="font-bold">Pago seguro por Transbank</p>
-                            <p className="mt-1">Te redirigiremos a Webpay para completar el pago. El stock local se descuenta solo si Webpay aprueba la transaccion.</p>
+                            <p className="mt-1">Te redirigiremos a Webpay para completar el pago. El stock local se descuenta solo si Webpay aprueba la transacción.</p>
                           </div>
                         )}
                         <div className="mt-4 rounded-[4px] border border-zinc-200 bg-zinc-50 px-3 py-3 text-xs text-zinc-700">
-                          <p className="font-bold">Despues de confirmar</p>
-                          <p className="mt-1">{paymentNextStep} El pedido queda registrado para preparacion.</p>
+                          <p className="font-bold">Después de confirmar</p>
+                          <p className="mt-1">{paymentNextStep} El pedido queda registrado para preparación.</p>
                         </div>
                       </section>
                     </div>

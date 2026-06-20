@@ -41,7 +41,7 @@ export default async function BusinessAdminPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <Card className="bg-white border border-zinc-200 rounded-[6px] shadow-none">
           <CardHeader className="border-b border-zinc-100">
-            <CardTitle className="text-sm font-black uppercase tracking-widest text-black">Ventas por categoria</CardTitle>
+            <CardTitle className="text-sm font-black uppercase tracking-widest text-black">Ventas por categoría</CardTitle>
           </CardHeader>
           <CardContent className="pt-6">
             <SalesByCategoryChart data={data.salesByCategory} />

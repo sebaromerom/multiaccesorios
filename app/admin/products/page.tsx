@@ -218,7 +218,7 @@ export default async function ProductsPage({
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-bold leading-snug line-clamp-2">{product.name}</p>
-                <p className="mt-1 text-xs text-zinc-500">{product.category || 'Sin categoria'}</p>
+                <p className="mt-1 text-xs text-zinc-500">{product.category || 'Sin categoría'}</p>
                 <div className="mt-2 flex items-center justify-between gap-2">
                   <span className="text-sm font-extrabold text-red-600">${Number(product.price).toLocaleString('es-CL')}</span>
                   <span className={`text-[10px] font-bold ${product.stock <= 5 ? 'text-red-600' : 'text-zinc-500'}`}>{product.stock} unid.</span>

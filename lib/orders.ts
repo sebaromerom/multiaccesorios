@@ -32,7 +32,7 @@ export async function buildValidatedOrderPricing(
   items: OrderItemInput[]
 ) {
   if (!Array.isArray(items) || items.length === 0) {
-    throw new OrderValidationError('El carrito esta vacio')
+    throw new OrderValidationError('El carrito está vacío')
   }
 
   const normalizedItems = Array.from(
