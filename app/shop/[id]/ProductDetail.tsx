@@ -277,20 +277,18 @@ export default function ProductDetail({
               onTouchMove={moveGalleryTouch}
               onTouchEnd={endGalleryTouch}
               onTouchCancel={endGalleryTouch}
-              style={{ transform: `translateX(-${activeImage * 100}%)` }}
             >
-              {safeDisplayImages.map((image, index) => (
-                <div key={`${image}-${index}`} className="main-image-slide">
-                  <SafeProductImage
-                    src={image}
-                    alt={index === 0 ? product.name : `${product.name} imagen ${index + 1}`}
-                    fill
-                    sizes="(max-width: 760px) 100vw, 520px"
-                    priority={index === 0}
-                    imageClassName="main-product-image"
-                  />
-                </div>
-              ))}
+              <div key={`${primaryImage}-${activeImage}`} className="main-image-slide">
+                <SafeProductImage
+                  src={primaryImage}
+                  alt={activeImage === 0 ? product.name : `${product.name} imagen ${activeImage + 1}`}
+                  fill
+                  sizes="(max-width: 760px) 100vw, 520px"
+                  priority
+                  imageClassName="main-product-image"
+                  unoptimized
+                />
+              </div>
             </div>
             <span className="mobile-slide-count">{Math.min(activeImage + 1, safeDisplayImages.length)}/{safeDisplayImages.length}</span>
           </div>
