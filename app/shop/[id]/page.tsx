@@ -10,7 +10,6 @@ import {
   Menu,
   Phone,
   Search,
-  User,
   Truck,
 } from 'lucide-react'
 import ProductDetail from './ProductDetail'
@@ -19,6 +18,8 @@ import CartHeaderLink from '../CartHeaderLink'
 import BrandLogo from '@/components/BrandLogo'
 
 export const dynamic = 'force-dynamic'
+
+const WHATSAPP_URL = 'https://wa.me/56953102476'
 
 export default async function ProductPage({
   params,
@@ -1176,7 +1177,7 @@ export default async function ProductPage({
               <SearchBar instant={false} />
             </Suspense>
             <div className="detail-actions">
-              <Link href="/admin/login" className="detail-action"><User className="size-6" /><span>Mi cuenta<small>Ingresar</small></span></Link>
+              <a href={WHATSAPP_URL} target="_blank" rel="noreferrer" className="detail-action"><Phone className="size-6" /><span>Ayuda<small>WhatsApp</small></span></a>
               <Link href="/shop" className="detail-action"><Heart className="size-6" /> Favoritos</Link>
               <CartHeaderLink />
             </div>

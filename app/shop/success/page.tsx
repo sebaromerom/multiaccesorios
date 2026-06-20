@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import ClearCartOnPaid from './ClearCartOnPaid'
 
+const WHATSAPP_URL = 'https://wa.me/56953102476'
+
 const paymentLabel = (method?: string | null, status?: string | null) => {
   if (method === 'webpay' && status === 'paid') return 'Webpay aprobado'
   if (method === 'webpay' && status === 'failed') return 'Webpay rechazado'
@@ -134,8 +136,8 @@ export default async function SuccessPage({
         <Link href="/shop">
           <Button variant="outline">Seguir comprando</Button>
         </Link>
-        <Link href="/admin/orders">
-          <Button>Ver órdenes</Button>
+        <Link href={WHATSAPP_URL} target="_blank" rel="noreferrer">
+          <Button>Consultar por WhatsApp</Button>
         </Link>
       </div>
     </div>

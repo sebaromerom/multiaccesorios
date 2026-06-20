@@ -8,6 +8,7 @@ export async function proxy(request: NextRequest) {
     req: request,
     secret: process.env.NEXTAUTH_SECRET,
   })
+  const isApiRequest = pathname.startsWith('/api/')
 
   if (pathname === '/admin/login') {
     if (token?.role === 'admin') {
@@ -18,6 +19,13 @@ export async function proxy(request: NextRequest) {
   }
 
   if (token?.role !== 'admin') {
+    if (isApiRequest) {
+      return NextResponse.json(
+        { ok: false, error: 'No autorizado. Se requieren permisos de administrador.' },
+        { status: 401 }
+      )
+    }
+
     const loginUrl = new URL('/admin/login', request.url)
     loginUrl.searchParams.set('callbackUrl', request.nextUrl.pathname + request.nextUrl.search)
     return NextResponse.redirect(loginUrl)
@@ -27,5 +35,11 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*'],
+  matcher: [
+    '/admin/:path*',
+    '/api/admin/:path*',
+    '/api/products/:path*',
+    '/api/discounts/:path*',
+    '/api/marketing-banners/:path*',
+  ],
 }

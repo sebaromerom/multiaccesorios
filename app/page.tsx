@@ -354,7 +354,7 @@ export default async function Home() {
           <HomeBrand />
           <HomeSearchBar />
           <div className="home-header-actions">
-            <Link href="/admin/login" className="shop-header-action"><User className="size-5" /><span>Mi cuenta<small>Ingresar</small></span></Link>
+            <a href={WHATSAPP_URL} target="_blank" rel="noreferrer" className="shop-header-action"><MessageCircle className="size-5" /><span>Ayuda<small>WhatsApp</small></span></a>
             <CartHeaderLink />
           </div>
         </header>
@@ -527,7 +527,7 @@ export default async function Home() {
         <Link href="/shop"><List className="size-5" />Categorías</Link>
         <Link href="/shop?promo=1&page=1"><Tag className="size-5" />Ofertas</Link>
         <Link href="/shop"><Heart className="size-5" />Favoritos</Link>
-        <Link href="/admin/login"><User className="size-5" />Cuenta</Link>
+        <a href={WHATSAPP_URL} target="_blank" rel="noreferrer"><User className="size-5" />Ayuda</a>
       </nav>
 
     </div>

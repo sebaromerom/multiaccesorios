@@ -19,17 +19,19 @@ import {
   Home,
   Laptop,
   Menu,
+  MessageCircle,
   PackageCheck,
   PanelsTopLeft,
   ShieldCheck,
   Sparkles,
   Smartphone,
   Truck,
-  User,
   Zap,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
+
+const WHATSAPP_URL = 'https://wa.me/56953102476'
 
 const CATEGORIES = [
   { value: 'Carcasa', label: 'Carcasas', icon: Smartphone },
@@ -144,9 +146,6 @@ export default async function ShopPage({
       .map((category) => category.value as Category)
     : []
   const brandTerms = ['Hoco', 'Baseus', 'MLab', 'Borofone', 'Golf', 'Jellico', 'Fujitel', 'IRM', 'Apple', 'Samsung']
-  const activeDiscountCount = promo === '1'
-    ? await prisma.discountRule.count({ where: { active: true } })
-    : 0
   const publicProductWhere = {
     price: { gt: 0 },
     stock: { gt: 0 },
@@ -156,7 +155,7 @@ export default async function ShopPage({
   const where = {
     ...publicProductWhere,
     ...(cat ? { category: cat as Category } : {}),
-    ...(promo === '1' && activeDiscountCount > 0 ? { discounts: { some: { active: true } } } : {}),
+    ...(promo === '1' ? { discounts: { some: { active: true } } } : {}),
     ...(brand === 'all' ? {
       OR: brandTerms.map((term) => ({ name: { contains: term, mode: 'insensitive' as const } })),
     } : {}),
@@ -176,7 +175,6 @@ export default async function ShopPage({
     sort === 'alpha_desc' ? [{ name: 'desc' as const }] :
     sort === 'newest' ? [{ createdAt: 'desc' as const }] :
     sort === 'sales' ? [{ orderItems: { _count: 'desc' as const } }, { createdAt: 'desc' as const }] :
-    promo === '1' && activeDiscountCount === 0 ? [{ price: 'asc' as const }] :
     [
       { orderItems: { _count: 'desc' as const } },
       { stock: 'desc' as const },
@@ -194,7 +192,7 @@ export default async function ShopPage({
       select: { orderItems: true },
     },
   }
-  const useCommercialPopularity = sort === 'popular' && !(promo === '1' && activeDiscountCount === 0)
+  const useCommercialPopularity = sort === 'popular'
   const productsPromise = useCommercialPopularity
     ? prisma.product.findMany({
         where,
@@ -1203,7 +1201,7 @@ export default async function ShopPage({
             </Suspense>
 
             <div className="shop-header-actions">
-              <Link href="/admin/login" className="shop-header-action"><User className="size-6" /><span>Mi cuenta<small>Ingresar</small></span></Link>
+              <a href={WHATSAPP_URL} target="_blank" rel="noreferrer" className="shop-header-action"><MessageCircle className="size-6" /><span>Ayuda<small>WhatsApp</small></span></a>
               <CartHeaderLink />
             </div>
           </header>
