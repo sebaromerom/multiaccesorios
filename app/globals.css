@@ -5,6 +5,8 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+    --mobile-bottom-nav-height: 64px;
+    --mobile-action-bar-height: 92px;
     --background: oklch(0.97 0.005 60);
     --foreground: oklch(0.15 0.005 60);
     --card: oklch(0.99 0.005 60);
@@ -104,6 +106,11 @@
 }
 
 @layer base {
+  html,
+  body {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
   * {
     @apply border-border outline-ring/50;
   }
@@ -117,6 +124,17 @@
   h1, h2, h3 {
     font-family: 'Bebas Neue', sans-serif;
     letter-spacing: 0.05em;
+  }
+  :focus-visible {
+    outline: 2px solid #e30613;
+    outline-offset: 3px;
+  }
+  @media (max-width: 760px) {
+    input,
+    select,
+    textarea {
+      font-size: 16px !important;
+    }
   }
 }
 

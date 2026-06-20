@@ -299,16 +299,20 @@ export default function CartPage() {
         @media (max-width: 760px) {
           .cart-header { height: auto; min-height: 72px; padding: 12px 16px; gap: 12px; flex-wrap: wrap; }
           .cart-search { order: 3; width: 100%; }
-          .cart-content { padding: 20px 12px 120px; }
+          .cart-content { padding: 20px 12px calc(var(--mobile-action-bar-height) + env(safe-area-inset-bottom) + 58px); }
           .cart-grid { grid-template-columns: 1fr; gap: 16px; }
           .cart-item { grid-template-columns: 76px minmax(0,1fr); padding: 12px; gap: 12px; }
           .cart-image { width: 76px; height: 76px; }
           .cart-item-actions { grid-column: 1 / -1; display: flex; justify-content: space-between; }
-          .cart-summary { position: fixed; left: 0; right: 0; top: auto; bottom: 0; z-index: 30; border-radius: 10px 10px 0 0; border-left: 0; border-right: 0; border-bottom: 0; padding: 12px 14px 14px !important; box-shadow: 0 -12px 30px rgba(0,0,0,.10); }
+          .cart-summary { position: fixed; left: 0; right: 0; top: auto; bottom: 0; z-index: 30; border-radius: 10px 10px 0 0; border-left: 0; border-right: 0; border-bottom: 0; padding: 12px 14px calc(14px + env(safe-area-inset-bottom)) !important; box-shadow: 0 -12px 30px rgba(0,0,0,.10); }
           .cart-summary h2, .cart-summary .cart-summary-lines, .cart-summary .cart-summary-trust { display: none; }
           .cart-summary-total { border-top: 0 !important; padding-top: 0 !important; margin-bottom: 10px !important; }
           .cart-trust-row { grid-template-columns: 1fr; margin: 10px 0 14px; }
           .cart-trust-item { min-height: 42px; }
+          .cart-item-actions button,
+          .cart-summary-cta {
+            min-height: 44px;
+          }
         }
       `}</style>
 
@@ -405,9 +409,18 @@ export default function CartPage() {
                       <section className="cart-panel p-5">
                         <h2 className="text-sm font-bold mb-4">Tus datos</h2>
                         <div className="grid sm:grid-cols-2 gap-3">
-                          <input className={fieldClass} placeholder="Nombre completo *" value={customerName} onChange={(e) => setCustomerName(e.target.value)} autoComplete="name" />
-                          <input className={fieldClass} type="tel" inputMode="tel" placeholder="Teléfono *" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} autoComplete="tel" />
-                          <input className={`${fieldClass} sm:col-span-2`} type="email" inputMode="email" placeholder="Email (opcional)" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} autoComplete="email" />
+                          <label className="text-xs font-bold text-zinc-600">
+                            Nombre completo *
+                            <input className={`${fieldClass} mt-1`} placeholder="Ej: Francisca Perez" value={customerName} onChange={(e) => setCustomerName(e.target.value)} autoComplete="name" />
+                          </label>
+                          <label className="text-xs font-bold text-zinc-600">
+                            Telefono *
+                            <input className={`${fieldClass} mt-1`} type="tel" inputMode="tel" placeholder="+56 9 1234 5678" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} autoComplete="tel" />
+                          </label>
+                          <label className="text-xs font-bold text-zinc-600 sm:col-span-2">
+                            Email opcional
+                            <input className={`${fieldClass} mt-1`} type="email" inputMode="email" placeholder="correo@ejemplo.cl" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} autoComplete="email" />
+                          </label>
                         </div>
                       </section>
 
@@ -437,11 +450,20 @@ export default function CartPage() {
                           </div>
                         ) : (
                           <div className="grid sm:grid-cols-2 gap-3">
-                            <input className={fieldClass} placeholder="Dirección *" value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)} autoComplete="street-address" />
-                            <input className={fieldClass} placeholder="Ciudad *" value={deliveryCity} onChange={(e) => setDeliveryCity(e.target.value)} autoComplete="address-level2" />
+                            <label className="text-xs font-bold text-zinc-600">
+                              Direccion *
+                              <input className={`${fieldClass} mt-1`} placeholder="Calle, numero, depto" value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)} autoComplete="street-address" />
+                            </label>
+                            <label className="text-xs font-bold text-zinc-600">
+                              Ciudad *
+                              <input className={`${fieldClass} mt-1`} placeholder="Ej: Linares" value={deliveryCity} onChange={(e) => setDeliveryCity(e.target.value)} autoComplete="address-level2" />
+                            </label>
                           </div>
                         )}
-                        <input className={`${fieldClass} mt-3`} placeholder="Notas adicionales (opcional)" value={deliveryNotes} onChange={(e) => setDeliveryNotes(e.target.value)} />
+                        <label className="mt-3 block text-xs font-bold text-zinc-600">
+                          Notas adicionales opcional
+                          <input className={`${fieldClass} mt-1`} placeholder="Referencias o instrucciones" value={deliveryNotes} onChange={(e) => setDeliveryNotes(e.target.value)} />
+                        </label>
                       </section>
 
                       <section className="cart-panel p-5">

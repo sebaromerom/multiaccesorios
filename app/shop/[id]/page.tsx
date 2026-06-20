@@ -941,7 +941,7 @@ export default async function ProductPage({
           }
 
           .product-detail-root {
-            padding: 0 16px 100px;
+            padding: 0 16px calc(var(--mobile-action-bar-height) + env(safe-area-inset-bottom) + 24px);
           }
 
           .product-detail-grid {
@@ -1054,7 +1054,7 @@ export default async function ProductPage({
 
           .variant-card {
             flex: 0 0 102px;
-            min-height: 68px;
+            min-height: 72px;
             grid-template-columns: 36px 1fr;
             gap: 7px;
             padding: 8px;
@@ -1101,7 +1101,7 @@ export default async function ProductPage({
             grid-template-columns: 78px 88px 1fr;
             gap: 10px;
             align-items: center;
-            padding: 12px 16px 18px;
+            padding: 12px 16px calc(14px + env(safe-area-inset-bottom));
           }
 
           .mobile-buy-bar strong {
@@ -1118,7 +1118,7 @@ export default async function ProductPage({
           }
 
           .mobile-qty {
-            height: 38px;
+            height: 44px;
             display: grid;
             grid-template-columns: 28px 1fr 28px;
             border: 1px solid #ddd;
@@ -1135,8 +1135,12 @@ export default async function ProductPage({
             border-right: 1px solid #eee;
           }
 
+          .mobile-qty button {
+            min-width: 32px;
+          }
+
           .mobile-buy-bar > button {
-            height: 42px;
+            min-height: 44px;
             border: 0;
             border-radius: 5px;
             background: #e30613;

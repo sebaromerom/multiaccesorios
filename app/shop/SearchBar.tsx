@@ -41,6 +41,9 @@ export default function SearchBar({ instant = true, initialQuery = '' }: { insta
   return (
     <div className="shop-search-control">
       <input
+        type="search"
+        inputMode="search"
+        enterKeyHint="search"
         value={query}
         onChange={(event) => setQuery(event.target.value)}
         onKeyDown={(event) => {

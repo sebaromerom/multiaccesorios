@@ -17,6 +17,9 @@ export default function HomeSearchBar() {
   return (
     <form className="shop-search-control" onSubmit={submit}>
       <input
+        type="search"
+        inputMode="search"
+        enterKeyHint="search"
         value={query}
         onChange={(event) => setQuery(event.target.value)}
         placeholder="Buscar productos, marcas y mas..."

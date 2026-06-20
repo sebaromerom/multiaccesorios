@@ -1075,7 +1075,7 @@ export default async function ShopPage({
 
           .shop-content {
             display: block;
-            padding: 0 16px 32px;
+            padding: 0 16px calc(var(--mobile-bottom-nav-height) + env(safe-area-inset-bottom) + 28px);
             background: #fff;
           }
 
@@ -1112,6 +1112,7 @@ export default async function ShopPage({
 
           .product-card {
             border-radius: 6px;
+            min-height: 100%;
           }
 
           .product-img-wrap {
@@ -1147,11 +1148,20 @@ export default async function ShopPage({
             min-height: 38px;
             font-size: 11px;
             line-height: 1.35;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
           }
 
           .product-price {
             font-size: 16px;
             margin: 9px 0 10px;
+          }
+
+          .product-info a,
+          .product-info button {
+            min-height: 44px;
           }
 
           .shop-benefits {

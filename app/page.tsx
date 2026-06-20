@@ -252,7 +252,7 @@ export default async function Home() {
           .home-mobile-header .home-brand-text { font-size: 15px; }
           .home-mobile-header .shop-search-control { height: 42px; border-radius: 5px; }
           .home-mobile-header .shop-search-submit { height: 42px; width: 48px; }
-          .home-content { padding: 14px 14px 78px; }
+          .home-content { padding: 14px 14px calc(var(--mobile-bottom-nav-height) + env(safe-area-inset-bottom) + 22px); }
           .home-hero { height: 170px; padding: 18px 16px; }
           .home-hero-copy { width: 52%; }
           .home-hero-kicker { font-size: 7px; }
@@ -271,12 +271,12 @@ export default async function Home() {
           .home-category { flex: 0 0 74px; min-height: 76px; gap: 7px; font-size: 9px; }
           .home-category small { display: none; }
           .home-trending-layout { display: block; }
-          .home-product-grid { grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; }
-          .home-product-card:nth-child(n+4) { display: none; }
-          .home-product-image { height: 126px; padding: 7px; }
+          .home-product-grid { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
+          .home-product-card:nth-child(n+5) { display: none; }
+          .home-product-image { height: 146px; padding: 8px; }
           .home-product-info { padding: 8px; }
-          .home-product-name { height: 34px; font-size: 9px; }
-          .home-product-price { font-size: 13px; }
+          .home-product-name { height: 34px; font-size: 10px; }
+          .home-product-price { font-size: 15px; }
           .home-product-info button { display: none; }
           .home-offer { margin-top: 16px; min-height: 138px; padding: 18px 14px; }
           .home-offer h3 { font-size: 16px; max-width: 42%; }
@@ -289,8 +289,8 @@ export default async function Home() {
           .home-support-item strong { font-size: 10px; }
           .home-support-item span { font-size: 9px; }
           .home-benefits { display: none; }
-          .home-mobile-nav { position: fixed; z-index: 30; display: grid; grid-template-columns: repeat(5,1fr); bottom: 0; left: 0; right: 0; height: 64px; border-top: 1px solid #ddd; background: #fff; }
-          .home-mobile-nav a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: #555; text-decoration: none; font-size: 9px; font-weight: 700; }
+          .home-mobile-nav { position: fixed; z-index: 30; display: grid; grid-template-columns: repeat(5,1fr); bottom: 0; left: 0; right: 0; min-height: var(--mobile-bottom-nav-height); padding-bottom: env(safe-area-inset-bottom); border-top: 1px solid #ddd; background: #fff; }
+          .home-mobile-nav a { min-height: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: #555; text-decoration: none; font-size: 9px; font-weight: 700; }
           .home-mobile-nav a:first-child { color: #e30613; }
         }
         @media (max-width: 390px) {
