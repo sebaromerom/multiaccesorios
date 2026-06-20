@@ -54,6 +54,27 @@ const CATEGORY_SEARCH_ALIASES: Record<Category, string[]> = {
 }
 
 const PAGE_SIZE = 24
+const CATEGORY_POPULARITY: Partial<Record<Category, number>> = {
+  Carcasa: 18,
+  Lamina: 16,
+  Cargador: 14,
+  Cable: 13,
+  Audifonos: 12,
+  Vapers: 10,
+  Computacion: 8,
+  Otros: 4,
+}
+
+type CatalogProduct = {
+  imageUrl: string | null
+  category: Category | null
+  price: number
+  stock: number
+  createdAt: Date
+  variants: { stock: number; imageUrl: string | null; images: { url: string }[] }[]
+  discounts: { id: string }[]
+  _count: { orderItems: number }
+}
 
 function normalizeSearch(value: string) {
   return value
@@ -63,12 +84,38 @@ function normalizeSearch(value: string) {
     .trim()
 }
 
+function hasUsableImage(product: CatalogProduct) {
+  if (product.imageUrl && !product.imageUrl.includes('placehold')) return true
+  return product.variants.some((variant) => {
+    if (variant.imageUrl && !variant.imageUrl.includes('placehold')) return true
+    return variant.images.some((image) => image.url && !image.url.includes('placehold'))
+  })
+}
+
+function commercialPopularityScore(product: CatalogProduct) {
+  const sales = product._count.orderItems
+  const hasVariants = product.variants.some((variant) => variant.stock > 0)
+  const impulsePrice = product.price >= 2990 && product.price <= 19990
+  const accessiblePrice = product.price > 0 && product.price <= 39990
+  const stockScore = Math.min(product.stock, 12)
+
+  return (
+    sales * 100 +
+    (hasUsableImage(product) ? 40 : 0) +
+    (product.discounts.length > 0 ? 25 : 0) +
+    (hasVariants ? 18 : 0) +
+    stockScore +
+    (impulsePrice ? 12 : accessiblePrice ? 6 : 0) +
+    (product.category ? CATEGORY_POPULARITY[product.category] ?? 0 : 0)
+  )
+}
+
 export default async function ShopPage({
   searchParams,
 }: {
   searchParams: Promise<{ q?: string; cat?: string; page?: string; sort?: string; promo?: string; brand?: string }>
 }) {
-  const { q, cat, page, sort = 'newest', promo, brand } = await searchParams
+  const { q, cat, page, sort = 'popular', promo, brand } = await searchParams
   const currentPage = Math.max(1, Number(page || 1))
   const normalizedQuery = normalizeSearch(q ?? '')
   const categoryMatches = normalizedQuery
@@ -101,26 +148,53 @@ export default async function ShopPage({
   }
 
   const orderBy =
-    sort === 'price_asc' ? { price: 'asc' as const } :
-    sort === 'price_desc' ? { price: 'desc' as const } :
-    sort === 'alpha_asc' ? { name: 'asc' as const } :
-    sort === 'alpha_desc' ? { name: 'desc' as const } :
-    sort === 'sales' ? { orderItems: { _count: 'desc' as const } } :
-    promo === '1' && activeDiscountCount === 0 ? { price: 'asc' as const } :
-    { createdAt: 'desc' as const }
+    sort === 'price_asc' ? [{ price: 'asc' as const }] :
+    sort === 'price_desc' ? [{ price: 'desc' as const }] :
+    sort === 'alpha_asc' ? [{ name: 'asc' as const }] :
+    sort === 'alpha_desc' ? [{ name: 'desc' as const }] :
+    sort === 'newest' ? [{ createdAt: 'desc' as const }] :
+    sort === 'sales' ? [{ orderItems: { _count: 'desc' as const } }, { createdAt: 'desc' as const }] :
+    promo === '1' && activeDiscountCount === 0 ? [{ price: 'asc' as const }] :
+    [
+      { orderItems: { _count: 'desc' as const } },
+      { stock: 'desc' as const },
+      { createdAt: 'desc' as const },
+    ]
+  const productInclude = {
+    variants: {
+      include: { images: { orderBy: { order: 'asc' as const } } },
+    },
+    discounts: {
+      where: { active: true },
+      select: { id: true },
+    },
+    _count: {
+      select: { orderItems: true },
+    },
+  }
+  const useCommercialPopularity = sort === 'popular' && !(promo === '1' && activeDiscountCount === 0)
+  const productsPromise = useCommercialPopularity
+    ? prisma.product.findMany({
+        where,
+        orderBy: [{ createdAt: 'desc' as const }],
+        include: productInclude,
+      }).then((allProducts) => allProducts
+        .sort((a, b) => {
+          const scoreDiff = commercialPopularityScore(b) - commercialPopularityScore(a)
+          if (scoreDiff !== 0) return scoreDiff
+          return b.createdAt.getTime() - a.createdAt.getTime()
+        })
+        .slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE))
+    : prisma.product.findMany({
+        where,
+        orderBy,
+        include: productInclude,
+        take: PAGE_SIZE,
+        skip: (currentPage - 1) * PAGE_SIZE,
+      })
 
   const [products, totalProducts, allAvailableProducts, categoryAggregations, shopBanner] = await Promise.all([
-    prisma.product.findMany({
-      where,
-      orderBy,
-      include: {
-        variants: {
-          include: { images: { orderBy: { order: 'asc' } } },
-        },
-      },
-      take: PAGE_SIZE,
-      skip: (currentPage - 1) * PAGE_SIZE,
-    }),
+    productsPromise,
     prisma.product.count({ where }),
     prisma.product.count({ where: { stock: { gt: 0 } } }),
     prisma.product.groupBy({
@@ -142,7 +216,7 @@ export default async function ShopPage({
     const params = new URLSearchParams()
     if (q) params.set('q', q)
     if (cat) params.set('cat', cat)
-    if (sort !== 'newest') params.set('sort', sort)
+    if (sort !== 'popular') params.set('sort', sort)
     if (promo) params.set('promo', promo)
     if (brand) params.set('brand', brand)
 

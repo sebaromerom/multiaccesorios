@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation'
 
 const OPTIONS = [
+  { value: 'popular', label: 'Popularidad' },
   { value: 'newest', label: 'Más recientes' },
   { value: 'sales', label: 'Más vendidos' },
   { value: 'price_asc', label: 'Precio: menor a mayor' },
@@ -17,7 +18,7 @@ export default function SortSelect({ value, mobile = false }: { value: string; m
 
   function handleChange(nextValue: string) {
     const params = new URLSearchParams(searchParams.toString())
-    if (nextValue === 'newest') params.delete('sort')
+    if (nextValue === 'popular') params.delete('sort')
     else params.set('sort', nextValue)
     params.delete('page')
     router.push(`/shop${params.toString() ? `?${params.toString()}` : ''}`)
