@@ -164,7 +164,7 @@ export default function MarketingBannerForm({
               <Input id="endsAt" name="endsAt" type="datetime-local" defaultValue={formatDatetimeLocal(banner?.endsAt ?? null)} />
             </div>
           </div>
-          <Button type="submit" disabled={loading} className="bg-red-600 hover:bg-red-700 text-white">
+          <Button type="submit" disabled={loading} className="min-h-11 bg-red-600 hover:bg-red-700 text-white">
             {loading ? 'Guardando...' : 'Guardar banner'}
           </Button>
         </form>

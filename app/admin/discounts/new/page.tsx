@@ -128,7 +128,7 @@ export default function NewDiscountPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <Button type="submit" disabled={loading}>
+              <Button type="submit" disabled={loading} className="min-h-11">
                 {loading ? 'Guardando...' : 'Guardar Descuento'}
               </Button>
             </form>

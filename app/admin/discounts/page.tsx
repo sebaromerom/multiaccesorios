@@ -105,7 +105,7 @@ export default async function DiscountsPage() {
             </div>
             <div className="mt-4 flex items-end justify-between border-t border-zinc-100 pt-3">
               <div><p className="text-[11px] text-zinc-500">Beneficio</p><p className="mt-1 text-lg font-extrabold text-red-600">{valueLabel(discount)}</p></div>
-              <Link href={`/admin/discounts/${discount.id}`} className="h-9 rounded-[4px] border border-zinc-300 px-4 text-xs font-bold flex items-center">Editar</Link>
+              <Link href={`/admin/discounts/${discount.id}`} className="min-h-11 rounded-[4px] border border-zinc-300 px-4 text-xs font-bold flex items-center">Editar</Link>
             </div>
           </article>
         ))}

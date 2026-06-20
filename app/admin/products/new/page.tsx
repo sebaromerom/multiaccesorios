@@ -127,7 +127,7 @@ export default function NewProductPage() {
                   `}
                 >
                   {previews.length > 0 ? (
-                    <div className="grid grid-cols-3 gap-2 w-full">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 w-full">
                       {previews.map((src, i) => (
                         <div key={i} className="relative group aspect-square">
                           <Image
@@ -141,7 +141,8 @@ export default function NewProductPage() {
                           <button
                             type="button"
                             onClick={(e) => { e.stopPropagation(); removeImage(i) }}
-                            className="absolute -top-2 -right-2 w-6 h-6 bg-red-600 text-white rounded-full flex items-center justify-center text-xs shadow-lg"
+                            className="absolute -top-2 -right-2 min-h-8 min-w-8 bg-red-600 text-white rounded-full flex items-center justify-center text-xs shadow-lg"
+                            aria-label="Quitar imagen"
                           >
                             ×
                           </button>
@@ -173,7 +174,7 @@ export default function NewProductPage() {
                     id="category"
                     name="category"
                     required
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
+                    className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
                   >
                     <option value="">Selecciona una categoría</option>
                     <option value="Carcasa">Carcasa</option>
@@ -192,7 +193,7 @@ export default function NewProductPage() {
                   <Input id="description" name="description" placeholder="Breve descripción del producto..." />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-4 sm:grid-cols-2">
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="price">Precio ($)</Label>
                     <Input id="price" name="price" type="number" placeholder="9990" />

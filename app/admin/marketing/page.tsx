@@ -87,9 +87,9 @@ export default async function MarketingPage() {
                     {dateLabel(banner.startsAt)} - {dateLabel(banner.endsAt)}
                   </p>
                 </div>
-                <div className="flex gap-2 md:justify-end">
-                  <Link href={`/admin/marketing/${banner.id}`}>
-                    <Button variant="outline" size="sm">Editar</Button>
+                <div className="flex flex-col gap-2 sm:flex-row md:justify-end">
+                  <Link href={`/admin/marketing/${banner.id}`} className="w-full sm:w-auto">
+                    <Button variant="outline" size="sm" className="min-h-11 w-full sm:w-auto">Editar</Button>
                   </Link>
                   <DeleteMarketingBannerButton id={banner.id} />
                 </div>

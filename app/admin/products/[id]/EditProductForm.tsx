@@ -77,7 +77,7 @@ function DropZone({
       }`}
     >
       {images.length > 0 ? (
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {images.map((img, i) => (
             <div key={i} className="relative group aspect-square">
               <Image
@@ -91,7 +91,8 @@ function DropZone({
               <button
                 type="button"
                 onClick={() => onRemove(i)}
-                className="absolute top-1 right-1 w-5 h-5 bg-black/70 text-white rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute top-1 right-1 min-h-8 min-w-8 bg-black/70 text-white rounded-full flex items-center justify-center text-xs opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+                aria-label="Quitar imagen"
               >×</button>
               {i === 0 && (
                 <span className="absolute bottom-1 left-1 text-[10px] bg-black/70 text-white px-1 rounded">
@@ -344,7 +345,7 @@ export default function EditProductForm({ product, returnQuery }: { product: Pro
               id="category"
               name="category"
               defaultValue={product.category ?? ''}
-              className="flex h-9 w-full rounded border border-border bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="flex h-11 w-full rounded border border-border bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
               <option value="Carcasa">Carcasas</option>
               <option value="Lamina">Láminas</option>
@@ -364,7 +365,7 @@ export default function EditProductForm({ product, returnQuery }: { product: Pro
           </div>
 
           {/* Precio + Stock */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-2">
               <Label htmlFor="price">Precio</Label>
               <Input id="price" name="price" type="number" step="0.01" defaultValue={product.price} />

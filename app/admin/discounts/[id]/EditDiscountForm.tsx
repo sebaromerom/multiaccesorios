@@ -148,7 +148,7 @@ export default function EditDiscountForm({
               </SelectContent>
             </Select>
           </div>
-          <Button type="submit" disabled={loading}>
+          <Button type="submit" disabled={loading} className="min-h-11">
             {loading ? 'Guardando...' : 'Guardar Cambios'}
           </Button>
         </form>

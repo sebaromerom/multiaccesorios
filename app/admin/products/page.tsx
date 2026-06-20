@@ -90,13 +90,13 @@ export default async function ProductsPage({
           name="q"
           defaultValue={q ?? ''}
           placeholder="Buscar por nombre..."
-          className="h-10 px-3 rounded-[4px] border border-zinc-300 focus:border-red-600 outline-none text-sm w-full sm:w-72 transition-colors"
+          className="h-11 px-3 rounded-[4px] border border-zinc-300 focus:border-red-600 outline-none text-sm w-full sm:w-72 transition-colors"
         />
 
         <select
           name="cat"
           defaultValue={cat ?? ''}
-          className="h-10 px-3 rounded-[4px] border border-zinc-300 focus:border-red-600 outline-none text-sm bg-white transition-colors w-full sm:w-auto"
+          className="h-11 px-3 rounded-[4px] border border-zinc-300 focus:border-red-600 outline-none text-sm bg-white transition-colors w-full sm:w-auto"
         >
           <option value="">Todas las categorías</option>
           {CATEGORIES.map(c => (
@@ -107,7 +107,7 @@ export default async function ProductsPage({
         <div className="flex gap-3 w-full sm:w-auto">
           <button
             type="submit"
-            className="h-10 flex-1 sm:flex-none px-5 rounded-[4px] bg-red-600 text-white text-xs font-bold hover:bg-red-700 transition-colors"
+            className="min-h-11 flex-1 sm:flex-none px-5 rounded-[4px] bg-red-600 text-white text-xs font-bold hover:bg-red-700 transition-colors"
           >
             Buscar
           </button>
@@ -115,7 +115,7 @@ export default async function ProductsPage({
           {(q || cat) && (
             <Link
               href="/admin/products"
-              className="h-10 flex-1 sm:flex-none px-6 border-2 border-zinc-300 text-zinc-500 text-xs uppercase tracking-widest font-bold hover:border-black hover:text-black transition-colors flex items-center justify-center"
+              className="min-h-11 flex-1 sm:flex-none px-6 border-2 border-zinc-300 text-zinc-500 text-xs uppercase tracking-widest font-bold hover:border-black hover:text-black transition-colors flex items-center justify-center"
             >
               Limpiar
             </Link>
@@ -230,7 +230,7 @@ export default async function ProductsPage({
             </div>
             <div className="mt-3 flex gap-2 border-t border-zinc-100 pt-3">
               <Link href={`/admin/products/${product.id}${queryString ? `?${queryString}` : ''}`} className="flex-1">
-                <Button variant="outline" size="sm" className="w-full rounded-[4px] text-xs font-bold">Editar</Button>
+                <Button variant="outline" size="sm" className="min-h-11 w-full rounded-[4px] text-xs font-bold">Editar</Button>
               </Link>
               <DeleteProductButton id={product.id} />
             </div>

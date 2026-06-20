@@ -49,7 +49,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
         .admin-brand { height: 78px; padding: 0 22px; display: flex; align-items: center; gap: 11px; border-bottom: 1px solid #292929; }
         .admin-brand-mark { position: relative; width: 36px; height: 36px; border-radius: 6px; background: #fff; display: block; overflow: hidden; flex: 0 0 auto; }
         .admin-nav { padding: 18px 12px; display: flex; flex-direction: column; gap: 4px; }
-        .admin-nav-link { display: flex; align-items: center; gap: 11px; min-height: 42px; padding: 0 12px; border-radius: 5px; color: #b7b7b7; font-size: 13px; font-weight: 600; transition: .16s ease; }
+        .admin-nav-link { display: flex; align-items: center; gap: 11px; min-height: 44px; padding: 0 12px; border-radius: 5px; color: #b7b7b7; font-size: 13px; font-weight: 600; transition: .16s ease; }
         .admin-nav-link:hover { background: #202020; color: #fff; }
         .admin-nav-link.active { background: #e30613; color: #fff; }
         .admin-sidebar-footer { margin-top: auto; padding: 14px 12px 18px; border-top: 1px solid #292929; }
@@ -58,15 +58,18 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
         .admin-content { padding: 28px 30px 48px; max-width: 1600px; margin: 0 auto; }
         .admin-mobile-button { display: none; }
         .admin-sidebar-close { display: none; }
+        .admin-backdrop { display: none; }
         .admin-page-title { font-size: 30px; line-height: 1.1; font-weight: 800; letter-spacing: 0; }
         .admin-page-kicker { color: #737373; font-size: 12px; margin-top: 5px; }
         @media (max-width: 860px) {
-          .admin-sidebar { transform: translateX(-100%); transition: transform .2s ease; box-shadow: 12px 0 30px rgba(0,0,0,.16); }
+          .admin-shell { min-height: 100dvh; }
+          .admin-sidebar { width: min(82vw, 300px); padding-bottom: env(safe-area-inset-bottom); transform: translateX(-100%); transition: transform .2s ease; box-shadow: 12px 0 30px rgba(0,0,0,.16); }
           .admin-sidebar.open { transform: translateX(0); }
+          .admin-backdrop.open { display: block; position: fixed; inset: 0; z-index: 40; border: 0; background: rgba(0,0,0,.42); }
           .admin-main { padding-left: 0; }
-          .admin-topbar { height: 64px; padding: 0 16px; }
-          .admin-content { padding: 20px 14px 36px; }
-          .admin-mobile-button { display: inline-grid; place-items: center; width: 38px; height: 38px; border: 1px solid #ddd; border-radius: 5px; }
+          .admin-topbar { min-height: 64px; padding: 0 16px; padding-top: env(safe-area-inset-top); }
+          .admin-content { padding: 20px 14px calc(36px + env(safe-area-inset-bottom)); }
+          .admin-mobile-button { display: inline-grid; place-items: center; width: 44px; height: 44px; border: 1px solid #ddd; border-radius: 5px; }
           .admin-sidebar-close { display: inline-flex; }
           .admin-page-title { font-size: 23px; }
         }
@@ -123,6 +126,12 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
           </button>
         </div>
       </aside>
+      <button
+        type="button"
+        className={`admin-backdrop ${open ? 'open' : ''}`}
+        onClick={() => setOpen(false)}
+        aria-label="Cerrar menu administrativo"
+      />
 
       <div className="admin-main">
         <header className="admin-topbar">
