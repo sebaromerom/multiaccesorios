@@ -10,7 +10,7 @@ const concurrency = Math.min(Math.max(Number(concurrencyArg?.split('=')[1] ?? 5)
 const overwrite = process.argv.includes('--overwrite')
 const dryRun = process.argv.includes('--dry-run')
 const categoriesArg = process.argv.find((arg) => arg.startsWith('--categories='))
-const categories = (categoriesArg?.split('=')[1]?.split(',') ?? ['Carcasa', 'Audifonos', 'Cargador'])
+const categories = (categoriesArg?.split('=')[1]?.split(',') ?? ['Carcasa', 'Lamina', 'Audifonos', 'Cargador'])
   .map((value) => value.trim())
   .filter(Boolean)
 
@@ -25,6 +25,7 @@ const stopwords = new Set([
 
 const categoryTerms = {
   Carcasa: 'carcasa funda case',
+  Lamina: 'lamina protector vidrio carcasa funda magsafe',
   Audifonos: 'audifonos tws bluetooth',
   Cargador: 'cargador charger adaptador',
 }
@@ -105,6 +106,9 @@ function categoryMatches(category, title) {
     return /\b(carcasa|funda|case|cover|magsafe)\b/.test(normalized) &&
       !/\b(lamina|vidrio|protector pantalla)\b/.test(normalized)
   }
+  if (category === 'Lamina') {
+    return /\b(lamina|vidrio|protector|pantalla|glass|tempered|carcasa|funda|case|cover|magsafe)\b/.test(normalized)
+  }
   if (category === 'Audifonos') {
     return /\b(audifono|audifonos|auricular|auriculares|headphone|headphones|earbuds|airpods|tws|bluetooth)\b/.test(normalized)
   }
@@ -112,6 +116,21 @@ function categoryMatches(category, title) {
     return /\b(cargador|charger|adaptador|powerbank|power bank|carga|pd|usb|tipo c|type c|wireless|inalambrico)\b/.test(normalized)
   }
   return true
+}
+
+function modelMatches(productName, variantName, title) {
+  const product = normalizeVariant(productName)
+  const variant = normalizeVariant(variantName)
+  const normalizedTitle = normalizeVariant(title)
+  const simpleIphoneModel = variant.match(/^\d{1,2}$/)?.[0]
+
+  if (!simpleIphoneModel || !/\biphone\b/.test(product)) return true
+
+  const upgradedModelPattern = new RegExp(
+    `\\b(?:iphone\\s*)?${simpleIphoneModel}\\s*(?:pro\\s*max|pro|max|plus|mini)\\b`
+  )
+
+  return !upgradedModelPattern.test(normalizedTitle)
 }
 
 function isColorVariant(value) {
@@ -142,6 +161,25 @@ function queries(product, variant) {
     result.add(`carcasa ${descriptor} ${variantName}`.trim())
     result.add(`funda ${variantName} ${descriptor}`.trim())
     result.add(`case ${variantName} ${descriptor}`.trim())
+  }
+
+  if (product.category === 'Lamina') {
+    const isMagsafeCase = /\b(magsafe|carcasa|funda|case|cover)\b/.test(productName)
+    const descriptor = productName
+      .replace(/\blaminas?\b/g, '')
+      .replace(/\bprotector(?:es)?\b/g, '')
+      .replace(/\bpantalla\b/g, '')
+      .trim()
+
+    if (isMagsafeCase) {
+      result.add(`carcasa ${descriptor} ${variantName}`.trim())
+      result.add(`funda magsafe ${variantName} ${descriptor}`.trim())
+      result.add(`case magsafe ${variantName} ${descriptor}`.trim())
+    } else {
+      result.add(`lamina ${descriptor} ${variantName}`.trim())
+      result.add(`vidrio templado ${variantName} ${descriptor}`.trim())
+      result.add(`protector pantalla ${variantName} ${descriptor}`.trim())
+    }
   }
 
   if (product.category === 'Audifonos') {
@@ -191,7 +229,8 @@ async function mercadoLibreCandidates(product, variant, query) {
       candidate.url &&
       candidate.score >= 0.28 &&
       hasTermMatch(terms, candidate.title) &&
-      categoryMatches(product.category, candidate.title)
+      categoryMatches(product.category, candidate.title) &&
+      modelMatches(product.name, variant.size, candidate.title)
     )
     .sort((a, b) => b.score - a.score)
     .slice(0, 4)
@@ -236,6 +275,7 @@ async function duckDuckGoCandidates(product, variant, query) {
       if (!candidate.url.startsWith('http')) return false
       if (candidate.url.includes('.svg') || candidate.url.toLowerCase().includes('.pdf')) return false
       if (!categoryMatches(product.category, candidate.title)) return false
+      if (!modelMatches(product.name, variant.size, `${candidate.title} ${candidate.url}`)) return false
       if (hasTermMatch(terms, `${candidate.title} ${candidate.url}`)) return true
       return colorVariant && score(product.name, candidate.title) >= 0.5
     })

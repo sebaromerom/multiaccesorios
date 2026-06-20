@@ -37,7 +37,7 @@ type Product = {
 }
 
 function cleanImages(images: string[]) {
-  return images.filter((url) => url && !url.includes('placehold'))
+  return [...new Set(images.filter((url) => url && !url.includes('placehold')))]
 }
 
 export default function ProductDetail({
@@ -74,8 +74,8 @@ export default function ProductDetail({
   const fallbackImages = cleanImages(carouselImages)
   const variantImages = selectedVariant
     ? cleanImages([
-        ...selectedVariant.images,
         ...(selectedVariant.imageUrl ? [selectedVariant.imageUrl] : []),
+        ...selectedVariant.images,
       ])
     : []
 
@@ -338,8 +338,8 @@ export default function ProductDetail({
                   const itemInCart = cartItems.find((item) => item.id === `${product.id}-${variant.size}`)
                   const freeStock = Math.max(0, variant.stock - (itemInCart?.quantity ?? 0))
                   const isAvailable = freeStock > 0
-                  const hasOwnVariantImage = Boolean(variant.images[0] ?? variant.imageUrl)
-                  const variantImage = variant.images[0] ?? variant.imageUrl ?? fallbackImages[0] ?? null
+                  const hasOwnVariantImage = Boolean(variant.imageUrl ?? variant.images[0])
+                  const variantImage = variant.imageUrl ?? variant.images[0] ?? fallbackImages[0] ?? null
 
                   return (
                     <button

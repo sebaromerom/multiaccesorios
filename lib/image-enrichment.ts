@@ -97,6 +97,7 @@ const STOPWORDS = new Set([
 
 const PRECISE_VARIANT_CATEGORIES = new Set<Category>([
   Category.Carcasa,
+  Category.Lamina,
   Category.Audifonos,
   Category.Cargador,
 ])
@@ -199,6 +200,10 @@ function matchesCategoryIntent(category: Category | null | undefined, candidateT
     return /\b(carcasa|funda|case|cover|magsafe)\b/.test(title) && !/\b(lamina|vidrio|protector pantalla)\b/.test(title)
   }
 
+  if (category === Category.Lamina) {
+    return /\b(lamina|vidrio|protector|pantalla|glass|tempered|carcasa|funda|case|cover|magsafe)\b/.test(title)
+  }
+
   if (category === Category.Audifonos) {
     return /\b(audifono|audifonos|auricular|auriculares|headphone|headphones|earbuds|airpods|tws|bluetooth)\b/.test(title)
   }
@@ -208,6 +213,21 @@ function matchesCategoryIntent(category: Category | null | undefined, candidateT
   }
 
   return true
+}
+
+function matchesVariantModelIntent(productName: string, variantName: string, candidateTitle: string): boolean {
+  const product = normalizeVariantValue(productName)
+  const variant = normalizeVariantValue(variantName)
+  const candidate = normalizeVariantValue(candidateTitle)
+  const simpleIphoneModel = variant.match(/^\d{1,2}$/)?.[0]
+
+  if (!simpleIphoneModel || !/\biphone\b/.test(product)) return true
+
+  const upgradedModelPattern = new RegExp(
+    `\\b(?:iphone\\s*)?${simpleIphoneModel}\\s*(?:pro\\s*max|pro|max|plus|mini)\\b`
+  )
+
+  return !upgradedModelPattern.test(candidate)
 }
 
 function buildSearchQuery(productName: string, category?: Category | null): string {
@@ -329,6 +349,25 @@ function buildVariantSearchQueries(
     queries.add(`carcasa ${descriptor} ${normalizedVariant}`.trim())
     queries.add(`funda ${normalizedVariant} ${descriptor}`.trim())
     queries.add(`case ${normalizedVariant} ${descriptor}`.trim())
+  }
+
+  if (category === Category.Lamina) {
+    const isMagsafeCase = /\b(magsafe|carcasa|funda|case|cover)\b/.test(normalizedProduct)
+    const descriptor = normalizedProduct
+      .replace(/\blaminas?\b/g, '')
+      .replace(/\bprotector(?:es)?\b/g, '')
+      .replace(/\bpantalla\b/g, '')
+      .trim()
+
+    if (isMagsafeCase) {
+      queries.add(`carcasa ${descriptor} ${normalizedVariant}`.trim())
+      queries.add(`funda magsafe ${normalizedVariant} ${descriptor}`.trim())
+      queries.add(`case magsafe ${normalizedVariant} ${descriptor}`.trim())
+    } else {
+      queries.add(`lamina ${descriptor} ${normalizedVariant}`.trim())
+      queries.add(`vidrio templado ${normalizedVariant} ${descriptor}`.trim())
+      queries.add(`protector pantalla ${normalizedVariant} ${descriptor}`.trim())
+    }
   }
 
   if (category === Category.Audifonos) {
@@ -564,7 +603,8 @@ export async function getVariantImages(
         .filter((candidate) =>
           candidate.score >= 0.34 &&
           hasVariantToken(candidate.title) &&
-          matchesCategoryIntent(category, candidate.title)
+          matchesCategoryIntent(category, candidate.title) &&
+          matchesVariantModelIntent(productName, variantName, candidate.title)
         )
         .sort((a, b) => b.score - a.score)
         .slice(0, 4)
@@ -575,7 +615,11 @@ export async function getVariantImages(
 
       const duckDuckGoCandidates = await fetchDuckDuckGoCandidates(combinedName, query)
       const bestWebMatches = duckDuckGoCandidates
-        .filter((candidate) => hasVariantToken(candidate.title) && matchesCategoryIntent(category, candidate.title))
+        .filter((candidate) =>
+          hasVariantToken(candidate.title) &&
+          matchesCategoryIntent(category, candidate.title) &&
+          matchesVariantModelIntent(productName, variantName, `${candidate.title} ${candidate.url}`)
+        )
         .slice(0, 4)
 
       if (bestWebMatches.length > 0) {
