@@ -2,8 +2,11 @@ import { getDetailedMetrics } from './actions'
 import { SalesByCategoryChart, BestSellersChart } from './charts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { AlertTriangle, DollarSign, ShoppingBag, TrendingUp } from 'lucide-react'
+import { requireAdminPage } from '@/lib/admin-auth'
 
 export default async function BusinessAdminPage() {
+  await requireAdminPage()
+
   const data = await getDetailedMetrics()
 
   return (

@@ -3,6 +3,10 @@ import { NextResponse } from 'next/server'
 import { adminUnauthorizedResponse, isAdminRequest } from '@/lib/admin-auth'
 
 export async function GET() {
+  if (!(await isAdminRequest())) {
+    return adminUnauthorizedResponse()
+  }
+
   const products = await prisma.product.findMany({
     orderBy: { createdAt: 'desc' },
   })
@@ -15,13 +19,23 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json()
+  const name = String(body.name ?? '').trim()
+  const price = Number(body.price)
+  const stock = Number(body.stock)
+
+  if (!name || !Number.isFinite(price) || price <= 0 || !Number.isFinite(stock) || stock < 0) {
+    return NextResponse.json(
+      { ok: false, error: 'Nombre, precio y stock del producto no son validos.' },
+      { status: 400 }
+    )
+  }
 
   const product = await prisma.product.create({
     data: {
-      name: body.name,
+      name,
       description: body.description,
-      price: body.price,
-      stock: body.stock,
+      price,
+      stock,
       imageUrl: body.imageUrl ?? null,
       category: body.category ?? null,
       images: body.images?.length > 0 ? {
@@ -32,8 +46,8 @@ export async function POST(req: Request) {
       } : undefined,
       variants: body.variants?.length > 0 ? {
         create: body.variants.map((v: { size: string; stock: number }) => ({
-          size: v.size,
-          stock: v.stock,
+          size: String(v.size ?? '').trim(),
+          stock: Math.max(0, Number(v.stock ?? 0)),
         }))
       } : undefined,
     },

@@ -8,8 +8,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { requireAdminPage } from '@/lib/admin-auth'
 
 export default async function OrdersPage() {
+  await requireAdminPage()
+
   const orders = await prisma.order.findMany({
     orderBy: { createdAt: 'desc' },
     include: { items: { include: { product: true } } },

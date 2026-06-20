@@ -6,6 +6,7 @@ import SafeProductImage from '@/components/SafeProductImage'
 import DeleteMarketingBannerButton from './DeleteMarketingBannerButton'
 import { BANNER_POSITIONS } from '@/lib/marketing-constants'
 import { isMissingMarketingBannerTable } from '@/lib/marketing'
+import { requireAdminPage } from '@/lib/admin-auth'
 
 function positionLabel(value: string) {
   return BANNER_POSITIONS.find((item) => item.value === value)?.label ?? value
@@ -30,6 +31,8 @@ async function getMarketingBanners() {
 }
 
 export default async function MarketingPage() {
+  await requireAdminPage()
+
   const banners = await getMarketingBanners()
   const now = new Date()
 

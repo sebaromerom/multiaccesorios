@@ -67,6 +67,9 @@ export async function buildValidatedOrderPricing(
   const pricedItems = normalizedItems.map((item) => {
     const product = products.find((candidate) => candidate.id === item.productId)
     if (!product) throw new OrderValidationError('Producto no encontrado')
+    if (product.price <= 0 || !product.category) {
+      throw new OrderValidationError('Producto no disponible para venta')
+    }
 
     const variant = item.size
       ? product.variants.find((candidate) => candidate.size === item.size)

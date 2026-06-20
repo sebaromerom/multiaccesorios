@@ -147,9 +147,14 @@ export default async function ShopPage({
   const activeDiscountCount = promo === '1'
     ? await prisma.discountRule.count({ where: { active: true } })
     : 0
+  const publicProductWhere = {
+    price: { gt: 0 },
+    stock: { gt: 0 },
+    category: { not: null },
+  }
 
   const where = {
-    stock: { gt: 0 },
+    ...publicProductWhere,
     ...(cat ? { category: cat as Category } : {}),
     ...(promo === '1' && activeDiscountCount > 0 ? { discounts: { some: { active: true } } } : {}),
     ...(brand === 'all' ? {
@@ -213,11 +218,11 @@ export default async function ShopPage({
   const [products, totalProducts, allAvailableProducts, categoryAggregations, shopBanner] = await Promise.all([
     productsPromise,
     prisma.product.count({ where }),
-    prisma.product.count({ where: { stock: { gt: 0 } } }),
+    prisma.product.count({ where: publicProductWhere }),
     prisma.product.groupBy({
       by: ['category'],
       _count: { id: true },
-      where: { stock: { gt: 0 } },
+      where: publicProductWhere,
     }),
     getActiveBanner('shop_top'),
   ])

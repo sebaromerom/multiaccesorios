@@ -3,6 +3,10 @@ import { NextResponse } from 'next/server'
 import { adminUnauthorizedResponse, isAdminRequest } from '@/lib/admin-auth'
 
 export async function GET() {
+  if (!(await isAdminRequest())) {
+    return adminUnauthorizedResponse()
+  }
+
   const discounts = await prisma.discountRule.findMany({
     orderBy: { createdAt: 'desc' },
   })

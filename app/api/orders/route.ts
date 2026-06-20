@@ -6,6 +6,7 @@ import {
   OrderValidationError,
 } from '@/lib/orders'
 import { NextResponse } from 'next/server'
+import { adminUnauthorizedResponse, isAdminRequest } from '@/lib/admin-auth'
 
 const PAYMENT_METHODS = ['transfer', 'pay_on_pickup', 'payment_link', 'webpay'] as const
 type PaymentMethod = (typeof PAYMENT_METHODS)[number]
@@ -55,6 +56,10 @@ function buildPaymentState(method: PaymentMethod) {
 }
 
 export async function GET() {
+  if (!(await isAdminRequest())) {
+    return adminUnauthorizedResponse()
+  }
+
   const orders = await prisma.order.findMany({
     orderBy: { createdAt: 'desc' },
     include: {

@@ -11,6 +11,7 @@ import SyncBsaleButton from '@/components/admin/SyncBsaleButton'
 import EnrichImagesButton from '@/components/admin/EnrichImagesButton'
 import SafeProductImage from '@/components/SafeProductImage'
 import { Category } from '@prisma/client'
+import { requireAdminPage } from '@/lib/admin-auth'
 
 const CATEGORIES = ['Carcasa','Lamina','Cargador','Cable','Audifonos','Vapers','Computacion','Otros'] as const
 const PER_PAGE = 50
@@ -20,6 +21,8 @@ export default async function ProductsPage({
 }: {
   searchParams: Promise<{ q?: string; cat?: string; page?: string }>
 }) {
+  await requireAdminPage()
+
   const { q, cat, page } = await searchParams
   const currentPage = Math.max(1, Number(page ?? 1))
   const skip = (currentPage - 1) * PER_PAGE

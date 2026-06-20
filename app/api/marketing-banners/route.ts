@@ -26,6 +26,10 @@ function bannerDataFromBody(body: Record<string, unknown>) {
 }
 
 export async function GET() {
+  if (!(await isAdminRequest())) {
+    return adminUnauthorizedResponse()
+  }
+
   try {
     const banners = await prisma.marketingBanner.findMany({
       orderBy: [{ position: 'asc' }, { priority: 'desc' }, { createdAt: 'desc' }],

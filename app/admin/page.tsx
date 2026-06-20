@@ -11,6 +11,7 @@ import {
   Tag,
 } from 'lucide-react'
 import { isMissingMarketingBannerTable } from '@/lib/marketing'
+import { requireAdminPage } from '@/lib/admin-auth'
 
 async function countActiveCampaigns() {
   try {
@@ -25,6 +26,8 @@ async function countActiveCampaigns() {
 }
 
 export default async function AdminPage() {
+  await requireAdminPage()
+
   const [productCount, availableProductCount, orderCount, pendingOrders, discountCount, activeCampaigns, missingImages] = await Promise.all([
     prisma.product.count(),
     prisma.product.count({ where: { stock: { gt: 0 } } }),

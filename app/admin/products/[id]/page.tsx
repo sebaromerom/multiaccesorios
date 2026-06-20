@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import EditProductForm from './EditProductForm'
 import { notFound } from 'next/navigation'
+import { requireAdminPage } from '@/lib/admin-auth'
 
 export default async function EditProductPage({
   params,
@@ -9,6 +10,8 @@ export default async function EditProductPage({
   params: Promise<{ id: string }>
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
+  await requireAdminPage()
+
   const { id } = await params
   
   // 🎒 RESOLVEMOS LOS FILTROS Y LOS PREPARAMOS PARA EL FORMULARIO

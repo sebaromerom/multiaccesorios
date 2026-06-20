@@ -102,7 +102,7 @@ export default function ProductDetail({
     : availableStock > 0
   const variantLabel =
     product.category === 'Vapers'
-      ? 'Sabor / Variante'
+      ? 'Variante'
       : product.category === 'Carcasa' || product.category === 'Lamina'
         ? 'Modelo / Variante'
         : product.category === 'Audifonos'
@@ -110,8 +110,8 @@ export default function ProductDetail({
           : 'Variante'
   const variantHelp =
     product.category === 'Vapers'
-      ? 'No encuentras tu sabor? Avísanos y lo buscamos para ti.'
-      : 'No encuentras tu modelo? Avísanos y lo buscamos para ti.'
+      ? 'No encuentras la variante? Avisanos y la buscamos para ti.'
+      : 'No encuentras tu modelo? Avisanos y lo buscamos para ti.'
 
   function selectVariant(size: string) {
     setSelectedSize(size)
@@ -420,8 +420,8 @@ export default function ProductDetail({
 
           <div className="seller-box">
             <BrandLogo className="seller-logo" alt="" sizes="34px" />
-            <span><b>Multi Accesorios</b><small>Tienda oficial</small></span>
-            <span className="verified">Verificado</span>
+            <span><b>Multi Accesorios</b><small>Venta local en Linares</small></span>
+            <span className="verified">Retiro en tienda</span>
           </div>
         </aside>
 

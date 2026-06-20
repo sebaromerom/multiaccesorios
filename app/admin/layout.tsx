@@ -4,6 +4,10 @@ import AdminShell from '@/components/admin/AdminShell'
 export const metadata: Metadata = {
   title: 'Panel de Administración - Multi Accesorios',
   description: 'Gestión de inventario y órdenes',
+  robots: {
+    index: false,
+    follow: false,
+  },
 }
 
 export default function AdminLayout({

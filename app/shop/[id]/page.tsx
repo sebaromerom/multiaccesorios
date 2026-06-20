@@ -39,7 +39,7 @@ export default async function ProductPage({
     },
   })
 
-  if (!product) notFound()
+  if (!product || product.price <= 0 || product.stock <= 0 || !product.category) notFound()
 
   const rawCarouselImages = product.images.length > 0
     ? product.images.map((image) => image.url)

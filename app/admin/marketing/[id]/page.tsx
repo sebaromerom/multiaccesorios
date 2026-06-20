@@ -1,12 +1,15 @@
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import MarketingBannerForm from '../MarketingBannerForm'
+import { requireAdminPage } from '@/lib/admin-auth'
 
 export default async function EditMarketingBannerPage({
   params,
 }: {
   params: Promise<{ id: string }>
 }) {
+  await requireAdminPage()
+
   const { id } = await params
   const banner = await prisma.marketingBanner.findUnique({ where: { id } })
 

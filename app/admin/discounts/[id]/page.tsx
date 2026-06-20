@@ -1,12 +1,15 @@
 import { prisma } from '@/lib/prisma'
 import EditDiscountForm from './EditDiscountForm'
 import { notFound } from 'next/navigation'
+import { requireAdminPage } from '@/lib/admin-auth'
 
 export default async function EditDiscountPage({
   params,
 }: {
   params: Promise<{ id: string }>
 }) {
+  await requireAdminPage()
+
   const { id } = await params
 
   const discount = await prisma.discountRule.findUnique({

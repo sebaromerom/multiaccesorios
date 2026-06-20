@@ -23,16 +23,26 @@ export async function PATCH(
 
     const { id } = await params
     const body = await req.json()
+    const name = String(body.name ?? '').trim()
+    const price = Number(body.price)
+    const stock = Number(body.stock)
+
+    if (!name || !Number.isFinite(price) || price <= 0 || !Number.isFinite(stock) || stock < 0) {
+      return NextResponse.json(
+        { ok: false, error: 'Nombre, precio y stock del producto no son validos.' },
+        { status: 400 }
+      )
+    }
 
     // 1. Actualizar producto principal e imágenes en una transacción corta
     await prisma.$transaction(async (tx) => {
       await tx.product.update({
         where: { id },
         data: {
-          name:        body.name,
+          name,
           description: body.description,
-          price:       body.price,
-          stock:       body.stock,
+          price,
+          stock,
           imageUrl:    body.imageUrl ?? null,
           category:    body.category ?? null,
         },
@@ -66,7 +76,7 @@ export async function PATCH(
           await prisma.productVariant.update({
             where: { id: variant.id },
             data: {
-              stock:    variant.stock,
+              stock:    Math.max(0, Number(variant.stock ?? 0)),
               imageUrl: variant.images?.[0]?.url ?? null,
               images: {
                 create: (variant.images ?? []).map((img, index) => ({

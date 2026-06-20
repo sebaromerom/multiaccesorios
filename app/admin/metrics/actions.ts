@@ -1,7 +1,10 @@
 'use server'
 import { prisma } from '@/lib/prisma'
+import { requireAdminPage } from '@/lib/admin-auth'
 
 export async function getDetailedMetrics() {
+  await requireAdminPage()
+
   const [totalSales, orderCount, lowStock, bestSellersData, salesByCategory] = await Promise.all([
     prisma.order.aggregate({ _sum: { total: true } }),
     prisma.order.count(),

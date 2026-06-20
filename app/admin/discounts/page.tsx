@@ -11,8 +11,11 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import DeleteDiscountButton from './DeleteDiscountButton'
+import { requireAdminPage } from '@/lib/admin-auth'
 
 export default async function DiscountsPage() {
+  await requireAdminPage()
+
   const discounts = await prisma.discountRule.findMany({
     orderBy: { createdAt: 'desc' },
     include: { product: true },
