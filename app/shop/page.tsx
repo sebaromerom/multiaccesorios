@@ -752,6 +752,8 @@ export default async function ShopPage({
 
         .product-card {
           position: relative;
+          display: flex;
+          flex-direction: column;
           border: 1px solid #e5e5e5;
           border-radius: 8px;
           background: #fff;
@@ -837,6 +839,14 @@ export default async function ShopPage({
 
         .product-info {
           padding: 0 18px 18px;
+          display: flex;
+          flex: 1;
+          flex-direction: column;
+        }
+
+        .product-info > a:last-child,
+        .product-info > button:last-child {
+          margin-top: auto;
         }
 
         .product-name {
