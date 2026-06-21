@@ -291,6 +291,8 @@ export default async function ProductPage({
         .product-detail-root {
           padding: 22px 52px 0;
           background: #fff;
+          box-sizing: border-box;
+          overflow-x: clip;
         }
 
         .product-detail-grid {
@@ -943,6 +945,7 @@ export default async function ProductPage({
 
           .product-detail-root {
             padding: 0 16px calc(var(--mobile-action-bar-height) + env(safe-area-inset-bottom) + 24px);
+            overflow-x: hidden;
           }
 
           .product-detail-grid {
@@ -1038,8 +1041,9 @@ export default async function ProductPage({
             overflow-x: auto;
             overflow-y: hidden;
             gap: 8px;
-            margin: 0 -16px;
-            padding: 8px 16px 10px;
+            margin: 0;
+            padding: 8px 2px 10px;
+            width: 100%;
             max-height: none;
             scrollbar-width: none;
             -webkit-overflow-scrolling: touch;
@@ -1054,7 +1058,7 @@ export default async function ProductPage({
           }
 
           .variant-card {
-            flex: 0 0 102px;
+            flex: 0 0 clamp(106px, 30vw, 118px);
             min-height: 72px;
             grid-template-columns: 36px 1fr;
             gap: 7px;
