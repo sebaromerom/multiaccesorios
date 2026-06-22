@@ -51,6 +51,8 @@ export default function NavBar() {
 
       {/* MENÚ DESPLEGABLE MÓVIL */}
       <div
+        aria-hidden={!isOpen}
+        inert={!isOpen ? true : undefined}
         className={`md:hidden bg-[#f7f4ee] border-t border-gray-200 px-4 transition-all duration-300 ease-in-out overflow-hidden ${
           isOpen ? 'max-h-60 opacity-100 pt-2 pb-4 shadow-lg' : 'max-h-0 opacity-0 pt-0 pb-0 pointer-events-none'
         }`}

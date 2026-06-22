@@ -110,8 +110,8 @@ export default function ProductDetail({
           : 'Variante'
   const variantHelp =
     product.category === 'Vapers'
-      ? 'No encuentras la variante? Avisanos y la buscamos para ti.'
-      : 'No encuentras tu modelo? Avisanos y lo buscamos para ti.'
+      ? '¿No encuentras la variante? Avísanos y la buscamos para ti.'
+      : '¿No encuentras tu modelo? Avísanos y lo buscamos para ti.'
 
   function selectVariant(size: string) {
     setSelectedSize(size)
@@ -214,7 +214,7 @@ export default function ProductDetail({
     }
 
     if (availableStock <= 0) {
-      toast.error('No queda mas stock disponible de este articulo')
+      toast.error('No queda más stock disponible de este artículo')
       return false
     }
 
@@ -249,7 +249,7 @@ export default function ProductDetail({
   return (
     <div className="product-detail-root">
       <div className="product-detail-grid">
-        <section className="gallery-column" aria-label="Galeria del producto">
+        <section className="gallery-column" aria-label="Galería del producto">
           <div className="desktop-thumbs">
             {safeDisplayImages.slice(0, 6).map((image, index) => (
               <button
@@ -257,7 +257,7 @@ export default function ProductDetail({
                 type="button"
                 onClick={() => setGalleryImage(index)}
                 className={`thumb-button${activeImage === index ? ' active' : ''}`}
-                aria-label={`Ver imagen ${index + 1}`}
+                aria-label={`Ver ${product.name}, vista ${index + 1}`}
               >
                 <SafeProductImage src={image} alt="" fill sizes="72px" imageClassName="thumb-image" />
               </button>
@@ -281,7 +281,7 @@ export default function ProductDetail({
               <div key={`${primaryImage}-${activeImage}`} className="main-image-slide">
                 <SafeProductImage
                   src={primaryImage}
-                  alt={activeImage === 0 ? product.name : `${product.name} imagen ${activeImage + 1}`}
+                  alt={`${product.name}${selectedVariant ? `, variante ${selectedVariant.size}` : ''}, vista ${activeImage + 1}`}
                   fill
                   sizes="(max-width: 760px) 100vw, 520px"
                   priority
@@ -300,7 +300,7 @@ export default function ProductDetail({
                 type="button"
                 onClick={() => setGalleryImage(index)}
                 className={activeImage === index ? 'active' : ''}
-                aria-label={`Ir a imagen ${index + 1}`}
+                aria-label={`Ir a ${product.name}, vista ${index + 1}`}
               />
             ))}
           </div>

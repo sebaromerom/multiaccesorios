@@ -16,6 +16,7 @@ import ProductDetail from './ProductDetail'
 import SearchBar from '../SearchBar'
 import CartHeaderLink from '../CartHeaderLink'
 import BrandLogo from '@/components/BrandLogo'
+import { formatProductName } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -41,6 +42,7 @@ export default async function ProductPage({
   })
 
   if (!product || product.price <= 0 || product.stock <= 0 || !product.category) notFound()
+  const displayName = formatProductName(product.name)
 
   const rawCarouselImages = product.images.length > 0
     ? product.images.map((image) => image.url)
@@ -444,7 +446,6 @@ export default async function ProductPage({
           line-height: 1.08;
           font-weight: 950;
           font-style: italic;
-          text-transform: uppercase;
         }
 
         .rating-row {
@@ -1194,7 +1195,6 @@ export default async function ProductPage({
               <Link href="/shop?sort=newest">Nuevos</Link>
               <Link href="/shop?sort=sales&page=1">Más vendidos</Link>
               <Link href="/shop?brand=all&page=1">Marcas</Link>
-              <Link href="/#blog">Blog</Link>
               {' '}
               <Link href="/#contacto">Contacto</Link>
             </div>
@@ -1218,7 +1218,7 @@ export default async function ProductPage({
           <ProductDetail
             product={{
               id: product.id,
-              name: product.name,
+              name: displayName,
               price: product.price,
               stock: product.stock,
               category: product.category,

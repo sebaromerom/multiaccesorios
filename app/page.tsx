@@ -6,6 +6,7 @@ import HomeSearchBar from '@/app/HomeSearchBar'
 import BrandLogo from '@/components/BrandLogo'
 import SafeProductImage from '@/components/SafeProductImage'
 import { getActiveBanner } from '@/lib/marketing'
+import { formatProductName } from '@/lib/utils'
 import {
   BadgePercent,
   Cable,
@@ -214,7 +215,7 @@ export default async function Home() {
         .home-product-card:hover .home-heart { color: #e30613; transform: scale(1.06); box-shadow: 0 8px 20px rgba(0,0,0,.12); }
         .home-heart svg { width: 16px; height: 16px; display: block; stroke-width: 2.2; }
         .home-product-info { padding: 10px 12px 12px; }
-        .home-product-name { height: 34px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; color: #111; text-decoration: none; font-size: 10px; line-height: 1.35; font-weight: 900; text-transform: uppercase; }
+        .home-product-name { height: 34px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; color: #111; text-decoration: none; font-size: 10px; line-height: 1.35; font-weight: 900; }
         .home-product-price { display: block; margin-top: 10px; color: #e30613; font-size: 15px; font-weight: 900; }
         .home-offer { min-height: 245px; border-radius: 8px; background: linear-gradient(135deg, #fff4f4 0%, #fff 100%); padding: 24px 20px; position: relative; overflow: hidden; transition: transform .2s ease, box-shadow .2s ease; }
         .home-offer::before { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, transparent, rgba(255,255,255,.72), transparent); transform: translateX(-120%); transition: transform .65s ease; pointer-events: none; }
@@ -366,7 +367,6 @@ export default async function Home() {
             <Link href="/shop?sort=newest">Nuevos</Link>
             <Link href="/shop?sort=sales&page=1">Más vendidos</Link>
             <Link href="/shop?brand=all&page=1">Marcas</Link>
-            <Link href="#blog">Blog</Link>
             {' '}
             <Link href="#contacto">Contacto</Link>
           </div>
@@ -414,7 +414,7 @@ export default async function Home() {
               <div className="home-hero-products">
                 {heroProducts.slice(0, 3).map((product) => (
                   <span key={product.id} className="home-hero-product">
-                    <SafeProductImage src={product.imageUrl} alt={product.name} fill sizes="180px" />
+                    <SafeProductImage src={product.imageUrl} alt={formatProductName(product.name)} fill sizes="180px" />
                   </span>
                 ))}
               </div>
@@ -422,7 +422,7 @@ export default async function Home() {
             {activeDiscount && offerBadge && <span className="home-hero-discount">{offerBadge}</span>}
           </section>
 
-          <section className="home-section" id="blog">
+          <section className="home-section" id="categorias">
             <div className="home-section-head"><h2>Explora por categoría</h2><Link href="/shop">Ver todas</Link></div>
             <div className="home-categories">
               {CATEGORIES.map((category) => {
@@ -444,23 +444,24 @@ export default async function Home() {
               <div className="home-product-grid">
                 {trending.map((product) => {
                   const hasVariants = product.variants.length > 0
+                  const displayName = formatProductName(product.name)
 
                   return (
                     <article key={product.id} className="home-product-card">
                       <Link href={`/shop/${product.id}`} className="home-product-image">
-                        <SafeProductImage src={product.imageUrl} alt={product.name} fill sizes="180px" />
+                        <SafeProductImage src={product.imageUrl} alt={displayName} fill sizes="180px" />
                         <span className="home-stock">En stock</span>
                         <span className="home-heart"><Heart /></span>
                       </Link>
                       <div className="home-product-info">
-                        <Link href={`/shop/${product.id}`} className="home-product-name">{product.name}</Link>
+                        <Link href={`/shop/${product.id}`} className="home-product-name">{displayName}</Link>
                         <span className="home-product-price">${product.price.toLocaleString('es-CL')}</span>
                         {hasVariants ? (
                           <Link href={`/shop/${product.id}`} className="h-10 rounded-[4px] border border-red-600 text-red-600 flex items-center justify-center text-xs font-black no-underline">
                             Ver opciones
                           </Link>
                         ) : (
-                          <AddToCartButton product={{ id: product.id, name: product.name, price: product.price, stock: product.stock, imageUrl: product.imageUrl }} />
+                          <AddToCartButton product={{ id: product.id, name: displayName, price: product.price, stock: product.stock, imageUrl: product.imageUrl }} />
                         )}
                       </div>
                     </article>
@@ -471,7 +472,7 @@ export default async function Home() {
               {(secondaryBanner || offerProduct) && (
                 <aside className="home-offer">
                   <p className="home-offer-kicker">{secondaryBanner?.eyebrow ?? (activeDiscount ? 'Oferta activa' : 'Producto destacado')} <Zap className="inline size-3" /></p>
-                  <h3>{secondaryBanner?.title ?? offerProduct?.name}</h3>
+                  <h3>{secondaryBanner?.title ?? formatProductName(offerProduct?.name ?? '')}</h3>
                   {!secondaryBanner && offerProduct && (
                     <div className="home-offer-price">
                       {activeDiscount && <del>${offerProduct.price.toLocaleString('es-CL')}</del>}
@@ -484,7 +485,7 @@ export default async function Home() {
                   <span className="home-offer-product">
                     <SafeProductImage
                       src={secondaryBanner?.imageUrl ?? secondaryBanner?.mobileImageUrl ?? offerProduct?.imageUrl}
-                      alt={secondaryBanner?.title ?? offerProduct?.name ?? 'Campaña'}
+                      alt={secondaryBanner?.title ?? formatProductName(offerProduct?.name ?? 'Campaña')}
                       fill
                       sizes="180px"
                     />

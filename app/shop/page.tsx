@@ -8,6 +8,7 @@ import SortSelect from './SortSelect'
 import BrandLogo from '@/components/BrandLogo'
 import SafeProductImage from '@/components/SafeProductImage'
 import { getActiveBanner } from '@/lib/marketing'
+import { formatProductName } from '@/lib/utils'
 import { Suspense } from 'react'
 import { Category } from '@prisma/client'
 import {
@@ -860,7 +861,6 @@ export default async function ShopPage({
           font-size: 13px;
           line-height: 1.42;
           font-weight: 900;
-          text-transform: uppercase;
           overflow-wrap: anywhere;
         }
 
@@ -1225,7 +1225,6 @@ export default async function ShopPage({
               <Link href={buildUrl({ sort: 'newest', page: '1' })}>Nuevos</Link>
               <Link href={buildUrl({ sort: 'sales', page: '1' })}>Más vendidos</Link>
               <Link href={buildUrl({ brand: 'all', promo: null, page: '1' })}>Marcas</Link>
-              <Link href="/#blog">Blog</Link>
               {' '}
               <Link href="/#contacto">Contacto</Link>
             </div>
@@ -1331,6 +1330,7 @@ export default async function ShopPage({
               ) : (
                 <div className="product-grid">
                   {products.map((product) => {
+                    const displayName = formatProductName(product.name)
                     const variantPreviewImage = getVariantPreviewImage(product)
                     const cardImage = product.variants.length > 0
                       ? variantPreviewImage ?? product.imageUrl ?? null
@@ -1342,7 +1342,7 @@ export default async function ShopPage({
                         <span className="product-img-inner">
                           <ProductImage
                             productId={product.id}
-                            productName={product.name}
+                            productName={displayName}
                             initialImageUrl={cardImage}
                           />
                         </span>
@@ -1351,7 +1351,7 @@ export default async function ShopPage({
                       </Link>
                       <div className="product-info">
                         <Link href={`/shop/${product.id}`} className="product-name">
-                          {product.name}
+                          {displayName}
                         </Link>
                         <span className="product-price">${Number(product.price).toLocaleString('es-CL')}</span>
                         {product.variants.length > 0 ? (
@@ -1362,7 +1362,7 @@ export default async function ShopPage({
                           <AddToCartButton
                             product={{
                               id: product.id,
-                              name: product.name,
+                              name: displayName,
                               price: product.price,
                               stock: product.stock,
                               imageUrl: product.imageUrl,
