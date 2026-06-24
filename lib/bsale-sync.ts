@@ -111,47 +111,72 @@ async function fetchAll<T>(endpoint: string): Promise<T[]> {
 }
 
 function mapCategory(
-  typeName: string | null | undefined
+  typeName: string | null | undefined,
+  productName: string | null | undefined
 ): Category {
-  if (!typeName) return Category.Otros
-
-  const t = typeName.toLowerCase()
-
-  if (t.includes('carcas')) return Category.Carcasa
+  const name = productName?.toLowerCase() ?? ''
+  const type = typeName?.toLowerCase() ?? ''
+  const text = `${name} ${type}`
 
   if (
-    t.includes('lamin') ||
-    t.includes('vidrio') ||
-    t.includes('protec')
+    name.includes('carcas') ||
+    name.includes('funda') ||
+    name.includes('flip cover') ||
+    name.includes('silicona') ||
+    name.includes('diseño') ||
+    name.includes('transparente magsafe')
+  ) {
+    return Category.Carcasa
+  }
+
+  if (name.includes('protector de cable')) return Category.Cable
+  if (name.includes('protector cargador')) return Category.Cargador
+  if (name.includes('metal magsafe')) return Category.Otros
+
+  if (
+    name.includes('lamin') ||
+    name.includes('vidrio') ||
+    name.includes('hidrogel') ||
+    name.includes('protector de camara') ||
+    name.includes('protector de cámara')
   ) {
     return Category.Lamina
   }
 
-  if (t.includes('cargad')) return Category.Cargador
+  if (text.includes('carcas')) return Category.Carcasa
+  if (text.includes('cargad')) return Category.Cargador
 
-  if (t.includes('cable')) return Category.Cable
+  if (text.includes('cable')) return Category.Cable
 
   if (
-    t.includes('audif') ||
-    t.includes('auricular') ||
-    t.includes('audio')
+    text.includes('audif') ||
+    text.includes('auricular') ||
+    text.includes('audio')
   ) {
     return Category.Audifonos
   }
 
   if (
-    t.includes('vaper') ||
-    t.includes('vaporizad')
+    text.includes('vaper') ||
+    text.includes('vaporizad')
   ) {
     return Category.Vapers
   }
 
   if (
-    t.includes('computa') ||
-    t.includes('notebook') ||
-    t.includes('pc')
+    text.includes('computa') ||
+    text.includes('notebook') ||
+    text.includes('pc')
   ) {
     return Category.Computacion
+  }
+
+  if (
+    text.includes('lamin') ||
+    text.includes('vidrio') ||
+    text.includes('protec')
+  ) {
+    return Category.Lamina
   }
 
   return Category.Otros
@@ -243,7 +268,8 @@ export async function syncBsaleToSupabase(): Promise<SyncResult> {
       )
 
       const category = mapCategory(
-        bp.product_type?.name
+        bp.product_type?.name,
+        bp.name
       )
 
       const bsaleImage =
