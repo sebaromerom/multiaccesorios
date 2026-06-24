@@ -244,7 +244,7 @@ export default function ProductDetail({
     }
   }
 
-  const paymentText = 'Paga hasta en 6 cuotas sin interés con'
+  const paymentText = 'Pago online seguro con'
 
   return (
     <div className="product-detail-root">
@@ -320,7 +320,7 @@ export default function ProductDetail({
             <strong>${Number(product.price).toLocaleString('es-CL')}</strong>
             <span>CLP</span>
           </div>
-          <p className="payment-line">{paymentText} <b>mercado pago</b></p>
+          <p className="payment-line">{paymentText} <b>Webpay</b></p>
 
           <div className="stock-line">
             <span>En stock</span>
@@ -410,12 +410,12 @@ export default function ProductDetail({
           <div className="payment-box">
             <p>Medios de pago</p>
             <div className="payment-badges">
-              <span>mercado pago</span>
+              <span>Webpay</span>
               <span>VISA</span>
-              <span>MC</span>
+              <span>Mastercard</span>
               <span>Redcompra</span>
             </div>
-            <small>Hasta 6 cuotas sin interés</small>
+            <small>Cuotas según condiciones del emisor</small>
           </div>
 
           <div className="seller-box">

@@ -7,6 +7,8 @@ import {
 } from '@/lib/orders'
 import { NextResponse } from 'next/server'
 import { adminUnauthorizedResponse, isAdminRequest } from '@/lib/admin-auth'
+import { getCheckoutConfig, getEnabledPaymentMethods } from '@/lib/checkout-config'
+import { CheckoutValidationError, validateCheckoutDetails } from '@/lib/checkout-validation'
 
 const PAYMENT_METHODS = ['transfer', 'pay_on_pickup', 'payment_link', 'webpay'] as const
 type PaymentMethod = (typeof PAYMENT_METHODS)[number]
@@ -75,6 +77,23 @@ export async function POST(req: Request) {
   try {
     const body = await req.json()
     const paymentMethod = normalizePaymentMethod(body.paymentMethod)
+    const checkoutConfig = getCheckoutConfig()
+    const enabledPaymentMethods = getEnabledPaymentMethods(checkoutConfig)
+
+    if (!enabledPaymentMethods.includes(paymentMethod)) {
+      return NextResponse.json(
+        { error: 'El método de pago seleccionado no está disponible.' },
+        { status: 400 }
+      )
+    }
+
+    if (body.deliveryType === 'despacho' && !checkoutConfig.shippingEnabled) {
+      return NextResponse.json(
+        { error: 'El despacho aún no está habilitado. Selecciona retiro en tienda.' },
+        { status: 400 }
+      )
+    }
+    const checkoutDetails = validateCheckoutDetails(body)
 
     if (paymentMethod === 'webpay') {
       return NextResponse.json(
@@ -91,17 +110,10 @@ export async function POST(req: Request) {
       const createdOrder = await tx.order.create({
         data: {
           total: pricing.total,
-          status: body.status ?? 'pending',
+          status: 'pending',
           paymentMethod,
           ...paymentState,
-          customerName:     body.customerName     ?? null,
-          customerPhone:    body.customerPhone     ?? null,
-          customerEmail:    body.customerEmail     ?? null,
-          deliveryType:     body.deliveryType      ?? 'retiro',
-          deliverySucursal: body.deliverySucursal  ?? null,
-          deliveryAddress:  body.deliveryAddress   ?? null,
-          deliveryCity:     body.deliveryCity      ?? null,
-          deliveryNotes:    body.deliveryNotes     ?? null,
+          ...checkoutDetails,
           items: {
             create: pricing.items.map((item) => ({
               productId: item.productId,
@@ -122,7 +134,9 @@ export async function POST(req: Request) {
   } catch (error) {
     return NextResponse.json(
       {
-        error: error instanceof OrderValidationError || error instanceof OrderStockError
+        error: error instanceof OrderValidationError ||
+          error instanceof OrderStockError ||
+          error instanceof CheckoutValidationError
           ? error.message
           : 'Error al procesar la orden',
       },

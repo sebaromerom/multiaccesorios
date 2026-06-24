@@ -5,8 +5,13 @@ import {
   Options,
   WebpayPlus,
 } from 'transbank-sdk'
+import { getCheckoutConfig } from '@/lib/checkout-config'
 
 export function getWebpayTransaction() {
+  if (!getCheckoutConfig().webpayEnabled) {
+    throw new Error('Webpay no está habilitado para este ambiente')
+  }
+
   const mode = (process.env.WEBPAY_ENV ?? 'integration').trim().toLowerCase()
   const commerceCode =
     process.env.WEBPAY_COMMERCE_CODE ??

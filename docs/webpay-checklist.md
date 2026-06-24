@@ -46,3 +46,14 @@ NEXT_PUBLIC_APP_URL=https://multiaccesorios.vercel.app
 - Configurar credenciales reales en Vercel.
 - Aplicar cambios de schema en la base productiva antes del deploy.
 - Confirmar con el administrador la cuenta bancaria asociada al comercio Transbank.
+
+## Protecciones de checkout
+
+- En produccion, Webpay solo aparece si `WEBPAY_ENV=production`, existen las credenciales y `NEXT_PUBLIC_APP_URL` usa HTTPS.
+- Transferencia permanece oculta hasta definir todos los datos bancarios y activar `CHECKOUT_ENABLE_TRANSFER=true`.
+- Link de pago permanece oculto hasta activar `CHECKOUT_ENABLE_PAYMENT_LINK=true`.
+- Despacho permanece deshabilitado hasta implementar costo, cobertura y total final.
+- Retiro y pago al retirar son el modo seguro inicial.
+- Estas validaciones se repiten en el servidor; no dependen solo de botones ocultos.
+- El navegador no puede definir el estado de una orden.
+- Nombre, telefono, correo y sucursal se validan nuevamente en el servidor.

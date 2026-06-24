@@ -35,6 +35,29 @@ type DiscountResult = {
 
 type DeliveryType = 'retiro' | 'despacho'
 type PaymentMethod = 'transfer' | 'pay_on_pickup' | 'payment_link' | 'webpay'
+type CheckoutConfig = {
+  webpayEnabled: boolean
+  transferEnabled: boolean
+  bankTransferDetails: {
+    accountHolder: string
+    bankName: string
+    accountType: string
+    accountNumber: string
+    rut: string
+  } | null
+  paymentLinkEnabled: boolean
+  payOnPickupEnabled: boolean
+  shippingEnabled: boolean
+}
+
+const DEFAULT_CHECKOUT_CONFIG: CheckoutConfig = {
+  webpayEnabled: false,
+  transferEnabled: false,
+  bankTransferDetails: null,
+  paymentLinkEnabled: false,
+  payOnPickupEnabled: true,
+  shippingEnabled: false,
+}
 
 const SUCURSALES = [
   { value: 'Chacabuco 479', label: 'Chacabuco 479 - Local principal' },
@@ -88,7 +111,8 @@ export default function CartPage() {
   const [deliveryAddress, setDeliveryAddress] = useState('')
   const [deliveryCity, setDeliveryCity] = useState('')
   const [deliveryNotes, setDeliveryNotes] = useState('')
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('transfer')
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pay_on_pickup')
+  const [checkoutConfig, setCheckoutConfig] = useState(DEFAULT_CHECKOUT_CONFIG)
 
   const clearCartState = () => useCartStore.setState({ cart: [] })
   const itemCount = cart.reduce((total, item) => total + item.quantity, 0)
@@ -103,7 +127,17 @@ export default function CartPage() {
     deliveryType === 'despacho' && !deliveryAddress.trim() ? 'Falta la dirección' : null,
     deliveryType === 'despacho' && !deliveryCity.trim() ? 'Falta la ciudad' : null,
   ].filter((issue): issue is string => Boolean(issue))
-  const checkoutReady = Boolean(result) && checkoutIssues.length === 0 && !loading
+  const availablePaymentMethods = PAYMENT_METHODS.filter((method) => {
+    if (method.value === 'webpay') return checkoutConfig.webpayEnabled
+    if (method.value === 'transfer') return checkoutConfig.transferEnabled
+    if (method.value === 'payment_link') return checkoutConfig.paymentLinkEnabled
+    return checkoutConfig.payOnPickupEnabled
+  })
+  const checkoutReady =
+    Boolean(result) &&
+    checkoutIssues.length === 0 &&
+    availablePaymentMethods.length > 0 &&
+    !loading
   const paymentActionLabel =
     paymentMethod === 'webpay' ? 'Pagar con Webpay' :
     paymentMethod === 'pay_on_pickup' ? 'Reservar pedido' :
@@ -114,6 +148,41 @@ export default function CartPage() {
     paymentMethod === 'pay_on_pickup' ? 'Pagas al retirar en tienda.' :
     paymentMethod === 'payment_link' ? 'Te enviaremos el link al teléfono indicado.' :
     'Te indicaremos los datos para transferir.'
+
+  useEffect(() => {
+    let cancelled = false
+
+    fetch('/api/checkout-config', { cache: 'no-store' })
+      .then((response) => response.ok ? response.json() : DEFAULT_CHECKOUT_CONFIG)
+      .then((config: CheckoutConfig) => {
+        if (cancelled) return
+        setCheckoutConfig(config)
+
+        const firstAvailable =
+          config.webpayEnabled ? 'webpay' :
+          config.payOnPickupEnabled ? 'pay_on_pickup' :
+          config.transferEnabled ? 'transfer' :
+          config.paymentLinkEnabled ? 'payment_link' :
+          null
+
+        setPaymentMethod((current) => {
+          const currentEnabled =
+            (current === 'webpay' && config.webpayEnabled) ||
+            (current === 'transfer' && config.transferEnabled) ||
+            (current === 'pay_on_pickup' && config.payOnPickupEnabled) ||
+            (current === 'payment_link' && config.paymentLinkEnabled)
+
+          return currentEnabled ? current : firstAvailable ?? current
+        })
+      })
+      .catch(() => {
+        if (!cancelled) setCheckoutConfig(DEFAULT_CHECKOUT_CONFIG)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     if (cart.length === 0) {
@@ -426,8 +495,8 @@ export default function CartPage() {
 
                       <section className="cart-panel p-5">
                         <h2 className="text-sm font-bold mb-4">Forma de entrega</h2>
-                        <div className="grid grid-cols-2 gap-3 mb-4">
-                          {(['retiro', 'despacho'] as DeliveryType[]).map((type) => (
+                        <div className={`grid gap-3 mb-4 ${checkoutConfig.shippingEnabled ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                          {(['retiro', ...(checkoutConfig.shippingEnabled ? ['despacho'] : [])] as DeliveryType[]).map((type) => (
                             <button
                               key={type}
                               type="button"
@@ -439,6 +508,11 @@ export default function CartPage() {
                             </button>
                           ))}
                         </div>
+                        {!checkoutConfig.shippingEnabled && (
+                          <p className="mb-4 rounded-[4px] border border-zinc-200 bg-zinc-50 px-3 py-3 text-xs text-zinc-600">
+                            Por ahora, los pedidos web están disponibles únicamente para retiro en tienda.
+                          </p>
+                        )}
                         {deliveryType === 'retiro' ? (
                           <div className="space-y-2">
                             {SUCURSALES.map((sucursal) => (
@@ -469,7 +543,7 @@ export default function CartPage() {
                       <section className="cart-panel p-5">
                         <h2 className="text-sm font-bold mb-4">Método de pago</h2>
                         <div className="grid gap-3">
-                          {PAYMENT_METHODS.map((method) => {
+                          {availablePaymentMethods.map((method) => {
                             const Icon = method.icon
 
                             return (
@@ -488,10 +562,18 @@ export default function CartPage() {
                             )
                           })}
                         </div>
+                        {availablePaymentMethods.length === 0 && (
+                          <p className="rounded-[4px] border border-amber-200 bg-amber-50 px-3 py-3 text-xs font-semibold text-amber-900">
+                            No hay métodos de pago habilitados. Contáctanos antes de confirmar el pedido.
+                          </p>
+                        )}
                         {paymentMethod === 'transfer' && (
                           <div className="mt-4 rounded-[4px] border border-green-200 bg-green-50 px-3 py-3 text-xs text-green-900">
                             <p className="font-bold">Datos de transferencia</p>
-                            <p className="mt-1">Multi Accesorios SpA - Banco por definir</p>
+                            <p className="mt-1">{checkoutConfig.bankTransferDetails?.accountHolder}</p>
+                            <p>{checkoutConfig.bankTransferDetails?.bankName} · {checkoutConfig.bankTransferDetails?.accountType}</p>
+                            <p>Cuenta: {checkoutConfig.bankTransferDetails?.accountNumber}</p>
+                            <p>RUT: {checkoutConfig.bankTransferDetails?.rut}</p>
                             <p>Envía el comprobante por WhatsApp indicando el número de pedido.</p>
                           </div>
                         )}

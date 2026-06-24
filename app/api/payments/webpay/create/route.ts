@@ -2,10 +2,29 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { buildValidatedOrderPricing, OrderValidationError } from '@/lib/orders'
 import { buildWebpayIds, getWebpayBaseUrl, getWebpayTransaction } from '@/lib/webpay'
+import { getCheckoutConfig } from '@/lib/checkout-config'
+import { CheckoutValidationError, validateCheckoutDetails } from '@/lib/checkout-validation'
 
 export async function POST(req: Request) {
   try {
     const body = await req.json()
+    const checkoutConfig = getCheckoutConfig()
+
+    if (!checkoutConfig.webpayEnabled) {
+      return NextResponse.json(
+        { error: 'Webpay aún no está habilitado para este ambiente.' },
+        { status: 503 }
+      )
+    }
+
+    if (body.deliveryType === 'despacho' && !checkoutConfig.shippingEnabled) {
+      return NextResponse.json(
+        { error: 'El despacho aún no está habilitado. Selecciona retiro en tienda.' },
+        { status: 400 }
+      )
+    }
+    const checkoutDetails = validateCheckoutDetails(body)
+
     const pricing = await buildValidatedOrderPricing(prisma, body.items ?? [])
 
     if (pricing.total <= 0) {
@@ -22,14 +41,7 @@ export async function POST(req: Request) {
         paymentMethod: 'webpay',
         paymentStatus: 'webpay_pending',
         paymentProvider: 'webpay',
-        customerName:     body.customerName     ?? null,
-        customerPhone:    body.customerPhone    ?? null,
-        customerEmail:    body.customerEmail    ?? null,
-        deliveryType:     body.deliveryType     ?? 'retiro',
-        deliverySucursal: body.deliverySucursal ?? null,
-        deliveryAddress:  body.deliveryAddress  ?? null,
-        deliveryCity:     body.deliveryCity     ?? null,
-        deliveryNotes:    body.deliveryNotes    ?? null,
+        ...checkoutDetails,
         items: {
           create: pricing.items.map((item) => ({
             productId: item.productId,
@@ -95,7 +107,7 @@ export async function POST(req: Request) {
   } catch (error) {
     return NextResponse.json(
       {
-        error: error instanceof OrderValidationError
+        error: error instanceof OrderValidationError || error instanceof CheckoutValidationError
           ? error.message
           : 'Pedido invalido para Webpay',
       },

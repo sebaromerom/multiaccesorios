@@ -4,6 +4,7 @@ import './globals.css'
 import Providers from './providers'
 import PublicNavGate from './PublicNavGate'
 import { Toaster } from '@/components/ui/sonner'
+import { getCheckoutConfig } from '@/lib/checkout-config'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 const bebasNeue = Bebas_Neue({
@@ -16,6 +17,12 @@ const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://multiaccesorios.cl'
 const logoUrl = `${siteUrl}/multi.jpeg`
 const phone = '+56953102476'
 const instagramUrl = 'https://www.instagram.com/multiaccesorios.cl/'
+const checkoutConfig = getCheckoutConfig()
+const paymentAccepted = [
+  ...(checkoutConfig.webpayEnabled ? ['Webpay'] : []),
+  ...(checkoutConfig.transferEnabled ? ['Transferencia'] : []),
+  ...(checkoutConfig.payOnPickupEnabled ? ['Pago al retirar'] : []),
+]
 const siteDescription =
   'Accesorios tech, carcasas, láminas, cargadores, cables, audio, vapers y servicio técnico con retiro en Linares y despacho a todo Chile.'
 
@@ -93,7 +100,7 @@ const localBusinessJsonLd = [
       closes: '19:00',
     },
     sameAs: [instagramUrl],
-    paymentAccepted: ['Webpay', 'Transferencia', 'Pago al retirar'],
+    paymentAccepted,
   },
   {
     '@context': 'https://schema.org',
@@ -120,7 +127,7 @@ const localBusinessJsonLd = [
       closes: '19:00',
     },
     sameAs: [instagramUrl],
-    paymentAccepted: ['Webpay', 'Transferencia', 'Pago al retirar'],
+    paymentAccepted,
   },
 ]
 
