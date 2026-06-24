@@ -4,8 +4,12 @@ import { buildValidatedOrderPricing, OrderValidationError } from '@/lib/orders'
 import { buildWebpayIds, getWebpayBaseUrl, getWebpayTransaction } from '@/lib/webpay'
 import { getCheckoutConfig } from '@/lib/checkout-config'
 import { CheckoutValidationError, validateCheckoutDetails } from '@/lib/checkout-validation'
+import { enforceRateLimit } from '@/lib/rate-limit'
 
 export async function POST(req: Request) {
+  const limited = enforceRateLimit(req, 'webpay-create', 10, 10 * 60_000)
+  if (limited) return limited
+
   try {
     const body = await req.json()
     const checkoutConfig = getCheckoutConfig()

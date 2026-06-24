@@ -1,8 +1,12 @@
 import { prisma } from '@/lib/prisma'
 import { buildValidatedOrderPricing, OrderValidationError } from '@/lib/orders'
+import { enforceRateLimit } from '@/lib/rate-limit'
 import { NextResponse } from 'next/server'
 
 export async function POST(req: Request) {
+  const limited = enforceRateLimit(req, 'cart', 60, 60_000)
+  if (limited) return limited
+
   try {
     const body = await req.json()
     const result = await buildValidatedOrderPricing(prisma, body.items ?? [])

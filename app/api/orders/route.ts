@@ -9,6 +9,7 @@ import { NextResponse } from 'next/server'
 import { adminUnauthorizedResponse, isAdminRequest } from '@/lib/admin-auth'
 import { getCheckoutConfig, getEnabledPaymentMethods } from '@/lib/checkout-config'
 import { CheckoutValidationError, validateCheckoutDetails } from '@/lib/checkout-validation'
+import { enforceRateLimit } from '@/lib/rate-limit'
 
 const PAYMENT_METHODS = ['transfer', 'pay_on_pickup', 'payment_link', 'webpay'] as const
 type PaymentMethod = (typeof PAYMENT_METHODS)[number]
@@ -74,6 +75,9 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const limited = enforceRateLimit(req, 'orders', 10, 10 * 60_000)
+  if (limited) return limited
+
   try {
     const body = await req.json()
     const paymentMethod = normalizePaymentMethod(body.paymentMethod)
