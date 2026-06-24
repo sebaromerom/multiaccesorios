@@ -1116,11 +1116,15 @@ export default async function ShopPage({
           .product-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 12px;
+            align-items: start;
           }
 
           .product-card {
             border-radius: 6px;
-            min-height: 100%;
+            min-height: 0;
+            height: auto;
+            content-visibility: visible;
+            contain-intrinsic-size: none;
           }
 
           .product-img-wrap {
@@ -1150,6 +1154,12 @@ export default async function ShopPage({
 
           .product-info {
             padding: 0 10px 10px;
+            flex: none;
+          }
+
+          .product-info > a:last-child,
+          .product-info > button:last-child {
+            margin-top: 0;
           }
 
           .product-name {
