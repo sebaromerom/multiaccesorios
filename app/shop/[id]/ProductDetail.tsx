@@ -70,6 +70,12 @@ export default function ProductDetail({
   const addToCartStore = useCartStore((state) => state.addToCart)
 
   const hasVariants = variants.length > 0
+  const categoryLabel =
+    product.category === 'Audifonos'
+      ? 'Audio'
+      : product.category === 'Computacion'
+        ? 'PC'
+        : product.category ?? 'Catálogo'
   const selectedVariant = variants.find((variant) => variant.size === selectedSize)
   const fallbackImages = cleanImages(carouselImages)
   const variantImages = selectedVariant
@@ -307,8 +313,8 @@ export default function ProductDetail({
         </section>
 
         <section className="product-copy">
-          <div className="breadcrumb">Inicio / {product.category ?? 'Catálogo'} / {product.name}</div>
-          <p className="brand-kicker">{product.category ?? 'Multi Accesorios'}</p>
+          <div className="breadcrumb">Inicio / {categoryLabel} / {product.name}</div>
+          <p className="brand-kicker">{categoryLabel}</p>
           <h1>{product.name}</h1>
 
           <div className="rating-row">

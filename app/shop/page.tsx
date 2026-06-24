@@ -37,11 +37,11 @@ const WHATSAPP_URL = 'https://wa.me/56953102476'
 const CATEGORIES = [
   { value: 'Carcasa', label: 'Carcasas', icon: Smartphone },
   { value: 'Lamina', label: 'Láminas', icon: PanelsTopLeft },
-  { value: 'Audifonos', label: 'Audífonos', icon: Headphones },
+  { value: 'Audifonos', label: 'Audio', icon: Headphones },
   { value: 'Cable', label: 'Cables', icon: Cable },
   { value: 'Cargador', label: 'Cargadores', icon: Zap },
   { value: 'Vapers', label: 'Vapers', icon: Sparkles },
-  { value: 'Computacion', label: 'Cómputo', icon: Laptop },
+  { value: 'Computacion', label: 'PC', icon: Laptop },
   { value: 'Otros', label: 'Otros', icon: Home },
 ] as const
 

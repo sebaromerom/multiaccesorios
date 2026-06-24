@@ -42,11 +42,11 @@ const MAP_CHACABUCO_456 = 'https://maps.app.goo.gl/uRC2hoVc8ssf1TTU7'
 const CATEGORIES = [
   { value: 'Carcasa', label: 'Carcasas', icon: Smartphone },
   { value: 'Lamina', label: 'Láminas', icon: PanelsTopLeft },
-  { value: 'Audifonos', label: 'Audífonos', icon: Headphones },
+  { value: 'Audifonos', label: 'Audio', icon: Headphones },
   { value: 'Cargador', label: 'Cargadores', icon: Zap },
   { value: 'Cable', label: 'Cables', icon: Cable },
   { value: 'Vapers', label: 'Vapers', icon: Sparkles },
-  { value: 'Computacion', label: 'Cómputo', icon: Laptop },
+  { value: 'Computacion', label: 'PC', icon: Laptop },
   { value: 'Otros', label: 'Otros', icon: Sparkles },
 ] as const
 
@@ -245,7 +245,10 @@ export default async function Home() {
         .home-mobile-header, .home-mobile-nav { display: none; }
         @media (max-width: 1180px) {
           .home-topbar, .home-header, .home-nav { display: none; }
-          .home-shell { box-shadow: none; }
+          .home-shell {
+            box-shadow: none;
+            padding-bottom: calc(var(--mobile-bottom-nav-height) + env(safe-area-inset-bottom) + 24px);
+          }
           .home-mobile-header { display: block; padding: 16px; border-bottom: 1px solid #ededed; background: #fff; position: sticky; top: 0; z-index: 20; }
           .home-mobile-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
           .home-mobile-actions { display: flex; align-items: center; gap: 18px; }
