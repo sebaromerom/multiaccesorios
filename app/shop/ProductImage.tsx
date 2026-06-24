@@ -18,7 +18,6 @@ export default function ProductImage({ productId, productName, initialImageUrl }
       alt={productName}
       fill
       sizes="(max-width: 760px) 45vw, (max-width: 1180px) 30vw, (max-width: 1400px) 24vw, 260px"
-      quality={72}
       loading="lazy"
       style={{
         objectFit: 'cover',

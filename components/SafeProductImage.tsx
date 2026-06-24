@@ -27,6 +27,7 @@ function isUsableImageUrl(value?: string | null) {
   if (!url) return false
   if (url.includes('placehold')) return false
   if (url === '/no-image-placeholder.jpg') return false
+  if (!url.startsWith('/') && !url.startsWith('https://')) return false
 
   return true
 }
@@ -86,7 +87,7 @@ export default function SafeProductImage({
   height,
   sizes,
   priority = false,
-  quality = 72,
+  quality = 75,
   loading,
   className = '',
   imageClassName = '',
@@ -94,10 +95,10 @@ export default function SafeProductImage({
   style,
   unoptimized,
 }: SafeProductImageProps) {
-  const [failed, setFailed] = useState(false)
+  const [failedSrc, setFailedSrc] = useState<string | null>(null)
   const safeSrc = useMemo(() => (isUsableImageUrl(src) ? src!.trim() : null), [src])
 
-  if (!safeSrc || failed) {
+  if (!safeSrc || failedSrc === safeSrc) {
     return <ProductFallback alt={alt} fill={fill} className={`${className} ${fallbackClassName}`} />
   }
 
@@ -116,7 +117,7 @@ export default function SafeProductImage({
       className={`${className} ${imageClassName}`.trim()}
       style={style}
       unoptimized={unoptimized}
-      onError={() => setFailed(true)}
+      onError={() => setFailedSrc(safeSrc)}
     />
   )
 }

@@ -16,7 +16,6 @@ import {
   Cable,
   Clock3,
   Headphones,
-  Heart,
   Home,
   Laptop,
   Menu,
@@ -57,6 +56,7 @@ const CATEGORY_SEARCH_ALIASES: Record<Category, string[]> = {
 }
 
 const PAGE_SIZE = 24
+const BRANDS = ['Hoco', 'Samsung', 'Borofone', 'Apple', 'Xiaomi', 'Baseus', 'MLab'] as const
 const CATEGORY_POPULARITY: Partial<Record<Category, number>> = {
   Carcasa: 18,
   Lamina: 16,
@@ -146,7 +146,9 @@ export default async function ShopPage({
       })
       .map((category) => category.value as Category)
     : []
-  const brandTerms = ['Hoco', 'Baseus', 'MLab', 'Borofone', 'Golf', 'Jellico', 'Fujitel', 'IRM', 'Apple', 'Samsung']
+  const selectedBrand = brand && brand !== 'all'
+    ? BRANDS.find((candidate) => candidate.toLowerCase() === brand.toLowerCase())
+    : null
   const publicProductWhere = {
     price: { gt: 0 },
     stock: { gt: 0 },
@@ -157,9 +159,15 @@ export default async function ShopPage({
     ...publicProductWhere,
     ...(cat ? { category: cat as Category } : {}),
     ...(promo === '1' ? { discounts: { some: { active: true } } } : {}),
-    ...(brand === 'all' ? {
-      OR: brandTerms.map((term) => ({ name: { contains: term, mode: 'insensitive' as const } })),
-    } : {}),
+    ...(brand === 'all'
+      ? {
+          OR: BRANDS.map((brandName) => ({
+            name: { contains: brandName, mode: 'insensitive' as const },
+          })),
+        }
+      : selectedBrand
+        ? { name: { contains: selectedBrand, mode: 'insensitive' as const } }
+        : {}),
     ...(q ? {
       OR: [
         { name: { contains: q, mode: 'insensitive' as const } },
@@ -214,7 +222,7 @@ export default async function ShopPage({
         skip: (currentPage - 1) * PAGE_SIZE,
       })
 
-  const [products, totalProducts, allAvailableProducts, categoryAggregations, shopBanner] = await Promise.all([
+  const [products, totalProducts, allAvailableProducts, categoryAggregations, shopBanner, activeDiscountCount] = await Promise.all([
     productsPromise,
     prisma.product.count({ where }),
     prisma.product.count({ where: publicProductWhere }),
@@ -224,7 +232,9 @@ export default async function ShopPage({
       where: publicProductWhere,
     }),
     getActiveBanner('shop_top'),
+    prisma.discountRule.count({ where: { active: true, productId: { not: null } } }),
   ])
+  const hasActiveOffers = activeDiscountCount > 0
 
   const categoryCounts = categoryAggregations.reduce((acc, curr) => {
     if (curr.category) acc[curr.category] = curr._count.id
@@ -887,6 +897,16 @@ export default async function ShopPage({
           font-weight: 800;
         }
 
+        .shop-empty a {
+          display: inline-flex;
+          min-height: 44px;
+          margin-top: 14px;
+          align-items: center;
+          color: #e30613;
+          font-size: 13px;
+          font-weight: 900;
+        }
+
         .shop-pagination {
           display: flex;
           justify-content: center;
@@ -1185,6 +1205,27 @@ export default async function ShopPage({
           .shop-benefits {
             display: none;
           }
+
+          .shop-brand-chips {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 8px;
+            margin: 0 0 16px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+            scrollbar-width: none;
+          }
+
+          .shop-brand-chips::-webkit-scrollbar {
+            display: none;
+          }
+
+          .shop-brand-chips .shop-chip {
+            flex: 0 0 auto;
+            min-width: 82px;
+            height: 40px;
+            padding: 0 14px;
+          }
         }
 
         @media (max-width: 360px) {
@@ -1206,7 +1247,7 @@ export default async function ShopPage({
             </div>
             <div className="shop-topbar-group">
               <span className="shop-topbar-item">Centro de ayuda</span>
-              <span className="shop-topbar-item">Contacto</span>
+              <Link href="/#contacto" className="shop-topbar-item">Contacto</Link>
             </div>
           </div>
 
@@ -1231,7 +1272,7 @@ export default async function ShopPage({
               <span className="inline-flex items-center gap-12"><Menu className="size-5" /> Todas las categorías</span>
             </Link>
             <div className="shop-nav-links">
-              <Link href={buildUrl({ promo: '1', brand: null, page: '1' })}><BadgePercent className="mr-1 inline size-4" /> Ofertas</Link>
+              {hasActiveOffers && <Link href={buildUrl({ promo: '1', brand: null, page: '1' })}><BadgePercent className="mr-1 inline size-4" /> Ofertas</Link>}
               <Link href={buildUrl({ sort: 'newest', page: '1' })}>Nuevos</Link>
               <Link href={buildUrl({ sort: 'sales', page: '1' })}>Más vendidos</Link>
               <Link href={buildUrl({ brand: 'all', promo: null, page: '1' })}>Marcas</Link>
@@ -1320,23 +1361,36 @@ export default async function ShopPage({
             <main>
               <div className="shop-main-head">
                 <div className="shop-title">
-                  <h1>{promo === '1' ? 'Ofertas' : brand === 'all' ? 'Marcas' : selectedCategory ? selectedCategory.label : 'Catálogo'}</h1>
+                  <h1>{promo === '1' ? 'Ofertas' : brand ? selectedBrand ?? 'Marcas' : selectedCategory ? selectedCategory.label : 'Catálogo'}</h1>
                   <p>{totalProducts} productos disponibles</p>
                 </div>
                 <Suspense><SortSelect value={sort} /></Suspense>
               </div>
 
-              <div className="shop-cat-chips">
+              <div className={`shop-cat-chips${brand ? ' shop-brand-chips' : ''}`}>
                 <Link href={buildUrl({ cat: null, promo: null, brand: null, page: '1' })} className={`shop-chip${!cat && !promo && !brand ? ' active' : ''}`}>Todos</Link>
-                {CATEGORIES.map((category) => (
-                  <Link key={category.value} href={buildUrl({ cat: category.value, promo: null, brand: null, page: '1' })} className={`shop-chip${cat === category.value ? ' active' : ''}`}>
-                    {category.label} ({categoryCounts[category.value] || 0})
-                  </Link>
-                ))}
+                {brand
+                  ? BRANDS.map((brandName) => (
+                      <Link
+                        key={brandName}
+                        href={buildUrl({ brand: brandName, cat: null, promo: null, page: '1' })}
+                        className={`shop-chip${selectedBrand === brandName ? ' active' : ''}`}
+                      >
+                        {brandName}
+                      </Link>
+                    ))
+                  : CATEGORIES.map((category) => (
+                      <Link key={category.value} href={buildUrl({ cat: category.value, promo: null, brand: null, page: '1' })} className={`shop-chip${cat === category.value ? ' active' : ''}`}>
+                        {category.label} ({categoryCounts[category.value] || 0})
+                      </Link>
+                    ))}
               </div>
 
               {products.length === 0 ? (
-                <div className="shop-empty">No se encontraron productos</div>
+                <div className="shop-empty">
+                  <p>{promo === '1' ? 'No hay ofertas activas por el momento.' : 'No se encontraron productos.'}</p>
+                  <Link href="/shop?sort=newest&page=1">Ver productos nuevos</Link>
+                </div>
               ) : (
                 <div className="product-grid">
                   {products.map((product) => {
@@ -1357,7 +1411,6 @@ export default async function ShopPage({
                           />
                         </span>
                         <span className="product-stock-badge">En stock</span>
-                        <span className="product-fav"><Heart className="size-5" /></span>
                       </Link>
                       <div className="product-info">
                         <Link href={`/shop/${product.id}`} className="product-name">

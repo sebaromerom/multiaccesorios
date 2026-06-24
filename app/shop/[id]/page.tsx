@@ -6,7 +6,6 @@ import {
   BadgePercent,
   ChevronLeft,
   Clock3,
-  Heart,
   Menu,
   Phone,
   Search,
@@ -29,17 +28,21 @@ export default async function ProductPage({
 }) {
   const { id } = await params
 
-  const product = await prisma.product.findUnique({
-    where: { id },
-    include: {
-      images: { orderBy: { order: 'asc' } },
-      variants: {
-        include: {
-          images: { orderBy: { order: 'asc' } },
+  const [product, activeDiscountCount] = await Promise.all([
+    prisma.product.findUnique({
+      where: { id },
+      include: {
+        images: { orderBy: { order: 'asc' } },
+        variants: {
+          include: {
+            images: { orderBy: { order: 'asc' } },
+          },
         },
       },
-    },
-  })
+    }),
+    prisma.discountRule.count({ where: { active: true, productId: { not: null } } }),
+  ])
+  const hasActiveOffers = activeDiscountCount > 0
 
   if (!product || product.price <= 0 || product.stock <= 0 || !product.category) notFound()
   const displayName = formatProductName(product.name)
@@ -1169,7 +1172,7 @@ export default async function ProductPage({
             </div>
             <div>
               <span>Centro de ayuda</span>
-              <span><Phone className="size-4" /> Contacto</span>
+              <Link href="/#contacto"><Phone className="size-4" /> Contacto</Link>
             </div>
           </div>
 
@@ -1183,7 +1186,6 @@ export default async function ProductPage({
             </Suspense>
             <div className="detail-actions">
               <a href={WHATSAPP_URL} target="_blank" rel="noreferrer" className="detail-action"><Phone className="size-6" /><span>Ayuda<small>WhatsApp</small></span></a>
-              <Link href="/shop" className="detail-action"><Heart className="size-6" /> Favoritos</Link>
               <CartHeaderLink />
             </div>
           </header>
@@ -1191,7 +1193,7 @@ export default async function ProductPage({
           <nav className="detail-nav">
             <Link href="/shop" className="detail-all-cats"><span className="inline-flex items-center gap-12"><Menu className="size-5" /> Todas las categorías</span></Link>
             <div className="detail-nav-links">
-              <Link href="/shop?promo=1&page=1"><BadgePercent className="mr-1 inline size-4" /> Ofertas</Link>
+              {hasActiveOffers && <Link href="/shop?promo=1&page=1"><BadgePercent className="mr-1 inline size-4" /> Ofertas</Link>}
               <Link href="/shop?sort=newest">Nuevos</Link>
               <Link href="/shop?sort=sales&page=1">Más vendidos</Link>
               <Link href="/shop?brand=all&page=1">Marcas</Link>

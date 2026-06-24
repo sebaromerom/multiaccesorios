@@ -117,6 +117,8 @@ export default function ProductDetail({
   const variantHelp =
     product.category === 'Vapers'
       ? '¿No encuentras la variante? Avísanos y la buscamos para ti.'
+      : product.name.toLocaleLowerCase('es-CL').includes('termo')
+        ? '¿No encuentras el color o la capacidad que buscas? Avísanos.'
       : '¿No encuentras tu modelo? Avísanos y lo buscamos para ti.'
 
   function selectVariant(size: string) {

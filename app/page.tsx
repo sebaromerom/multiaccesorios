@@ -13,7 +13,6 @@ import {
   Camera,
   Clock3,
   Headphones,
-  Heart,
   Home as HomeIcon,
   Laptop,
   List,
@@ -32,7 +31,7 @@ import {
   Zap,
 } from 'lucide-react'
 
-export const revalidate = 0
+export const dynamic = 'force-dynamic'
 
 const WHATSAPP_URL = 'https://wa.me/56953102476'
 const INSTAGRAM_URL = 'https://www.instagram.com/multiaccesorios.cl/'
@@ -285,7 +284,7 @@ export default async function Home() {
           .home-offer { margin-top: 16px; min-height: 138px; padding: 18px 14px; }
           .home-offer h3 { font-size: 16px; max-width: 42%; }
           .home-offer-product { width: 48%; height: 86%; }
-          .home-support { margin: 18px 14px 0; grid-template-columns: 1fr 1fr; }
+          .home-support { margin: 18px 14px 0; grid-template-columns: 1fr 1fr; scroll-margin-top: 76px; }
           .home-support-item { min-height: 88px; padding: 14px 12px; border-right: 1px solid #ededed; border-bottom: 1px solid #ededed; }
           .home-support-item:nth-child(2n) { border-right: 0; }
           .home-support-item:nth-last-child(-n+2) { border-bottom: 0; }
@@ -293,7 +292,8 @@ export default async function Home() {
           .home-support-item strong { font-size: 10px; }
           .home-support-item span { font-size: 9px; }
           .home-benefits { display: none; }
-          .home-mobile-nav { position: fixed; z-index: 30; display: grid; grid-template-columns: repeat(5,1fr); bottom: 0; left: 0; right: 0; min-height: var(--mobile-bottom-nav-height); padding-bottom: env(safe-area-inset-bottom); border-top: 1px solid #ddd; background: #fff; }
+          .home-mobile-nav { position: fixed; z-index: 30; display: grid; grid-template-columns: repeat(4,1fr); bottom: 0; left: 0; right: 0; min-height: var(--mobile-bottom-nav-height); padding-bottom: env(safe-area-inset-bottom); border-top: 1px solid #ddd; background: #fff; }
+          .home-mobile-nav.no-offers { grid-template-columns: repeat(3,1fr); }
           .home-mobile-nav a { min-height: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: #555; text-decoration: none; font-size: 9px; font-weight: 700; }
           .home-mobile-nav a:first-child { color: #e30613; }
         }
@@ -366,7 +366,7 @@ export default async function Home() {
         <nav className="home-nav">
           <Link href="/shop" className="home-all-cats"><span className="inline-flex items-center gap-3"><Menu className="size-4" /> Todas las categorías</span></Link>
           <div className="home-nav-links">
-            <Link href="/shop?promo=1&page=1"><BadgePercent className="inline size-4 mr-1" /> Ofertas</Link>
+            {activeDiscount && <Link href="/shop?promo=1&page=1"><BadgePercent className="inline size-4 mr-1" /> Ofertas</Link>}
             <Link href="/shop?sort=newest">Nuevos</Link>
             <Link href="/shop?sort=sales&page=1">Más vendidos</Link>
             <Link href="/shop?brand=all&page=1">Marcas</Link>
@@ -454,7 +454,6 @@ export default async function Home() {
                       <Link href={`/shop/${product.id}`} className="home-product-image">
                         <SafeProductImage src={product.imageUrl} alt={displayName} fill sizes="180px" />
                         <span className="home-stock">En stock</span>
-                        <span className="home-heart"><Heart /></span>
                       </Link>
                       <div className="home-product-info">
                         <Link href={`/shop/${product.id}`} className="home-product-name">{displayName}</Link>
@@ -499,7 +498,7 @@ export default async function Home() {
           </section>
         </div>
 
-        <section className="home-support" aria-label="Condiciones de compra y contacto">
+        <section className="home-support" id="contacto" aria-label="Condiciones de compra y contacto">
           <a href={MAP_CHACABUCO_479} target="_blank" rel="noreferrer" className="home-support-item">
             <span className="home-support-icon"><MapPin className="size-4" /></span>
             <p><strong>Retiro en Linares</strong><span>Chacabuco 479. Atención de lunes a sábado, 09:00 a 19:00.</span></p>
@@ -518,7 +517,7 @@ export default async function Home() {
           </a>
         </section>
 
-        <footer className="home-benefits" id="contacto">
+        <footer className="home-benefits">
           <div className="home-benefit"><Truck className="size-7" /><span>Envíos a todo Chile<small>Rápido y seguro</small></span></div>
           <div className="home-benefit"><Clock3 className="size-7" /><span>Despacho 24-48h en Linares<small>Compras antes de las 14:00</small></span></div>
           <div className="home-benefit"><ShieldCheck className="size-7" /><span>Compra segura<small>Sitio protegido SSL</small></span></div>
@@ -526,11 +525,10 @@ export default async function Home() {
         </footer>
       </div>
 
-      <nav className="home-mobile-nav">
+      <nav className={`home-mobile-nav${activeDiscount ? '' : ' no-offers'}`}>
         <Link href="/"><HomeIcon className="size-5" />Inicio</Link>
         <Link href="/shop"><List className="size-5" />Categorías</Link>
-        <Link href="/shop?promo=1&page=1"><Tag className="size-5" />Ofertas</Link>
-        <Link href="/shop"><Heart className="size-5" />Favoritos</Link>
+        {activeDiscount && <Link href="/shop?promo=1&page=1"><Tag className="size-5" />Ofertas</Link>}
         <a href={WHATSAPP_URL} target="_blank" rel="noreferrer"><User className="size-5" />Ayuda</a>
       </nav>
 
