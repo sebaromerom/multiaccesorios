@@ -809,6 +809,64 @@ export default async function ProductPage({
           margin: 18px 0 24px;
         }
 
+        .product-info-panels {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) 360px;
+          gap: 18px;
+          margin: 0 0 26px;
+        }
+
+        .spec-panel {
+          border: 1px solid #e8e8e8;
+          border-radius: 8px;
+          background: #fff;
+          padding: 18px;
+        }
+
+        .spec-panel h3 {
+          margin: 0 0 14px;
+          color: #111;
+          font-size: 13px;
+          font-weight: 950;
+          text-transform: uppercase;
+          letter-spacing: .04em;
+        }
+
+        .spec-panel dl {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 10px 18px;
+          margin: 0;
+        }
+
+        .spec-panel dl div {
+          min-width: 0;
+          border-bottom: 1px solid #f0f0f0;
+          padding-bottom: 10px;
+        }
+
+        .spec-panel dt {
+          color: #777;
+          font-size: 11px;
+          font-weight: 850;
+          text-transform: uppercase;
+        }
+
+        .spec-panel dd {
+          margin: 4px 0 0;
+          color: #111;
+          font-size: 13px;
+          font-weight: 850;
+          line-height: 1.35;
+        }
+
+        .spec-panel.compact p {
+          margin: 0 0 16px;
+          color: #444;
+          font-size: 13px;
+          line-height: 1.55;
+        }
+
         .feature-row {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
@@ -1007,8 +1065,39 @@ export default async function ProductPage({
 
           .breadcrumb,
           .brand-kicker,
-          .purchase-card,
+          .purchase-card {
+            display: none;
+          }
+
           .detail-tabs {
+            display: block;
+            margin-top: 18px;
+            padding-bottom: 0;
+          }
+
+          .tabs-head,
+          .detail-tabs > p,
+          .feature-row {
+            display: none;
+          }
+
+          .product-info-panels {
+            display: block;
+            margin: 0;
+          }
+
+          .spec-panel {
+            padding: 14px;
+            border-radius: 6px;
+            margin-top: 12px;
+          }
+
+          .spec-panel dl {
+            grid-template-columns: 1fr;
+            gap: 8px;
+          }
+
+          .spec-panel.compact {
             display: none;
           }
 

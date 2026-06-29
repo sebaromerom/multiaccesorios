@@ -36,8 +36,111 @@ type Product = {
   description: string | null
 }
 
+type ProductSpec = {
+  label: string
+  value: string
+}
+
 function cleanImages(images: string[]) {
   return [...new Set(images.filter((url) => url && !url.includes('placehold')))]
+}
+
+function titleCase(value: string) {
+  return value
+    .toLocaleLowerCase('es-CL')
+    .replace(/\b\p{L}/gu, (letter) => letter.toLocaleUpperCase('es-CL'))
+}
+
+function inferBrand(name: string) {
+  const upper = name.toLocaleUpperCase('es-CL')
+  const brands = ['HOCO', 'BOROFONE', 'BASEUS', 'MLAB', 'MOTOMO', 'SAMSUNG', 'IPHONE', 'XIAOMI', 'REDMI', 'ZIIMA', 'ZUMMIT']
+  return brands.find((brand) => upper.includes(brand)) ?? null
+}
+
+function inferCompatibility(name: string, variants: Variant[]) {
+  const upper = name.toLocaleUpperCase('es-CL')
+  const family =
+    upper.includes('IPHONE')
+      ? 'iPhone'
+      : upper.includes('SAMSUNG')
+        ? 'Samsung'
+        : upper.includes('REDMI') || upper.includes('XIAOMI')
+          ? 'Xiaomi / Redmi'
+          : null
+
+  const visibleVariants = variants
+    .filter((variant) => variant.stock > 0)
+    .slice(0, 4)
+    .map((variant) => variant.size)
+
+  if (visibleVariants.length > 0) {
+    const suffix = variants.length > visibleVariants.length ? ' y otros modelos' : ''
+    return `${family ? `${family}: ` : ''}${visibleVariants.join(', ')}${suffix}`
+  }
+
+  return family ?? 'Segun modelo disponible'
+}
+
+function inferSpecs(product: Product, variants: Variant[]): ProductSpec[] {
+  const name = product.name
+  const upper = name.toLocaleUpperCase('es-CL')
+  const category = product.category
+  const brand = inferBrand(name)
+  const activeVariants = variants.filter((variant) => variant.stock > 0)
+  const specs: ProductSpec[] = []
+
+  if (category === 'Carcasa') {
+    specs.push({ label: 'Tipo', value: upper.includes('MAGSAFE') ? 'Carcasa compatible con MagSafe' : 'Carcasa protectora' })
+    specs.push({ label: 'Compatibilidad', value: inferCompatibility(name, variants) })
+    specs.push({ label: 'Material', value: upper.includes('SILICONA') ? 'Silicona flexible' : upper.includes('METAL') ? 'Borde metalizado / rigido' : 'Material protector segun modelo' })
+    specs.push({ label: 'Proteccion', value: upper.includes('CAMARA') ? 'Borde y camara protegidos' : 'Uso diario contra rayas y golpes leves' })
+  } else if (category === 'Lamina') {
+    specs.push({ label: 'Tipo', value: upper.includes('HIDROGEL') ? 'Lamina de hidrogel' : upper.includes('CAMARA') ? 'Protector de camara' : 'Lamina de vidrio' })
+    specs.push({ label: 'Compatibilidad', value: inferCompatibility(name, variants) })
+    specs.push({ label: 'Uso', value: upper.includes('ANTIESPIA') ? 'Privacidad y proteccion de pantalla' : 'Proteccion de pantalla o camara' })
+    specs.push({ label: 'Instalacion', value: 'Recomendado instalar en tienda' })
+  } else if (category === 'Cargador') {
+    specs.push({ label: 'Tipo', value: upper.includes('AUTO') ? 'Cargador de auto' : 'Cargador de pared' })
+    specs.push({ label: 'Conexion', value: upper.includes('TYPE C') || upper.includes('TIPO C') || upper.includes('USB C') ? 'USB-C' : upper.includes('USB') ? 'USB-A' : 'Segun variante' })
+    specs.push({ label: 'Potencia', value: upper.match(/(\d+)\s?W/)?.[0] ?? 'Segun modelo' })
+    specs.push({ label: 'Compatibilidad', value: 'Celulares y accesorios compatibles' })
+  } else if (category === 'Cable') {
+    specs.push({ label: 'Tipo', value: 'Cable de carga / datos' })
+    specs.push({ label: 'Conexion', value: upper.includes('LIGHTNING') ? 'Lightning' : upper.includes('TYPE C') || upper.includes('TIPO C') || upper.includes('USB C') ? 'USB-C' : upper.includes('MICRO') ? 'Micro USB' : 'Segun variante' })
+    specs.push({ label: 'Potencia', value: upper.match(/(\d+)\s?W/)?.[0] ?? 'Segun modelo' })
+    specs.push({ label: 'Uso', value: 'Carga diaria y conexion de dispositivos' })
+  } else if (category === 'Audifonos') {
+    specs.push({ label: 'Tipo', value: upper.includes('TWS') || upper.includes('INALAMBRICO') || upper.includes('BT') ? 'Audio Bluetooth' : 'Audio' })
+    specs.push({ label: 'Conexion', value: upper.includes('BT') || upper.includes('BLUETOOTH') || upper.includes('TWS') ? 'Bluetooth' : 'Segun modelo' })
+    specs.push({ label: 'Uso', value: 'Musica, llamadas y uso diario' })
+    specs.push({ label: 'Variante', value: activeVariants.length > 0 ? activeVariants.map((variant) => variant.size).slice(0, 4).join(', ') : 'Segun stock disponible' })
+  } else if (category === 'Vapers') {
+    specs.push({ label: 'Tipo', value: 'Vaper / vaporizador' })
+    specs.push({ label: 'Variante', value: activeVariants.length > 0 ? activeVariants.map((variant) => variant.size).slice(0, 4).join(', ') : 'Segun stock disponible' })
+    specs.push({ label: 'Venta', value: 'Producto para mayores de edad' })
+    specs.push({ label: 'Disponibilidad', value: 'Stock sujeto a sabor/variante' })
+  } else if (category === 'Computacion') {
+    specs.push({ label: 'Tipo', value: 'Accesorio PC / notebook' })
+    specs.push({ label: 'Uso', value: 'Trabajo, estudio o soporte tecnico' })
+    specs.push({ label: 'Compatibilidad', value: 'Segun equipo y conexion' })
+  } else {
+    specs.push({ label: 'Tipo', value: 'Accesorio disponible en tienda' })
+    specs.push({ label: 'Uso', value: 'Uso diario segun producto' })
+    specs.push({ label: 'Disponibilidad', value: 'Stock sujeto a variante' })
+  }
+
+  if (brand) specs.unshift({ label: 'Marca', value: titleCase(brand) })
+  specs.push({ label: 'Stock', value: activeVariants.length > 0 ? 'Validado por variante' : 'Disponible para compra' })
+
+  return specs.slice(0, 6)
+}
+
+function inferIncluded(product: Product) {
+  if (product.category === 'Cargador' && !product.name.toLocaleUpperCase('es-CL').includes('CABLE')) return '1 cargador. Cable no incluido salvo que el producto lo indique.'
+  if (product.category === 'Cable') return '1 cable.'
+  if (product.category === 'Lamina') return '1 lamina/protector. Instalacion recomendada en tienda.'
+  if (product.category === 'Carcasa') return '1 carcasa para el modelo seleccionado.'
+  return '1 producto segun la variante seleccionada.'
 }
 
 export default function ProductDetail({
@@ -120,6 +223,9 @@ export default function ProductDetail({
       : product.name.toLocaleLowerCase('es-CL').includes('termo')
         ? '¿No encuentras el color o la capacidad que buscas? Avísanos.'
       : '¿No encuentras tu modelo? Avísanos y lo buscamos para ti.'
+
+  const productSpecs = inferSpecs(product, variants)
+  const includedText = inferIncluded(product)
 
   function selectVariant(size: string) {
     setSelectedSize(size)
@@ -441,6 +547,25 @@ export default function ProductDetail({
             <button>Preguntas frecuentes</button>
           </div>
           <p>{product.description || 'Producto seleccionado por Multi Accesorios, disponible para retiro en tienda y despacho a todo Chile.'}</p>
+          <div className="product-info-panels">
+            <div className="spec-panel">
+              <h3>Especificaciones</h3>
+              <dl>
+                {productSpecs.map((spec) => (
+                  <div key={`${spec.label}-${spec.value}`}>
+                    <dt>{spec.label}</dt>
+                    <dd>{spec.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+            <div className="spec-panel compact">
+              <h3>Que incluye</h3>
+              <p>{includedText}</p>
+              <h3>Antes de comprar</h3>
+              <p>Si tienes duda con el modelo, escribe por WhatsApp y confirmamos compatibilidad antes de preparar el pedido.</p>
+            </div>
+          </div>
           <div className="feature-row">
             <span><BatteryCharging className="size-6" /> <b>Stock real</b><small>Según variante</small></span>
             <span><ShieldCheck className="size-6" /> <b>Compra segura</b><small>Sitio protegido</small></span>
