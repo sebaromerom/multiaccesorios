@@ -33,8 +33,8 @@ import {
 
 export const dynamic = 'force-dynamic'
 
-const WHATSAPP_URL = 'https://wa.me/56953102476'
-const INSTAGRAM_URL = 'https://www.instagram.com/multiaccesorios.cl/'
+const WHATSAPP_URL = 'https://wa.me/56927109764'
+const INSTAGRAM_URL = 'https://www.instagram.com/multiaccesorios_cl/'
 const MAP_CHACABUCO_479 = 'https://maps.app.goo.gl/jicd2cJFi37D6Qs96'
 const MAP_CHACABUCO_456 = 'https://maps.app.goo.gl/uRC2hoVc8ssf1TTU7'
 
@@ -194,6 +194,7 @@ export default async function Home() {
         .home-product-image img { width: 100%; height: 100%; object-fit: contain; transition: transform .22s ease; }
         .home-product-card:hover .home-product-image img { transform: scale(1.04); }
         .home-stock { position: absolute; top: 9px; left: 9px; border: 1px solid #bfe7c8; border-radius: 3px; background: #f6fff7; color: #1f9a3f; padding: 3px 6px; font-size: 8px; font-weight: 800; transition: transform .18s ease; }
+        .home-option-badge { position: absolute; right: 9px; bottom: 9px; border-radius: 999px; background: #111; color: #fff; padding: 4px 8px; font-size: 8px; font-weight: 900; box-shadow: 0 8px 16px rgba(0,0,0,.14); }
         .home-product-card:hover .home-stock { transform: translateY(-1px); }
         .home-heart {
           position: absolute;
@@ -454,13 +455,14 @@ export default async function Home() {
                       <Link href={`/shop/${product.id}`} className="home-product-image">
                         <SafeProductImage src={product.imageUrl} alt={displayName} fill sizes="180px" />
                         <span className="home-stock">En stock</span>
+                        {hasVariants && <span className="home-option-badge">Modelos</span>}
                       </Link>
                       <div className="home-product-info">
                         <Link href={`/shop/${product.id}`} className="home-product-name">{displayName}</Link>
                         <span className="home-product-price">${product.price.toLocaleString('es-CL')}</span>
                         {hasVariants ? (
                           <Link href={`/shop/${product.id}`} className="h-10 rounded-[4px] border border-red-600 text-red-600 flex items-center justify-center text-xs font-black no-underline">
-                            Ver opciones
+                            Elegir modelo
                           </Link>
                         ) : (
                           <AddToCartButton product={{ id: product.id, name: displayName, price: product.price, stock: product.stock, imageUrl: product.imageUrl }} />
@@ -509,7 +511,7 @@ export default async function Home() {
           </a>
           <a href={WHATSAPP_URL} target="_blank" rel="noreferrer" className="home-support-item">
             <span className="home-support-icon"><MessageCircle className="size-4" /></span>
-            <p><strong>WhatsApp oficial</strong><span>Escríbenos al +56 9 5310 2476 para disponibilidad y entrega.</span></p>
+            <p><strong>WhatsApp oficial</strong><span>Escríbenos al +56 9 2710 9764 para disponibilidad y entrega.</span></p>
           </a>
           <a href={INSTAGRAM_URL} target="_blank" rel="noreferrer" className="home-support-item">
             <span className="home-support-icon"><Camera className="size-4" /></span>

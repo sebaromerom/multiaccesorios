@@ -15,8 +15,8 @@ const bebasNeue = Bebas_Neue({
 
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://multiaccesorios.cl'
 const logoUrl = `${siteUrl}/multi.jpeg`
-const phone = '+56953102476'
-const instagramUrl = 'https://www.instagram.com/multiaccesorios.cl/'
+const phone = '+56927109764'
+const instagramUrl = 'https://www.instagram.com/multiaccesorios_cl/'
 const checkoutConfig = getCheckoutConfig()
 const paymentAccepted = [
   ...(checkoutConfig.webpayEnabled ? ['Webpay'] : []),

@@ -31,7 +31,7 @@ import {
 
 export const dynamic = 'force-dynamic'
 
-const WHATSAPP_URL = 'https://wa.me/56953102476'
+const WHATSAPP_URL = 'https://wa.me/56927109764'
 
 const CATEGORIES = [
   { value: 'Carcasa', label: 'Carcasas', icon: Smartphone },
@@ -57,6 +57,15 @@ const CATEGORY_SEARCH_ALIASES: Record<Category, string[]> = {
 
 const PAGE_SIZE = 24
 const BRANDS = ['Hoco', 'Samsung', 'Borofone', 'Apple', 'Xiaomi', 'Baseus', 'MLab'] as const
+const SORT_LABELS: Record<string, string> = {
+  popular: 'Popularidad',
+  newest: 'Más recientes',
+  sales: 'Más vendidos',
+  price_asc: 'Menor precio',
+  price_desc: 'Mayor precio',
+  alpha_asc: 'A-Z',
+  alpha_desc: 'Z-A',
+}
 const CATEGORY_POPULARITY: Partial<Record<Category, number>> = {
   Carcasa: 18,
   Lamina: 16,
@@ -243,6 +252,8 @@ export default async function ShopPage({
 
   const totalPages = Math.ceil(totalProducts / PAGE_SIZE)
   const selectedCategory = CATEGORIES.find((category) => category.value === cat)
+  const selectedSortLabel = SORT_LABELS[sort] ?? 'Popularidad'
+  const hasActiveFilters = Boolean(q || cat || promo || brand || sort !== 'popular')
   const buildUrl = (updates: { cat?: string | null; q?: string | null; page?: string | null; sort?: string | null; promo?: string | null; brand?: string | null }) => {
     const params = new URLSearchParams()
     if (q) params.set('q', q)
@@ -714,6 +725,13 @@ export default async function ShopPage({
           font-weight: 600;
         }
 
+        .shop-result-note {
+          margin-top: 8px;
+          color: #555;
+          font-size: 12px;
+          font-weight: 700;
+        }
+
         .shop-sort-select {
           height: 44px;
           border: 1px solid #ddd;
@@ -730,6 +748,41 @@ export default async function ShopPage({
           flex-wrap: wrap;
           gap: 12px;
           margin-bottom: 26px;
+        }
+
+        .shop-active-filters {
+          display: flex;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 8px;
+          margin: -10px 0 18px;
+        }
+
+        .shop-active-pill {
+          min-height: 32px;
+          border: 1px solid #e5e5e5;
+          border-radius: 999px;
+          background: #fafafa;
+          color: #333;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 0 12px;
+          text-decoration: none;
+          font-size: 11px;
+          font-weight: 850;
+          white-space: nowrap;
+        }
+
+        .shop-active-pill strong {
+          color: #111;
+          font-weight: 950;
+        }
+
+        .shop-active-pill.clear {
+          border-color: #e30613;
+          background: #fff;
+          color: #e30613;
         }
 
         .shop-chip {
@@ -822,6 +875,20 @@ export default async function ShopPage({
           color: #e30613;
           border-color: #ffb9bd;
           background: #fff6f6;
+        }
+
+        .product-option-badge {
+          position: absolute;
+          right: 16px;
+          bottom: 16px;
+          z-index: 2;
+          border-radius: 999px;
+          background: #111;
+          color: #fff;
+          padding: 5px 10px;
+          font-size: 10px;
+          font-weight: 900;
+          box-shadow: 0 10px 20px rgba(0,0,0,.16);
         }
 
         .product-fav {
@@ -1086,6 +1153,25 @@ export default async function ShopPage({
             color: #666;
             font-weight: 700;
             white-space: nowrap;
+          }
+
+          .shop-active-filters {
+            margin: -6px 0 14px;
+            gap: 6px;
+            overflow-x: auto;
+            flex-wrap: nowrap;
+            scrollbar-width: none;
+          }
+
+          .shop-active-filters::-webkit-scrollbar {
+            display: none;
+          }
+
+          .shop-active-pill {
+            flex: 0 0 auto;
+            min-height: 30px;
+            padding: 0 10px;
+            font-size: 10px;
           }
 
           .mobile-sort-select {
@@ -1363,9 +1449,21 @@ export default async function ShopPage({
                 <div className="shop-title">
                   <h1>{promo === '1' ? 'Ofertas' : brand ? selectedBrand ?? 'Marcas' : selectedCategory ? selectedCategory.label : 'Catálogo'}</h1>
                   <p>{totalProducts} productos disponibles</p>
+                  {q && <div className="shop-result-note">Resultados para: <strong>{q}</strong></div>}
                 </div>
                 <Suspense><SortSelect value={sort} /></Suspense>
               </div>
+
+              {hasActiveFilters && (
+                <div className="shop-active-filters" aria-label="Filtros activos">
+                  {q && <Link href={buildUrl({ q: null, page: '1' })} className="shop-active-pill">Busqueda: <strong>{q}</strong> x</Link>}
+                  {selectedCategory && <Link href={buildUrl({ cat: null, page: '1' })} className="shop-active-pill">Categoria: <strong>{selectedCategory.label}</strong> x</Link>}
+                  {promo === '1' && <Link href={buildUrl({ promo: null, page: '1' })} className="shop-active-pill">Ofertas x</Link>}
+                  {selectedBrand && <Link href={buildUrl({ brand: null, page: '1' })} className="shop-active-pill">Marca: <strong>{selectedBrand}</strong> x</Link>}
+                  {sort !== 'popular' && <Link href={buildUrl({ sort: null, page: '1' })} className="shop-active-pill">Orden: <strong>{selectedSortLabel}</strong> x</Link>}
+                  <Link href="/shop?page=1" className="shop-active-pill clear">Limpiar todo</Link>
+                </div>
+              )}
 
               <div className={`shop-cat-chips${brand ? ' shop-brand-chips' : ''}`}>
                 <Link href={buildUrl({ cat: null, promo: null, brand: null, page: '1' })} className={`shop-chip${!cat && !promo && !brand ? ' active' : ''}`}>Todos</Link>
@@ -1388,8 +1486,10 @@ export default async function ShopPage({
 
               {products.length === 0 ? (
                 <div className="shop-empty">
-                  <p>{promo === '1' ? 'No hay ofertas activas por el momento.' : 'No se encontraron productos.'}</p>
-                  <Link href="/shop?sort=newest&page=1">Ver productos nuevos</Link>
+                  <p>{promo === '1' ? 'No hay ofertas activas por el momento.' : q ? 'No encontramos coincidencias con esa busqueda.' : 'No se encontraron productos.'}</p>
+                  <Link href={q || cat || brand || promo ? '/shop?page=1' : '/shop?sort=newest&page=1'}>
+                    {q || cat || brand || promo ? 'Volver al catalogo' : 'Ver productos nuevos'}
+                  </Link>
                 </div>
               ) : (
                 <div className="product-grid">
@@ -1411,6 +1511,7 @@ export default async function ShopPage({
                           />
                         </span>
                         <span className="product-stock-badge">En stock</span>
+                        {product.variants.length > 0 && <span className="product-option-badge">Modelos</span>}
                       </Link>
                       <div className="product-info">
                         <Link href={`/shop/${product.id}`} className="product-name">
@@ -1419,7 +1520,7 @@ export default async function ShopPage({
                         <span className="product-price">${Number(product.price).toLocaleString('es-CL')}</span>
                         {product.variants.length > 0 ? (
                           <Link href={`/shop/${product.id}`} className="h-10 rounded-[4px] border border-red-600 text-red-600 flex items-center justify-center text-xs font-black no-underline">
-                            Ver opciones
+                            Elegir modelo
                           </Link>
                         ) : (
                           <AddToCartButton

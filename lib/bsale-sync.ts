@@ -117,6 +117,11 @@ function mapCategory(
   const name = productName?.toLowerCase() ?? ''
   const type = typeName?.toLowerCase() ?? ''
   const text = `${name} ${type}`
+  const hasLaminaWord =
+    /\blamina\b/.test(name) ||
+    /\blamina\b/.test(type) ||
+    /\blámina\b/.test(name) ||
+    /\blámina\b/.test(type)
 
   if (
     name.includes('carcas') ||
@@ -134,7 +139,7 @@ function mapCategory(
   if (name.includes('metal magsafe')) return Category.Otros
 
   if (
-    name.includes('lamin') ||
+    hasLaminaWord ||
     name.includes('vidrio') ||
     name.includes('hidrogel') ||
     name.includes('protector de camara') ||
@@ -172,7 +177,7 @@ function mapCategory(
   }
 
   if (
-    text.includes('lamin') ||
+    hasLaminaWord ||
     text.includes('vidrio') ||
     text.includes('protec')
   ) {

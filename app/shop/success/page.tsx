@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import ClearCartOnPaid from './ClearCartOnPaid'
 
-const WHATSAPP_URL = 'https://wa.me/56953102476'
+const WHATSAPP_URL = 'https://wa.me/56927109764'
 
 const paymentLabel = (method?: string | null, status?: string | null) => {
   if (method === 'webpay' && status === 'paid') return 'Webpay aprobado'

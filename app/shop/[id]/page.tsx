@@ -19,7 +19,7 @@ import { formatProductName } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
 
-const WHATSAPP_URL = 'https://wa.me/56953102476'
+const WHATSAPP_URL = 'https://wa.me/56927109764'
 
 export default async function ProductPage({
   params,
