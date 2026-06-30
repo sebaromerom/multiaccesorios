@@ -20,6 +20,18 @@ export type MercadoPagoPayment = {
   date_approved?: string
 }
 
+export class MercadoPagoApiError extends Error {
+  status: number
+  details: unknown
+
+  constructor(status: number, message: string, details: unknown) {
+    super(message)
+    this.name = 'MercadoPagoApiError'
+    this.status = status
+    this.details = details
+  }
+}
+
 function getAccessToken() {
   const token = process.env.MERCADOPAGO_ACCESS_TOKEN?.trim()
   if (!token) {
@@ -98,7 +110,11 @@ export async function createMercadoPagoPreference(input: {
   const data = await response.json().catch(() => null)
 
   if (!response.ok) {
-    throw new Error(data?.message ?? 'Mercado Pago no pudo crear la preferencia')
+    throw new MercadoPagoApiError(
+      response.status,
+      data?.message ?? data?.error ?? 'Mercado Pago no pudo crear la preferencia',
+      data,
+    )
   }
 
   return data as MercadoPagoPreferenceResponse
@@ -116,7 +132,11 @@ export async function getMercadoPagoPayment(paymentId: string | number) {
   const data = await response.json().catch(() => null)
 
   if (!response.ok) {
-    throw new Error(data?.message ?? 'No pudimos consultar el pago en Mercado Pago')
+    throw new MercadoPagoApiError(
+      response.status,
+      data?.message ?? data?.error ?? 'No pudimos consultar el pago en Mercado Pago',
+      data,
+    )
   }
 
   return data as MercadoPagoPayment

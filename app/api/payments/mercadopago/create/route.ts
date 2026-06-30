@@ -8,6 +8,7 @@ import {
   assertMercadoPagoEnabled,
   createMercadoPagoPreference,
   getMercadoPagoBaseUrl,
+  MercadoPagoApiError,
 } from '@/lib/mercadopago'
 
 export async function POST(req: Request) {
@@ -99,9 +100,16 @@ export async function POST(req: Request) {
         },
       })
 
+      const mercadoPagoMessage =
+        error instanceof MercadoPagoApiError
+          ? `Mercado Pago rechazo la preferencia: ${error.message}`
+          : error instanceof Error
+            ? error.message
+            : 'No pudimos iniciar Mercado Pago. Intenta nuevamente.'
+
       return NextResponse.json(
-        { error: 'No pudimos iniciar Mercado Pago. Intenta nuevamente.' },
-        { status: 502 }
+        { error: mercadoPagoMessage },
+        { status: error instanceof MercadoPagoApiError ? error.status : 502 }
       )
     }
   } catch (error) {
