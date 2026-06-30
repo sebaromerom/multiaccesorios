@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -26,25 +25,27 @@ export default function LoginPage() {
           ? new URLSearchParams(window.location.search).get('callbackUrl') || '/admin'
           : '/admin'
 
-      const result = await Promise.race([
-        signIn('credentials', {
-          username: formData.get('username'),
-          password: formData.get('password'),
-          redirect: false,
-          callbackUrl,
+      const response = await Promise.race([
+        fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: formData.get('username'),
+            password: formData.get('password'),
+          }),
         }),
         new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error('Tiempo de espera agotado')), 15_000),
         ),
       ])
 
-      if (result?.error || !result?.ok) {
+      if (!response.ok) {
         setError('Usuario o contrasena incorrectos')
         setLoading(false)
         return
       }
 
-      router.push(result.url || callbackUrl)
+      router.push(callbackUrl)
       router.refresh()
     } catch (loginError) {
       console.error('Admin login error', loginError)

@@ -1,13 +1,10 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
+import { isAdminRequest } from '@/lib/admin-auth'
 import { enrichMissingProductImages, enrichMissingVariantImages } from '@/lib/image-enrichment'
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions)
-
-    if (!session || session.user?.role !== 'admin') {
+    if (!(await isAdminRequest())) {
       return NextResponse.json(
         { ok: false, error: 'No autorizado. Se requieren permisos de administrador.' },
         { status: 401 }

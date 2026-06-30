@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { signOut } from 'next-auth/react'
 import BrandLogo from '@/components/BrandLogo'
 import {
   BarChart3,
@@ -38,6 +37,11 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   const current = NAV_ITEMS.find((item) =>
     item.exact ? pathname === item.href : pathname.startsWith(item.href)
   )
+
+  async function handleLogout() {
+    await fetch('/api/admin/logout', { method: 'POST' }).catch(() => null)
+    window.location.href = '/'
+  }
 
   return (
     <div className="admin-shell">
@@ -118,7 +122,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
           </Link>
           <button
             type="button"
-            onClick={() => signOut({ callbackUrl: '/' })}
+            onClick={handleLogout}
             className="admin-nav-link w-full"
           >
             <LogOut className="size-[17px]" />

@@ -2,8 +2,11 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { redirect } from 'next/navigation'
 import { authOptions } from '@/lib/auth'
+import { hasAdminSession } from '@/lib/admin-session'
 
 export async function isAdminRequest() {
+  if (await hasAdminSession()) return true
+
   const session = await getServerSession(authOptions)
   return session?.user?.role === 'admin'
 }
