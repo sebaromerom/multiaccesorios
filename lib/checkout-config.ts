@@ -15,6 +15,14 @@ export function getCheckoutConfig() {
       process.env.NEXT_PUBLIC_APP_URL
     ) &&
     process.env.NEXT_PUBLIC_APP_URL?.startsWith('https://')
+  const mercadoPagoEnabled =
+    enabled(process.env.CHECKOUT_ENABLE_MERCADOPAGO) &&
+    hasValues(
+      process.env.MERCADOPAGO_ACCESS_TOKEN,
+      process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY,
+      process.env.NEXT_PUBLIC_APP_URL
+    ) &&
+    process.env.NEXT_PUBLIC_APP_URL?.startsWith('https://')
   const transferEnabled =
     enabled(process.env.CHECKOUT_ENABLE_TRANSFER) &&
     hasValues(
@@ -29,6 +37,7 @@ export function getCheckoutConfig() {
     webpayEnabled: nodeProduction
       ? webpayProductionReady
       : webpayMode === 'integration' || webpayProductionReady,
+    mercadoPagoEnabled,
     transferEnabled,
     bankTransferDetails: transferEnabled
       ? {
@@ -50,6 +59,7 @@ export type CheckoutConfig = ReturnType<typeof getCheckoutConfig>
 export function getEnabledPaymentMethods(config = getCheckoutConfig()) {
   return [
     ...(config.webpayEnabled ? ['webpay'] as const : []),
+    ...(config.mercadoPagoEnabled ? ['mercadopago'] as const : []),
     ...(config.transferEnabled ? ['transfer'] as const : []),
     ...(config.payOnPickupEnabled ? ['pay_on_pickup'] as const : []),
     ...(config.paymentLinkEnabled ? ['payment_link'] as const : []),

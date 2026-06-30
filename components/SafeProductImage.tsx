@@ -87,7 +87,7 @@ export default function SafeProductImage({
   height,
   sizes,
   priority = false,
-  quality = 75,
+  quality = 68,
   loading,
   className = '',
   imageClassName = '',

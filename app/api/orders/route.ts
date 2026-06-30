@@ -11,7 +11,7 @@ import { getCheckoutConfig, getEnabledPaymentMethods } from '@/lib/checkout-conf
 import { CheckoutValidationError, validateCheckoutDetails } from '@/lib/checkout-validation'
 import { enforceRateLimit } from '@/lib/rate-limit'
 
-const PAYMENT_METHODS = ['transfer', 'pay_on_pickup', 'payment_link', 'webpay'] as const
+const PAYMENT_METHODS = ['transfer', 'pay_on_pickup', 'payment_link', 'webpay', 'mercadopago'] as const
 type PaymentMethod = (typeof PAYMENT_METHODS)[number]
 
 function normalizePaymentMethod(method: unknown): PaymentMethod {
@@ -45,6 +45,15 @@ function buildPaymentState(method: PaymentMethod) {
     return {
       paymentStatus: 'webpay_pending',
       paymentProvider: 'webpay',
+      paymentReference: reference,
+      paymentUrl: null,
+    }
+  }
+
+  if (method === 'mercadopago') {
+    return {
+      paymentStatus: 'mercadopago_pending',
+      paymentProvider: 'mercadopago',
       paymentReference: reference,
       paymentUrl: null,
     }
@@ -99,9 +108,9 @@ export async function POST(req: Request) {
     }
     const checkoutDetails = validateCheckoutDetails(body)
 
-    if (paymentMethod === 'webpay') {
+    if (paymentMethod === 'webpay' || paymentMethod === 'mercadopago') {
       return NextResponse.json(
-        { error: 'Webpay debe iniciarse desde la ruta de pagos' },
+        { error: 'Este pago online debe iniciarse desde la ruta de pagos' },
         { status: 400 }
       )
     }

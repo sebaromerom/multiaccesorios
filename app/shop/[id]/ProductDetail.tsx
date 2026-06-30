@@ -373,7 +373,7 @@ export default function ProductDetail({
                 className={`thumb-button${activeImage === index ? ' active' : ''}`}
                 aria-label={`Ver ${product.name}, vista ${index + 1}`}
               >
-                <SafeProductImage src={image} alt="" fill sizes="72px" imageClassName="thumb-image" />
+                <SafeProductImage src={image} alt="" fill sizes="72px" quality={62} imageClassName="thumb-image" />
               </button>
             ))}
           </div>
@@ -399,8 +399,8 @@ export default function ProductDetail({
                   fill
                   sizes="(max-width: 760px) 100vw, 520px"
                   priority
+                  quality={72}
                   imageClassName="main-product-image"
-                  unoptimized
                 />
               </div>
             </div>
@@ -434,7 +434,7 @@ export default function ProductDetail({
             <strong>${Number(product.price).toLocaleString('es-CL')}</strong>
             <span>CLP</span>
           </div>
-          <p className="payment-line">{paymentText} <b>Webpay</b></p>
+          <p className="payment-line">{paymentText} <b>Mercado Pago</b></p>
 
           <div className="stock-line">
             <span>En stock</span>
@@ -469,6 +469,7 @@ export default function ProductDetail({
                           alt=""
                           fill
                           sizes="(max-width: 760px) 34px, 56px"
+                          quality={62}
                           imageClassName={hasOwnVariantImage ? '' : 'fallback-variant-image'}
                         />
                       </span>
@@ -524,7 +525,7 @@ export default function ProductDetail({
           <div className="payment-box">
             <p>Medios de pago</p>
             <div className="payment-badges">
-              <span>Webpay</span>
+              <span>Mercado Pago</span>
               <span>VISA</span>
               <span>Mastercard</span>
               <span>Redcompra</span>

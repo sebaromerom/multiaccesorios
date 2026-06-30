@@ -34,9 +34,10 @@ type DiscountResult = {
 }
 
 type DeliveryType = 'retiro' | 'despacho'
-type PaymentMethod = 'transfer' | 'pay_on_pickup' | 'payment_link' | 'webpay'
+type PaymentMethod = 'transfer' | 'pay_on_pickup' | 'payment_link' | 'webpay' | 'mercadopago'
 type CheckoutConfig = {
   webpayEnabled: boolean
+  mercadoPagoEnabled: boolean
   transferEnabled: boolean
   bankTransferDetails: {
     accountHolder: string
@@ -52,6 +53,7 @@ type CheckoutConfig = {
 
 const DEFAULT_CHECKOUT_CONFIG: CheckoutConfig = {
   webpayEnabled: false,
+  mercadoPagoEnabled: false,
   transferEnabled: false,
   bankTransferDetails: null,
   paymentLinkEnabled: false,
@@ -74,6 +76,12 @@ const PAYMENT_METHODS: {
     value: 'webpay',
     title: 'Webpay',
     detail: 'Paga online con tarjeta por Transbank.',
+    icon: CreditCard,
+  },
+  {
+    value: 'mercadopago',
+    title: 'Mercado Pago',
+    detail: 'Paga online con debito, credito u otros medios.',
     icon: CreditCard,
   },
   {
@@ -129,6 +137,7 @@ export default function CartPage() {
   ].filter((issue): issue is string => Boolean(issue))
   const availablePaymentMethods = PAYMENT_METHODS.filter((method) => {
     if (method.value === 'webpay') return checkoutConfig.webpayEnabled
+    if (method.value === 'mercadopago') return checkoutConfig.mercadoPagoEnabled
     if (method.value === 'transfer') return checkoutConfig.transferEnabled
     if (method.value === 'payment_link') return checkoutConfig.paymentLinkEnabled
     return checkoutConfig.payOnPickupEnabled
@@ -140,11 +149,13 @@ export default function CartPage() {
     !loading
   const paymentActionLabel =
     paymentMethod === 'webpay' ? 'Pagar con Webpay' :
+    paymentMethod === 'mercadopago' ? 'Pagar con Mercado Pago' :
     paymentMethod === 'pay_on_pickup' ? 'Reservar pedido' :
     paymentMethod === 'payment_link' ? 'Solicitar link de pago' :
     'Confirmar pedido'
   const paymentNextStep =
     paymentMethod === 'webpay' ? 'Serás redirigido a Transbank.' :
+    paymentMethod === 'mercadopago' ? 'Seras redirigido a Mercado Pago.' :
     paymentMethod === 'pay_on_pickup' ? 'Pagas al retirar en tienda.' :
     paymentMethod === 'payment_link' ? 'Te enviaremos el link al teléfono indicado.' :
     'Te indicaremos los datos para transferir.'
@@ -159,6 +170,7 @@ export default function CartPage() {
         setCheckoutConfig(config)
 
         const firstAvailable =
+          config.mercadoPagoEnabled ? 'mercadopago' :
           config.webpayEnabled ? 'webpay' :
           config.payOnPickupEnabled ? 'pay_on_pickup' :
           config.transferEnabled ? 'transfer' :
@@ -168,6 +180,7 @@ export default function CartPage() {
         setPaymentMethod((current) => {
           const currentEnabled =
             (current === 'webpay' && config.webpayEnabled) ||
+            (current === 'mercadopago' && config.mercadoPagoEnabled) ||
             (current === 'transfer' && config.transferEnabled) ||
             (current === 'pay_on_pickup' && config.payOnPickupEnabled) ||
             (current === 'payment_link' && config.paymentLinkEnabled)
@@ -294,6 +307,8 @@ export default function CartPage() {
       const response = await fetch(
         paymentMethod === 'webpay'
           ? '/api/payments/webpay/create'
+          : paymentMethod === 'mercadopago'
+            ? '/api/payments/mercadopago/create'
           : '/api/orders',
         {
         method: 'POST',
@@ -333,6 +348,17 @@ export default function CartPage() {
       form.appendChild(input)
       document.body.appendChild(form)
       form.submit()
+      return
+    }
+
+    if (paymentMethod === 'mercadopago') {
+      if (!order.url) {
+        toast.error('Mercado Pago no entrego el link de pago. Intenta nuevamente.')
+        setLoading(false)
+        return
+      }
+
+      window.location.href = order.url
       return
     }
 
@@ -587,6 +613,12 @@ export default function CartPage() {
                           <div className="mt-4 rounded-[4px] border border-red-200 bg-red-50 px-3 py-3 text-xs text-red-900">
                             <p className="font-bold">Pago seguro por Transbank</p>
                             <p className="mt-1">Te redirigiremos a Webpay para completar el pago. El stock local se descuenta solo si Webpay aprueba la transacción.</p>
+                          </div>
+                        )}
+                        {paymentMethod === 'mercadopago' && (
+                          <div className="mt-4 rounded-[4px] border border-blue-200 bg-blue-50 px-3 py-3 text-xs text-blue-900">
+                            <p className="font-bold">Pago seguro por Mercado Pago</p>
+                            <p className="mt-1">Te redirigiremos a Mercado Pago. El stock local se descuenta solo si el pago queda aprobado.</p>
                           </div>
                         )}
                         <div className="mt-4 rounded-[4px] border border-zinc-200 bg-zinc-50 px-3 py-3 text-xs text-zinc-700">

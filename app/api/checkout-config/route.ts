@@ -8,6 +8,7 @@ export async function GET() {
 
   return NextResponse.json({
     webpayEnabled: config.webpayEnabled,
+    mercadoPagoEnabled: config.mercadoPagoEnabled,
     transferEnabled: config.transferEnabled,
     bankTransferDetails: config.bankTransferDetails,
     paymentLinkEnabled: config.paymentLinkEnabled,

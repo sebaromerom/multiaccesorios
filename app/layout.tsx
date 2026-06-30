@@ -19,6 +19,7 @@ const phone = '+56927109764'
 const instagramUrl = 'https://www.instagram.com/multiaccesorios_cl/'
 const checkoutConfig = getCheckoutConfig()
 const paymentAccepted = [
+  ...(checkoutConfig.mercadoPagoEnabled ? ['Mercado Pago'] : []),
   ...(checkoutConfig.webpayEnabled ? ['Webpay'] : []),
   ...(checkoutConfig.transferEnabled ? ['Transferencia'] : []),
   ...(checkoutConfig.payOnPickupEnabled ? ['Pago al retirar'] : []),

@@ -17,10 +17,11 @@ export default function ProductImage({ productId, productName, initialImageUrl }
       src={primaryUrl}
       alt={productName}
       fill
-      sizes="(max-width: 760px) 45vw, (max-width: 1180px) 30vw, (max-width: 1400px) 24vw, 260px"
+      sizes="(max-width: 760px) 42vw, (max-width: 1180px) 30vw, (max-width: 1400px) 23vw, 230px"
       loading="lazy"
+      quality={62}
       style={{
-        objectFit: 'cover',
+        objectFit: 'contain',
         display: 'block',
         backgroundColor: '#fcfcfc',
       }}

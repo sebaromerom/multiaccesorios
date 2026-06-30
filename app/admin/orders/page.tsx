@@ -42,6 +42,8 @@ export default async function OrdersPage() {
     const methodLabel =
       method === 'webpay'
         ? 'Webpay'
+        : method === 'mercadopago'
+          ? 'Mercado Pago'
         : method === 'pay_on_pickup'
         ? 'Pago al retirar'
         : method === 'payment_link'
@@ -59,6 +61,10 @@ export default async function OrdersPage() {
             ? 'Inicio fallido'
           : status === 'webpay_pending'
             ? 'Webpay pendiente'
+          : status === 'mercadopago_create_failed'
+            ? 'Inicio fallido'
+          : status === 'mercadopago_pending'
+            ? 'Mercado Pago pendiente'
         : status === 'pay_on_pickup'
           ? 'Al retirar'
           : status === 'payment_link_pending'
@@ -71,7 +77,7 @@ export default async function OrdersPage() {
   const paymentClass = (status: string) =>
     status === 'paid'
       ? 'bg-green-100 text-green-700'
-      : status === 'failed' || status === 'cancelled' || status === 'webpay_create_failed'
+      : status === 'failed' || status === 'cancelled' || status === 'webpay_create_failed' || status === 'mercadopago_create_failed'
         ? 'bg-red-100 text-red-700'
       : status === 'pay_on_pickup'
         ? 'bg-blue-100 text-blue-700'
