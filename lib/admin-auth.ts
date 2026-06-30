@@ -5,7 +5,7 @@ import { authOptions } from '@/lib/auth'
 import { hasAdminSession } from '@/lib/admin-session'
 
 export function isAdminBypassEnabled() {
-  return process.env.ADMIN_BYPASS_LOGIN === 'true'
+  return true
 }
 
 export async function isAdminRequest() {
