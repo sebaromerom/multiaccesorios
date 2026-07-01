@@ -3,8 +3,9 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
+import { Trash2 } from 'lucide-react'
 
-export default function DeleteProductButton({ id }: { id: string }) {
+export default function DeleteProductButton({ id, compact = false }: { id: string; compact?: boolean }) {
   const router = useRouter()
   const [deleting, setDeleting] = useState(false)
 
@@ -22,8 +23,15 @@ export default function DeleteProductButton({ id }: { id: string }) {
   }
 
   return (
-    <Button variant="destructive" size="sm" onClick={handleDelete} disabled={deleting} className="min-h-11 whitespace-nowrap">
-      {deleting ? 'Eliminando...' : 'Eliminar'}
+    <Button
+      variant="destructive"
+      size="sm"
+      onClick={handleDelete}
+      disabled={deleting}
+      className={compact ? 'h-9 w-9 rounded-[4px] p-0' : 'min-h-11 whitespace-nowrap'}
+      title="Eliminar producto"
+    >
+      {compact ? <Trash2 className="size-4" /> : deleting ? 'Eliminando...' : 'Eliminar'}
     </Button>
   )
 }

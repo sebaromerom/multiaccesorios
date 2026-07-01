@@ -20,9 +20,7 @@ import {
   MessageCircle,
   MapPin,
   PackageCheck,
-  PanelsTopLeft,
   ShieldCheck,
-  Smartphone,
   Sparkles,
   Tag,
   Truck,
@@ -39,12 +37,9 @@ const MAP_CHACABUCO_479 = 'https://maps.app.goo.gl/jicd2cJFi37D6Qs96'
 const MAP_CHACABUCO_456 = 'https://maps.app.goo.gl/uRC2hoVc8ssf1TTU7'
 
 const CATEGORIES = [
-  { value: 'Carcasa', label: 'Carcasas', icon: Smartphone },
-  { value: 'Lamina', label: 'Láminas', icon: PanelsTopLeft },
   { value: 'Audifonos', label: 'Audio', icon: Headphones },
   { value: 'Cargador', label: 'Cargadores', icon: Zap },
   { value: 'Cable', label: 'Cables', icon: Cable },
-  { value: 'Vapers', label: 'Vapers', icon: Sparkles },
   { value: 'Computacion', label: 'PC', icon: Laptop },
   { value: 'Otros', label: 'Otros', icon: Sparkles },
 ] as const
@@ -68,7 +63,7 @@ export default async function Home() {
       take: 8,
     }),
     prisma.product.findMany({
-      where: { stock: { gt: 0 }, imageUrl: { not: null }, category: { in: ['Carcasa', 'Audifonos', 'Cargador', 'Cable', 'Otros'] } },
+      where: { stock: { gt: 0 }, imageUrl: { not: null }, category: { in: ['Audifonos', 'Cargador', 'Cable', 'Computacion', 'Otros'] } },
       orderBy: { createdAt: 'desc' },
       include: { variants: { select: { id: true }, take: 1 } },
       take: 10,
@@ -182,7 +177,7 @@ export default async function Home() {
         .home-section-head h2 { font-size: 15px; font-weight: 900; }
         .home-section-head a { height: 30px; padding: 0 15px; border: 1px solid #ddd; border-radius: 4px; display: inline-flex; align-items: center; color: #111; text-decoration: none; font-size: 10px; font-weight: 800; transition: border-color .16s ease, transform .16s ease, box-shadow .16s ease; }
         .home-section-head a:hover { border-color: #111; transform: translateY(-1px); box-shadow: 0 8px 18px rgba(0,0,0,.07); }
-        .home-categories { display: grid; grid-template-columns: repeat(8, minmax(0,1fr)); gap: 16px; }
+        .home-categories { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 16px; }
         .home-category { min-height: 92px; border: 1px solid #e5e5e5; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: #111; text-decoration: none; font-size: 11px; font-weight: 800; transition: transform .18s ease, border-color .18s ease, color .18s ease, box-shadow .18s ease, background-color .18s ease; }
         .home-category:hover { border-color: #e30613; color: #e30613; background: #fff; transform: translateY(-3px); box-shadow: 0 14px 30px rgba(0,0,0,.08); }
         .home-category small { color: #999; font-size: 9px; font-weight: 700; }
@@ -387,19 +382,18 @@ export default async function Home() {
         <div className="home-content">
           <section className="home-hero">
             <div className="home-hero-copy">
-              <p className="home-hero-kicker">{heroBanner?.eyebrow ?? 'Tecnología que te conecta'}</p>
-              {heroBanner ? (
-                <h1>{heroBanner.title}<br />{heroBanner.subtitle && <span>{heroBanner.subtitle}</span>}</h1>
-              ) : (
-                <h1>Todo lo que necesitas,<br /><span>en un solo lugar.</span></h1>
-              )}
+              <p className="home-hero-kicker">{heroBanner?.eyebrow ?? 'Selección práctica'}</p>
+              <h1>Detalles que hacen<br /><span>la diferencia.</span></h1>
+              <p className="relative z-[2] -mt-3 mb-4 max-w-[360px] text-xs font-bold leading-relaxed text-zinc-600">
+                Accesorios pensados para hacer tu día más simple, práctico y conectado.
+              </p>
               <div className="home-hero-benefits">
                 <span className="home-hero-benefit"><Truck className="size-5" /> Envíos rápidos</span>
                 <span className="home-hero-benefit"><ShieldCheck className="size-5" /> Compra segura</span>
                 <span className="home-hero-benefit"><PackageCheck className="size-5" /> Garantía y cambios</span>
               </div>
               <div className="home-hero-actions">
-                <Link href={heroBanner?.href ?? '/shop'} className="home-primary-cta">Comprar ahora</Link>
+                <Link href={heroBanner?.href ?? '/shop'} className="home-primary-cta">Explorar catálogo</Link>
                 <Link href={activeDiscount ? '/shop?promo=1&page=1' : '/shop?sort=newest'} className="home-secondary-cta">
                   {activeDiscount ? 'Ver ofertas' : 'Ver nuevos'}
                 </Link>
@@ -427,7 +421,7 @@ export default async function Home() {
           </section>
 
           <section className="home-section" id="categorias">
-            <div className="home-section-head"><h2>Explora por categoría</h2><Link href="/shop">Ver todas</Link></div>
+            <div className="home-section-head"><h2>Productos para tu rutina</h2><Link href="/shop">Ver catálogo</Link></div>
             <div className="home-categories">
               {CATEGORIES.map((category) => {
                 const Icon = category.icon

@@ -125,15 +125,15 @@ export default async function ProductsPage({
 
       {/* TABLA */}
       <div className="hidden md:block w-full overflow-x-auto border border-zinc-200 rounded-[6px] bg-white">
-        <Table className="w-full min-w-[1000px]">
+        <Table className="w-full min-w-[860px] table-fixed">
           <TableHeader>
             <TableRow className="border-b border-zinc-200 bg-zinc-50 hover:bg-zinc-50">
-              <TableHead className="w-[80px] py-5 text-black font-black uppercase tracking-tight">Imagen</TableHead>
+              <TableHead className="w-[72px] py-5 text-black font-black uppercase tracking-tight">Imagen</TableHead>
               <TableHead className="text-black font-black uppercase tracking-tight">Nombre</TableHead>
-              <TableHead className="w-[140px] text-black font-black uppercase tracking-tight">Categoría</TableHead>
-              <TableHead className="w-[120px] text-black font-black uppercase tracking-tight">Precio</TableHead>
-              <TableHead className="w-[100px] text-black font-black uppercase tracking-tight">Stock</TableHead>
-              <TableHead className="w-[140px] text-right text-black font-black uppercase tracking-tight">Acciones</TableHead>
+              <TableHead className="w-[120px] text-black font-black uppercase tracking-tight">Categoría</TableHead>
+              <TableHead className="w-[105px] text-black font-black uppercase tracking-tight">Precio</TableHead>
+              <TableHead className="w-[80px] text-black font-black uppercase tracking-tight">Stock</TableHead>
+              <TableHead className="sticky right-0 z-10 w-[112px] bg-zinc-50 text-right text-black font-black uppercase tracking-tight shadow-[-10px_0_18px_rgba(255,255,255,.9)]">Acciones</TableHead>
             </TableRow>
           </TableHeader>
 
@@ -149,12 +149,12 @@ export default async function ProductsPage({
                 <TableRow key={product.id} className="border-b border-zinc-100 hover:bg-zinc-50 transition-colors">
                   <TableCell className="py-3">
                     {/* Validación estricta para strings vacíos o URLs corruptas */}
-                    <div className="relative h-14 w-14 overflow-hidden border border-zinc-200 bg-zinc-50">
+                    <div className="relative h-12 w-12 overflow-hidden border border-zinc-200 bg-zinc-50">
                       <SafeProductImage
                         src={product.imageUrl}
                         alt={product.name}
                         fill
-                        sizes="56px"
+                        sizes="48px"
                         imageClassName="object-contain"
                       />
                     </div>
@@ -167,7 +167,7 @@ export default async function ProductsPage({
                   </TableCell>
 
                   <TableCell>
-                    <Badge variant="secondary" className="rounded-none bg-zinc-100 text-zinc-700 uppercase text-[10px] tracking-wider font-bold border-none px-3 py-1">
+                      <Badge variant="secondary" className="max-w-full rounded-none bg-zinc-100 text-zinc-700 uppercase text-[10px] tracking-wider font-bold border-none px-2 py-1">
                       {product.category || 'Sin categoría'}
                     </Badge>
                   </TableCell>
@@ -184,15 +184,14 @@ export default async function ProductsPage({
                     </Badge>
                   </TableCell>
 
-                  <TableCell>
-                    <div className="flex justify-end gap-2">
-                      {/* 🎒 LE PASAMOS LOS FILTROS AL LINK DE EDITAR */}
+                  <TableCell className="sticky right-0 z-10 bg-white shadow-[-10px_0_18px_rgba(255,255,255,.9)]">
+                    <div className="flex justify-end gap-1">
                       <Link href={`/admin/products/${product.id}${queryString ? `?${queryString}` : ''}`}>
-                        <Button variant="outline" size="sm" className="rounded-none border-zinc-300 hover:border-black hover:bg-black hover:text-white uppercase text-[10px] tracking-widest font-bold transition-all">
+                        <Button variant="outline" size="sm" className="h-9 rounded-[4px] border-zinc-300 px-3 hover:border-black hover:bg-black hover:text-white uppercase text-[10px] tracking-widest font-bold transition-all">
                           Editar
                         </Button>
                       </Link>
-                      <DeleteProductButton id={product.id} />
+                      <DeleteProductButton id={product.id} compact />
                     </div>
                   </TableCell>
                 </TableRow>
