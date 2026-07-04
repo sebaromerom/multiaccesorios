@@ -12,6 +12,12 @@ interface VariantInput {
   images?: VariantImageInput[]
 }
 
+interface BranchStockInput {
+  officeId: string
+  officeName: string
+  stock: number
+}
+
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -87,6 +93,26 @@ export async function PATCH(
             },
           })
         })
+      )
+    }
+
+    if (body.branchStocks && Array.isArray(body.branchStocks)) {
+      await Promise.all(
+        (body.branchStocks as BranchStockInput[]).map((branch) =>
+          prisma.productBranchStock.upsert({
+            where: { productId_officeId: { productId: id, officeId: String(branch.officeId) } },
+            update: {
+              officeName: String(branch.officeName),
+              stock: Math.max(0, Number(branch.stock ?? 0)),
+            },
+            create: {
+              productId: id,
+              officeId: String(branch.officeId),
+              officeName: String(branch.officeName),
+              stock: Math.max(0, Number(branch.stock ?? 0)),
+            },
+          }),
+        ),
       )
     }
 

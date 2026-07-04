@@ -34,6 +34,7 @@ type Product = {
   category: string | null
   images: ProductImage[]
   variants: Variant[]
+  branchStocks: { officeId: string; officeName: string; stock: number }[]
 }
 
 // ─── Upload helper ────────────────────────────────────────────────────────────
@@ -237,6 +238,11 @@ export default function EditProductForm({ product, returnQuery }: { product: Pro
       const price      = Number(formData.get('price'))
       const stock      = Number(formData.get('stock'))
       const category   = (document.getElementById('category') as HTMLSelectElement)?.value
+      const branchStocks = product.branchStocks.map((branch) => ({
+        officeId: branch.officeId,
+        officeName: branch.officeName,
+        stock: Number(formData.get(`branchStock-${branch.officeId}`) ?? branch.stock),
+      }))
 
       if (!name.trim())  { toast.error('El nombre es obligatorio'); setLoading(false); return }
       if (price <= 0)    { toast.error('El precio debe ser mayor a 0'); setLoading(false); return }
@@ -289,6 +295,7 @@ export default function EditProductForm({ product, returnQuery }: { product: Pro
           images:    allProductImages,
           category,
           variants:  variantsPayload,
+          branchStocks,
         }),
       })
 
@@ -375,6 +382,28 @@ export default function EditProductForm({ product, returnQuery }: { product: Pro
               <Input id="stock" name="stock" type="number" defaultValue={product.stock} />
             </div>
           </div>
+
+          {product.branchStocks.length > 0 && (
+            <div className="flex flex-col gap-2 rounded border border-zinc-200 p-3">
+              <Label>Stock por sucursal</Label>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {product.branchStocks.map((branch) => (
+                  <div key={branch.officeId} className="flex flex-col gap-1">
+                    <Label htmlFor={`branchStock-${branch.officeId}`} className="text-xs text-zinc-500">
+                      {branch.officeName}
+                    </Label>
+                    <Input
+                      id={`branchStock-${branch.officeId}`}
+                      name={`branchStock-${branch.officeId}`}
+                      type="number"
+                      min={0}
+                      defaultValue={branch.stock}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Variantes */}
           {variants.length > 0 && (

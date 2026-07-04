@@ -42,6 +42,11 @@ export default async function EditProductPage({
           size: 'asc',
         },
       },
+      branchStocks: {
+        orderBy: {
+          officeId: 'asc',
+        },
+      },
     },
   })
 

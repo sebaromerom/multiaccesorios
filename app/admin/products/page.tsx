@@ -13,26 +13,10 @@ import EnrichImagesButton from '@/components/admin/EnrichImagesButton'
 import SafeProductImage from '@/components/SafeProductImage'
 import { Category } from '@prisma/client'
 import { requireAdminPage } from '@/lib/admin-auth'
-import { getBranchStockByProductName, normalizeBsaleProductName } from '@/lib/bsale-branch-stock'
+import type { BranchStockSummary } from '@/lib/bsale-branch-stock'
 
 const CATEGORIES = ['Carcasa','Lamina','Cargador','Cable','Audifonos','Vapers','Computacion','Otros'] as const
 const PER_PAGE = 30
-const emptyBranchStock = new Map<string, never[]>()
-
-async function getBranchStockWithTimeout(names: string[]) {
-  let timeout: ReturnType<typeof setTimeout> | undefined
-
-  try {
-    return await Promise.race([
-      getBranchStockByProductName(names),
-      new Promise<typeof emptyBranchStock>((resolve) => {
-        timeout = setTimeout(() => resolve(emptyBranchStock), 1500)
-      }),
-    ])
-  } finally {
-    if (timeout) clearTimeout(timeout)
-  }
-}
 
 export default async function ProductsPage({
   searchParams,
@@ -61,7 +45,16 @@ export default async function ProductsPage({
   ])
 
   const totalPages = Math.ceil(total / PER_PAGE)
-  const branchStock = await getBranchStockWithTimeout(products.map((product) => product.name))
+  const branchRows = await prisma.productBranchStock.findMany({
+    where: { productId: { in: products.map((product) => product.id) } },
+    orderBy: [{ officeId: 'asc' }],
+  })
+  const branchStock = branchRows.reduce((acc, row) => {
+    const list = acc.get(row.productId) ?? []
+    list.push({ officeId: row.officeId, name: row.officeName, stock: row.stock })
+    acc.set(row.productId, list)
+    return acc
+  }, new Map<string, BranchStockSummary[]>())
 
   // Preserve current filters after editing a product.
   const currentParams = new URLSearchParams()
@@ -197,7 +190,7 @@ export default async function ProductsPage({
                   <TableCell>
                     <div className="max-w-[145px]">
                     {(() => {
-                      const branches = branchStock.get(normalizeBsaleProductName(product.name)) ?? []
+                      const branches = branchStock.get(product.id) ?? []
                       return (
                         <div className="space-y-1">
                           <Badge className={`rounded-none uppercase text-[10px] tracking-widest px-2 py-1 border-none ${
@@ -265,7 +258,7 @@ export default async function ProductsPage({
                   <span className={`text-[10px] font-bold ${product.stock <= 5 ? 'text-red-600' : 'text-zinc-500'}`}>{product.stock} unid.</span>
                 </div>
                 {(() => {
-                  const branches = branchStock.get(normalizeBsaleProductName(product.name)) ?? []
+                  const branches = branchStock.get(product.id) ?? []
                   return branches.length > 0 ? (
                     <div className="mt-2 grid grid-cols-2 gap-1 text-[10px] font-bold text-zinc-500">
                       {branches.map((branch) => (

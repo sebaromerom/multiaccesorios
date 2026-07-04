@@ -127,4 +127,44 @@ export async function getBranchStockByProductName(names: string[]) {
   }
 }
 
+export async function getAllBranchStockFromBsale() {
+  try {
+    const [offices, products, stocks] = await Promise.all([
+      fetchAll<BsaleOffice>('/offices.json'),
+      fetchAll<BsaleProduct>('/products.json?expand=[variants]'),
+      fetchAll<BsaleStock>('/stocks.json'),
+    ])
+
+    const officeMap = new Map(
+      offices.map((office) => [
+        String(office.id),
+        { name: office.name, address: office.address },
+      ]),
+    )
+    const variantToProduct = new Map<string, string>()
+
+    for (const product of products) {
+      const key = normalizeName(product.name)
+      for (const variant of product.variants?.items ?? []) {
+        variantToProduct.set(String(variant.id), key)
+      }
+    }
+
+    const byProduct = new Map<string, Map<string, number>>()
+    for (const stock of stocks) {
+      const productKey = variantToProduct.get(String(stock.variant.id))
+      if (!productKey) continue
+      const officeId = String(stock.office.id)
+      const byOffice = byProduct.get(productKey) ?? new Map<string, number>()
+      byOffice.set(officeId, (byOffice.get(officeId) ?? 0) + Math.max(0, stock.quantityAvailable ?? 0))
+      byProduct.set(productKey, byOffice)
+    }
+
+    return { byProduct, officeMap }
+  } catch (error) {
+    console.error('No se pudo cargar stock completo desde Bsale', error)
+    return { byProduct: new Map<string, Map<string, number>>(), officeMap: new Map<string, { name: string; address?: string }>() }
+  }
+}
+
 export { normalizeName as normalizeBsaleProductName }
