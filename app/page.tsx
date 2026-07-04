@@ -40,30 +40,31 @@ const CATEGORIES = [
   { value: 'Audifonos', label: 'Audio', icon: Headphones },
   { value: 'Cargador', label: 'Cargadores', icon: Zap },
   { value: 'Cable', label: 'Cables', icon: Cable },
+  { value: 'Vapers', label: 'Vapers', icon: Sparkles },
   { value: 'Computacion', label: 'PC', icon: Laptop },
-  { value: 'Otros', label: 'Otros', icon: Sparkles },
+  { value: 'Otros', label: 'Otros', icon: HomeIcon },
 ] as const
 
+const HERO_CATEGORY_ORDER = ['Audifonos', 'Computacion', 'Vapers', 'Cargador', 'Cable', 'Otros']
+
+function isRealProductImage(imageUrl: string | null) {
+  return Boolean(imageUrl && !/(multi\.jpe?g|logo|placeholder)/i.test(imageUrl))
+}
+
 export default async function Home() {
-  const [featuredProducts, fallbackProducts, categoryCounts, activeDiscount, heroBanner, secondaryBanner] = await Promise.all([
+  const [featuredProducts, fallbackProducts, categoryCounts, activeDiscount, secondaryBanner] = await Promise.all([
     prisma.product.findMany({
       where: {
         stock: { gt: 0 },
         imageUrl: { not: null },
-        OR: [
-          { name: { contains: 'TERMO', mode: 'insensitive' } },
-          { name: { contains: 'TELEFONO MLAB', mode: 'insensitive' } },
-          { name: { contains: 'AUDIFONOS MLAB', mode: 'insensitive' } },
-          { name: { contains: 'MAGSAFE', mode: 'insensitive' } },
-          { name: { contains: 'CABLE USB', mode: 'insensitive' } },
-        ],
+        category: { in: ['Audifonos', 'Computacion', 'Vapers', 'Cargador', 'Cable'] },
       },
       orderBy: { stock: 'desc' },
       include: { variants: { select: { id: true }, take: 1 } },
-      take: 8,
+      take: 18,
     }),
     prisma.product.findMany({
-      where: { stock: { gt: 0 }, imageUrl: { not: null }, category: { in: ['Audifonos', 'Cargador', 'Cable', 'Computacion', 'Otros'] } },
+      where: { stock: { gt: 0 }, imageUrl: { not: null }, category: { in: ['Audifonos', 'Cargador', 'Cable', 'Vapers', 'Computacion', 'Otros'] } },
       orderBy: { createdAt: 'desc' },
       include: { variants: { select: { id: true }, take: 1 } },
       take: 10,
@@ -78,14 +79,19 @@ export default async function Home() {
       include: { product: { include: { variants: { select: { id: true }, take: 1 } } } },
       orderBy: { createdAt: 'desc' },
     }),
-    getActiveBanner('home_hero'),
     getActiveBanner('home_secondary'),
   ])
 
   const trending = [...featuredProducts, ...fallbackProducts]
     .filter((product, index, products) => products.findIndex((item) => item.id === product.id) === index)
     .slice(0, 5)
-  const heroProducts = trending.slice(0, 3)
+  const categoryHeroProducts = HERO_CATEGORY_ORDER.flatMap((category) => {
+    const product = trending.find((item) => item.category === category && isRealProductImage(item.imageUrl))
+    return product ? [product] : []
+  })
+  const heroProducts = [...categoryHeroProducts, ...trending.filter((product) => isRealProductImage(product.imageUrl))]
+    .filter((product, index, products) => products.findIndex((item) => item.id === product.id) === index)
+    .slice(0, 3)
 
   const counts = categoryCounts.reduce((acc, row) => {
     if (row.category) acc[row.category] = row._count.id
@@ -177,7 +183,7 @@ export default async function Home() {
         .home-section-head h2 { font-size: 15px; font-weight: 900; }
         .home-section-head a { height: 30px; padding: 0 15px; border: 1px solid #ddd; border-radius: 4px; display: inline-flex; align-items: center; color: #111; text-decoration: none; font-size: 10px; font-weight: 800; transition: border-color .16s ease, transform .16s ease, box-shadow .16s ease; }
         .home-section-head a:hover { border-color: #111; transform: translateY(-1px); box-shadow: 0 8px 18px rgba(0,0,0,.07); }
-        .home-categories { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 16px; }
+        .home-categories { display: grid; grid-template-columns: repeat(6, minmax(0,1fr)); gap: 16px; }
         .home-category { min-height: 92px; border: 1px solid #e5e5e5; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: #111; text-decoration: none; font-size: 11px; font-weight: 800; transition: transform .18s ease, border-color .18s ease, color .18s ease, box-shadow .18s ease, background-color .18s ease; }
         .home-category:hover { border-color: #e30613; color: #e30613; background: #fff; transform: translateY(-3px); box-shadow: 0 14px 30px rgba(0,0,0,.08); }
         .home-category small { color: #999; font-size: 9px; font-weight: 700; }
@@ -382,10 +388,10 @@ export default async function Home() {
         <div className="home-content">
           <section className="home-hero">
             <div className="home-hero-copy">
-              <p className="home-hero-kicker">{heroBanner?.eyebrow ?? 'Selección práctica'}</p>
+              <p className="home-hero-kicker">Selección práctica</p>
               <h1>Detalles que hacen<br /><span>la diferencia.</span></h1>
               <p className="relative z-[2] -mt-3 mb-4 max-w-[360px] text-xs font-bold leading-relaxed text-zinc-600">
-                Accesorios pensados para hacer tu día más simple, práctico y conectado.
+                Productos pensados para acompañarte, resolver y simplificar tu día.
               </p>
               <div className="home-hero-benefits">
                 <span className="home-hero-benefit"><Truck className="size-5" /> Envíos rápidos</span>
@@ -393,30 +399,19 @@ export default async function Home() {
                 <span className="home-hero-benefit"><PackageCheck className="size-5" /> Garantía y cambios</span>
               </div>
               <div className="home-hero-actions">
-                <Link href={heroBanner?.href ?? '/shop'} className="home-primary-cta">Explorar catálogo</Link>
+                <Link href="/shop" className="home-primary-cta">Explorar catálogo</Link>
                 <Link href={activeDiscount ? '/shop?promo=1&page=1' : '/shop?sort=newest'} className="home-secondary-cta">
                   {activeDiscount ? 'Ver ofertas' : 'Ver nuevos'}
                 </Link>
               </div>
             </div>
-            {heroBanner?.imageUrl || heroBanner?.mobileImageUrl ? (
-              <span className="home-hero-banner-media">
-                <SafeProductImage
-                  src={heroBanner.imageUrl ?? heroBanner.mobileImageUrl}
-                  alt={heroBanner.title}
-                  fill
-                  sizes="(max-width: 760px) 46vw, 420px"
-                />
-              </span>
-            ) : (
-              <div className="home-hero-products">
-                {heroProducts.slice(0, 3).map((product) => (
-                  <span key={product.id} className="home-hero-product">
-                    <SafeProductImage src={product.imageUrl} alt={formatProductName(product.name)} fill sizes="180px" />
-                  </span>
-                ))}
-              </div>
-            )}
+            <div className="home-hero-products">
+              {heroProducts.slice(0, 3).map((product) => (
+                <span key={product.id} className="home-hero-product">
+                  <SafeProductImage src={product.imageUrl} alt={formatProductName(product.name)} fill sizes="180px" />
+                </span>
+              ))}
+            </div>
             {activeDiscount && offerBadge && <span className="home-hero-discount">{offerBadge}</span>}
           </section>
 
