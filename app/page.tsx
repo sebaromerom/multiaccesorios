@@ -46,9 +46,35 @@ const CATEGORIES = [
 ] as const
 
 const HERO_CATEGORY_ORDER = ['Audifonos', 'Computacion', 'Vapers', 'Cargador', 'Cable', 'Otros']
+const HERO_BRAND_TERMS = [
+  'JBL',
+  'XIAOMI',
+  'HOCO',
+  'MLAB',
+  'BASEUS',
+  'TP-LINK',
+  'KINGSTON',
+  'LOGITECH',
+  'GEEK',
+  'MELOSO',
+]
 
 function isRealProductImage(imageUrl: string | null) {
   return Boolean(imageUrl && !/(multi\.jpe?g|logo|placeholder)/i.test(imageUrl))
+}
+
+function heroScore(product: { name: string; category: string | null; stock: number; imageUrl: string | null }) {
+  const name = product.name.toUpperCase()
+  const brandScore = HERO_BRAND_TERMS.reduce((score, term, index) => (
+    name.includes(term) ? score + 120 - index * 6 : score
+  ), 0)
+  const categoryScore = product.category === 'Audifonos' ? 55
+    : product.category === 'Computacion' ? 45
+      : product.category === 'Vapers' ? 35
+        : product.category === 'Cargador' ? 25
+          : product.category === 'Cable' ? 15
+            : 0
+  return brandScore + categoryScore + Math.min(product.stock, 30)
 }
 
 export default async function Home() {
@@ -85,11 +111,15 @@ export default async function Home() {
   const trending = [...featuredProducts, ...fallbackProducts]
     .filter((product, index, products) => products.findIndex((item) => item.id === product.id) === index)
     .slice(0, 5)
+  const heroPool = [...featuredProducts, ...fallbackProducts]
+    .filter((product, index, products) => products.findIndex((item) => item.id === product.id) === index)
+    .filter((product) => isRealProductImage(product.imageUrl))
+    .sort((a, b) => heroScore(b) - heroScore(a))
   const categoryHeroProducts = HERO_CATEGORY_ORDER.flatMap((category) => {
-    const product = trending.find((item) => item.category === category && isRealProductImage(item.imageUrl))
+    const product = heroPool.find((item) => item.category === category)
     return product ? [product] : []
   })
-  const heroProducts = [...categoryHeroProducts, ...trending.filter((product) => isRealProductImage(product.imageUrl))]
+  const heroProducts = [...categoryHeroProducts, ...heroPool]
     .filter((product, index, products) => products.findIndex((item) => item.id === product.id) === index)
     .slice(0, 3)
 
