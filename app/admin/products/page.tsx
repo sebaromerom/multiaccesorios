@@ -12,6 +12,7 @@ import EnrichImagesButton from '@/components/admin/EnrichImagesButton'
 import SafeProductImage from '@/components/SafeProductImage'
 import { Category } from '@prisma/client'
 import { requireAdminPage } from '@/lib/admin-auth'
+import { getBranchStockByProductName, normalizeBsaleProductName } from '@/lib/bsale-branch-stock'
 
 const CATEGORIES = ['Carcasa','Lamina','Cargador','Cable','Audifonos','Vapers','Computacion','Otros'] as const
 const PER_PAGE = 50
@@ -43,6 +44,7 @@ export default async function ProductsPage({
   ])
 
   const totalPages = Math.ceil(total / PER_PAGE)
+  const branchStock = await getBranchStockByProductName(products.map((product) => product.name))
 
   // 🎒 EMPACAMOS LOS FILTROS ACTUALES
   const currentParams = new URLSearchParams()
@@ -132,7 +134,7 @@ export default async function ProductsPage({
               <TableHead className="text-black font-black uppercase tracking-tight">Nombre</TableHead>
               <TableHead className="w-[120px] text-black font-black uppercase tracking-tight">Categoría</TableHead>
               <TableHead className="w-[105px] text-black font-black uppercase tracking-tight">Precio</TableHead>
-              <TableHead className="w-[80px] text-black font-black uppercase tracking-tight">Stock</TableHead>
+              <TableHead className="w-[180px] text-black font-black uppercase tracking-tight">Stock</TableHead>
               <TableHead className="sticky right-0 z-10 w-[112px] bg-zinc-50 text-right text-black font-black uppercase tracking-tight shadow-[-10px_0_18px_rgba(255,255,255,.9)]">Acciones</TableHead>
             </TableRow>
           </TableHeader>
@@ -177,11 +179,30 @@ export default async function ProductsPage({
                   </TableCell>
 
                   <TableCell>
-                    <Badge className={`rounded-none uppercase text-[10px] tracking-widest px-3 py-1 border-none ${
-                      product.stock <= 5 ? 'bg-red-100 text-red-700' : 'bg-zinc-100 text-zinc-700'
-                    }`}>
-                      {product.stock} unid.
-                    </Badge>
+                    {(() => {
+                      const branches = branchStock.get(normalizeBsaleProductName(product.name)) ?? []
+                      return (
+                        <div className="space-y-1">
+                          <Badge className={`rounded-none uppercase text-[10px] tracking-widest px-3 py-1 border-none ${
+                            product.stock <= 5 ? 'bg-red-100 text-red-700' : 'bg-zinc-100 text-zinc-700'
+                          }`}>
+                            Total app: {product.stock}
+                          </Badge>
+                          {branches.length > 0 ? (
+                            <div className="space-y-0.5 text-[10px] font-bold text-zinc-600">
+                              {branches.map((branch) => (
+                                <p key={branch.officeId} className="flex justify-between gap-2">
+                                  <span className="truncate">{branch.name}</span>
+                                  <span>{branch.stock}</span>
+                                </p>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-[10px] font-semibold text-zinc-400">Sin match Bsale</p>
+                          )}
+                        </div>
+                      )
+                    })()}
                   </TableCell>
 
                   <TableCell className="sticky right-0 z-10 bg-white shadow-[-10px_0_18px_rgba(255,255,255,.9)]">
@@ -225,6 +246,18 @@ export default async function ProductsPage({
                   <span className="text-sm font-extrabold text-red-600">${Number(product.price).toLocaleString('es-CL')}</span>
                   <span className={`text-[10px] font-bold ${product.stock <= 5 ? 'text-red-600' : 'text-zinc-500'}`}>{product.stock} unid.</span>
                 </div>
+                {(() => {
+                  const branches = branchStock.get(normalizeBsaleProductName(product.name)) ?? []
+                  return branches.length > 0 ? (
+                    <div className="mt-2 grid grid-cols-2 gap-1 text-[10px] font-bold text-zinc-500">
+                      {branches.map((branch) => (
+                        <span key={branch.officeId} className="rounded bg-zinc-100 px-2 py-1">
+                          {branch.name}: {branch.stock}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null
+                })()}
               </div>
             </div>
             <div className="mt-3 flex gap-2 border-t border-zinc-100 pt-3">
