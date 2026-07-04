@@ -30,6 +30,9 @@ export default async function ProductsPage({
   const skip = (currentPage - 1) * PER_PAGE
 
   const where = {
+    stock: { gt: 0 },
+    category: { not: null },
+    price: { gt: 0 },
     ...(q ? { name: { contains: q, mode: 'insensitive' as const } } : {}),
     ...(cat && CATEGORIES.includes(cat as Category) ? { category: cat as Category } : {}),
   }
