@@ -9,7 +9,6 @@ import { getActiveBanner } from '@/lib/marketing'
 import { formatProductName } from '@/lib/utils'
 import {
   BadgePercent,
-  Cable,
   Camera,
   Clock3,
   Headphones,
@@ -38,7 +37,6 @@ const MAP_CHACABUCO_456 = 'https://maps.app.goo.gl/uRC2hoVc8ssf1TTU7'
 const CATEGORIES = [
   { value: 'Audifonos', label: 'Audio', icon: Headphones },
   { value: 'Cargador', label: 'Carga', icon: Zap },
-  { value: 'Cable', label: 'Conectividad', icon: Cable },
   { value: 'Computacion', label: 'PC', icon: Laptop },
   { value: 'Otros', label: 'Novedades', icon: HomeIcon },
 ] as const
@@ -206,7 +204,7 @@ export default async function Home() {
         .home-section-head h2 { font-size: 15px; font-weight: 900; }
         .home-section-head a { height: 30px; padding: 0 15px; border: 1px solid #ddd; border-radius: 4px; display: inline-flex; align-items: center; color: #111; text-decoration: none; font-size: 10px; font-weight: 800; transition: border-color .16s ease, transform .16s ease, box-shadow .16s ease; }
         .home-section-head a:hover { border-color: #111; transform: translateY(-1px); box-shadow: 0 8px 18px rgba(0,0,0,.07); }
-        .home-categories { display: grid; grid-template-columns: repeat(6, minmax(0,1fr)); gap: 16px; }
+        .home-categories { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 16px; }
         .home-category { min-height: 70px; border: 1px solid #e5e5e5; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; color: #111; text-decoration: none; font-size: 11px; font-weight: 800; transition: transform .18s ease, border-color .18s ease, color .18s ease, box-shadow .18s ease, background-color .18s ease; }
         .home-category:hover { border-color: #e30613; color: #e30613; background: #fff; transform: translateY(-3px); box-shadow: 0 14px 30px rgba(0,0,0,.08); }
         .home-category small { display: none; }
