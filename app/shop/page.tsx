@@ -37,11 +37,11 @@ const CATEGORIES = [
   { value: 'Carcasa', label: 'Carcasas', icon: Smartphone },
   { value: 'Lamina', label: 'Láminas', icon: PanelsTopLeft },
   { value: 'Audifonos', label: 'Audio', icon: Headphones },
-  { value: 'Cable', label: 'Cables', icon: Cable },
-  { value: 'Cargador', label: 'Cargadores', icon: Zap },
+  { value: 'Cable', label: 'Conectividad', icon: Cable },
+  { value: 'Cargador', label: 'Carga oficial', icon: Zap },
   { value: 'Vapers', label: 'Vapers', icon: Sparkles },
   { value: 'Computacion', label: 'PC', icon: Laptop },
-  { value: 'Otros', label: 'Otros', icon: Home },
+  { value: 'Otros', label: 'Novedades', icon: Home },
 ] as const
 
 const CATEGORY_SEARCH_ALIASES: Record<Category, string[]> = {
@@ -249,6 +249,7 @@ export default async function ShopPage({
     if (curr.category) acc[curr.category] = curr._count.id
     return acc
   }, {} as Record<string, number>)
+  const visibleCategories = CATEGORIES.filter((category) => (categoryCounts[category.value] || 0) > 0 || cat === category.value)
 
   const totalPages = Math.ceil(totalProducts / PAGE_SIZE)
   const selectedCategory = CATEGORIES.find((category) => category.value === cat)
@@ -1387,7 +1388,7 @@ export default async function ShopPage({
               <span className="mobile-cat-icon"><Menu className="size-5" /></span>
               Todos
             </Link>
-            {CATEGORIES.map((category) => {
+            {visibleCategories.map((category) => {
               const Icon = category.icon
               return (
                 <Link key={category.value} href={buildUrl({ cat: category.value, promo: null, brand: null, page: '1' })} className={`mobile-cat${cat === category.value ? ' active' : ''}`}>
@@ -1430,7 +1431,7 @@ export default async function ShopPage({
                   <span className="shop-side-main"><BadgePercent className="size-4" /> Todos los productos</span>
                   <span className="shop-side-count">{allAvailableProducts}</span>
                 </Link>
-                {CATEGORIES.map((category) => {
+                {visibleCategories.map((category) => {
                   const Icon = category.icon
                   const count = categoryCounts[category.value] || 0
                   return (
@@ -1477,7 +1478,7 @@ export default async function ShopPage({
                         {brandName}
                       </Link>
                     ))
-                  : CATEGORIES.map((category) => (
+                  : visibleCategories.map((category) => (
                       <Link key={category.value} href={buildUrl({ cat: category.value, promo: null, brand: null, page: '1' })} className={`shop-chip${cat === category.value ? ' active' : ''}`}>
                         {category.label} ({categoryCounts[category.value] || 0})
                       </Link>
