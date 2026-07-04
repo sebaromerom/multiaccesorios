@@ -21,7 +21,6 @@ import {
   MapPin,
   PackageCheck,
   ShieldCheck,
-  Sparkles,
   Tag,
   Truck,
   User,
@@ -38,14 +37,13 @@ const MAP_CHACABUCO_456 = 'https://maps.app.goo.gl/uRC2hoVc8ssf1TTU7'
 
 const CATEGORIES = [
   { value: 'Audifonos', label: 'Audio', icon: Headphones },
-  { value: 'Cargador', label: 'Cargadores', icon: Zap },
-  { value: 'Cable', label: 'Cables', icon: Cable },
-  { value: 'Vapers', label: 'Vapers', icon: Sparkles },
+  { value: 'Cargador', label: 'Carga', icon: Zap },
+  { value: 'Cable', label: 'Conectividad', icon: Cable },
   { value: 'Computacion', label: 'PC', icon: Laptop },
-  { value: 'Otros', label: 'Otros', icon: HomeIcon },
+  { value: 'Otros', label: 'Novedades', icon: HomeIcon },
 ] as const
 
-const HERO_CATEGORY_ORDER = ['Audifonos', 'Computacion', 'Vapers', 'Cargador', 'Cable', 'Otros']
+const HERO_CATEGORY_ORDER = ['Audifonos', 'Computacion', 'Cargador', 'Cable']
 const HERO_BRAND_TERMS = [
   'JBL',
   'XIAOMI',
@@ -54,8 +52,8 @@ const HERO_BRAND_TERMS = [
   'TP-LINK',
   'KINGSTON',
   'LOGITECH',
-  'GEEK',
-  'MELOSO',
+  'MOUSE',
+  'PARLANTE',
 ]
 
 function isRealProductImage(imageUrl: string | null) {
@@ -65,7 +63,7 @@ function isRealProductImage(imageUrl: string | null) {
 function isHeroProduct(product: { name: string; imageUrl: string | null }) {
   const name = product.name.toUpperCase()
   return isRealProductImage(product.imageUrl) &&
-    !/(EW46|GATO|CAT|FUNDA|CARCASA|LAMINA|LÁMINA)/i.test(name)
+    !/(EW46|GATO|CAT|FUNDA|CARCASA|LAMINA|LÁMINA|ACCESORIOS DEL STAND)/i.test(name)
 }
 
 function heroScore(product: { name: string; category: string | null; stock: number; imageUrl: string | null }) {
@@ -75,20 +73,19 @@ function heroScore(product: { name: string; category: string | null; stock: numb
   ), 0)
   const categoryScore = product.category === 'Audifonos' ? 55
     : product.category === 'Computacion' ? 45
-      : product.category === 'Vapers' ? 35
-        : product.category === 'Cargador' ? 25
-          : product.category === 'Cable' ? 15
-            : 0
+      : product.category === 'Cargador' ? 35
+        : product.category === 'Cable' ? 25
+          : 0
   return brandScore + categoryScore + Math.min(product.stock, 30)
 }
 
 export default async function Home() {
-  const [featuredProducts, fallbackProducts, categoryCounts, activeDiscount, secondaryBanner] = await Promise.all([
+  const [featuredProducts, fallbackProducts, activeDiscount, secondaryBanner] = await Promise.all([
     prisma.product.findMany({
       where: {
         stock: { gt: 0 },
         imageUrl: { not: null },
-        category: { in: ['Audifonos', 'Computacion', 'Vapers', 'Cargador', 'Cable'] },
+        category: { in: ['Audifonos', 'Computacion', 'Cargador', 'Cable'] },
       },
       orderBy: { stock: 'desc' },
       include: { variants: { select: { id: true }, take: 1 } },
@@ -99,11 +96,6 @@ export default async function Home() {
       orderBy: { createdAt: 'desc' },
       include: { variants: { select: { id: true }, take: 1 } },
       take: 10,
-    }),
-    prisma.product.groupBy({
-      by: ['category'],
-      _count: { id: true },
-      where: { stock: { gt: 0 } },
     }),
     prisma.discountRule.findFirst({
       where: { active: true, productId: { not: null }, product: { stock: { gt: 0 }, imageUrl: { not: null } } },
@@ -127,11 +119,6 @@ export default async function Home() {
   const heroProducts = [...categoryHeroProducts, ...heroPool]
     .filter((product, index, products) => products.findIndex((item) => item.id === product.id) === index)
     .slice(0, 3)
-
-  const counts = categoryCounts.reduce((acc, row) => {
-    if (row.category) acc[row.category] = row._count.id
-    return acc
-  }, {} as Record<string, number>)
 
   const offerProduct = activeDiscount?.product ?? trending[0] ?? null
   const offerPrice = offerProduct && activeDiscount?.type === 'percentage'
@@ -182,16 +169,16 @@ export default async function Home() {
         .home-nav-links a:hover::after { transform: scaleX(1); }
         .home-nav-links a:first-child { color: #e30613; }
         .home-content { padding: 18px 52px 0; }
-        .home-hero { height: 230px; border-radius: 8px; background: linear-gradient(115deg, #fff7f7 0%, #fff 50%, #fff0f0 100%); position: relative; overflow: hidden; display: flex; align-items: center; padding: 28px 38px; isolation: isolate; animation: homeRise .55s .05s ease both; }
+        .home-hero { height: 255px; border-radius: 8px; background: linear-gradient(115deg, #fff7f7 0%, #fff 50%, #fff0f0 100%); position: relative; overflow: hidden; display: flex; align-items: center; padding: 34px 42px; isolation: isolate; animation: homeRise .55s .05s ease both; }
         .home-hero::before { content: ""; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 0%, rgba(255,255,255,.7) 44%, transparent 58%); transform: translateX(-115%); animation: homeHeroSheen 4.8s 1.2s ease-in-out infinite; pointer-events: none; }
         .home-hero::after { content: ""; position: absolute; inset: 0; border: 1px solid rgba(227,6,19,.08); border-radius: inherit; pointer-events: none; }
         .home-hero-copy { position: relative; z-index: 3; width: 48%; animation: homeCopyIn .5s .15s ease both; }
         .home-hero-kicker { color: #e30613; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; }
-        .home-hero h1 { margin: 12px 0 20px; font-size: 29px; line-height: 1.1; font-weight: 900; }
+        .home-hero h1 { margin: 10px 0 20px; font-size: 30px; line-height: 1.16; font-weight: 900; }
         .home-hero h1 span { color: #e30613; }
         .home-hero-benefits { display: flex; gap: 24px; }
         .home-hero-benefit { display: flex; align-items: center; gap: 8px; font-size: 10px; font-weight: 800; color: #555; }
-        .home-hero-actions { display: flex; align-items: center; gap: 10px; margin-top: 22px; }
+        .home-hero-actions { display: flex; align-items: center; gap: 16px; margin-top: 22px; }
         .home-primary-cta,
         .home-secondary-cta { height: 38px; padding: 0 18px; border-radius: 5px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; font-size: 11px; font-weight: 900; transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease, border-color .18s ease; }
         .home-primary-cta { position: relative; overflow: hidden; background: #e30613; color: #fff; box-shadow: 0 10px 22px rgba(227,6,19,.22); }
@@ -201,15 +188,16 @@ export default async function Home() {
         .home-primary-cta:active,
         .home-secondary-cta:active,
         .home-offer-link:active { transform: translateY(0) scale(.98); }
-        .home-secondary-cta { border: 1px solid #ddd; color: #111; background: #fff; }
-        .home-secondary-cta:hover { border-color: #111; transform: translateY(-1px); box-shadow: 0 10px 22px rgba(0,0,0,.08); }
-        .home-hero-products { position: absolute; inset: 10px 4% 10px 50%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: center; gap: 12px; }
+        .home-secondary-cta { height: auto; padding: 0; border: 0; color: #111; background: transparent; }
+        .home-secondary-cta:hover { color: #e30613; transform: translateY(-1px); }
+        .home-hero-products { position: absolute; inset: 14px 5% 14px 52%; display: grid; grid-template-columns: 1.25fr .86fr .78fr; align-items: center; gap: 14px; }
         .home-hero-banner-media { position: absolute; inset: 16px 4% 16px 48%; filter: drop-shadow(0 14px 20px rgba(0,0,0,.14)); }
         .home-hero-banner-media img { object-fit: contain; }
-        .home-hero-product { position: relative; height: 86%; filter: drop-shadow(0 12px 12px rgba(0,0,0,.12)); animation: homeProductFloat 5.2s ease-in-out infinite; transform-origin: center bottom; will-change: transform; }
+        .home-hero-product { position: relative; height: 88%; filter: drop-shadow(0 12px 12px rgba(0,0,0,.12)); animation: homeProductFloat 5.2s ease-in-out infinite; transform-origin: center bottom; will-change: transform; }
         .home-hero-product img { object-fit: contain; }
-        .home-hero-product:nth-child(2) { height: 96%; animation-delay: .25s; }
-        .home-hero-product:nth-child(3) { height: 84%; animation-delay: .5s; }
+        .home-hero-product:nth-child(1) { height: 100%; }
+        .home-hero-product:nth-child(2) { height: 82%; animation-delay: .25s; }
+        .home-hero-product:nth-child(3) { height: 72%; animation-delay: .5s; }
         .home-hero-discount { position: absolute; z-index: 4; top: 24px; right: 17%; width: 66px; height: 66px; border-radius: 50%; background: #e30613; color: #fff; display: grid; place-items: center; text-align: center; font-size: 13px; font-weight: 900; line-height: 1; box-shadow: 0 14px 26px rgba(227,6,19,.28); animation: homeBadgePop .5s .45s ease both, homeBadgePulse 2.8s 1.2s ease-in-out infinite; }
         .home-section { margin-top: 22px; animation: homeRise .52s ease both; }
         .home-section:nth-of-type(2) { animation-delay: .12s; }
@@ -219,9 +207,9 @@ export default async function Home() {
         .home-section-head a { height: 30px; padding: 0 15px; border: 1px solid #ddd; border-radius: 4px; display: inline-flex; align-items: center; color: #111; text-decoration: none; font-size: 10px; font-weight: 800; transition: border-color .16s ease, transform .16s ease, box-shadow .16s ease; }
         .home-section-head a:hover { border-color: #111; transform: translateY(-1px); box-shadow: 0 8px 18px rgba(0,0,0,.07); }
         .home-categories { display: grid; grid-template-columns: repeat(6, minmax(0,1fr)); gap: 16px; }
-        .home-category { min-height: 78px; border: 1px solid #e5e5e5; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; color: #111; text-decoration: none; font-size: 11px; font-weight: 800; transition: transform .18s ease, border-color .18s ease, color .18s ease, box-shadow .18s ease, background-color .18s ease; }
+        .home-category { min-height: 70px; border: 1px solid #e5e5e5; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; color: #111; text-decoration: none; font-size: 11px; font-weight: 800; transition: transform .18s ease, border-color .18s ease, color .18s ease, box-shadow .18s ease, background-color .18s ease; }
         .home-category:hover { border-color: #e30613; color: #e30613; background: #fff; transform: translateY(-3px); box-shadow: 0 14px 30px rgba(0,0,0,.08); }
-        .home-category small { color: #999; font-size: 9px; font-weight: 700; }
+        .home-category small { display: none; }
         .home-trending-layout { display: grid; grid-template-columns: minmax(0,1fr) 290px; gap: 22px; }
         .home-product-grid { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 14px; }
         .home-product-card { border: 1px solid #e5e5e5; border-radius: 6px; background: #fff; overflow: hidden; min-width: 0; transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
@@ -293,7 +281,7 @@ export default async function Home() {
           .home-mobile-header .shop-search-control { height: 42px; border-radius: 5px; }
           .home-mobile-header .shop-search-submit { height: 42px; width: 48px; }
           .home-content { padding: 14px 14px calc(var(--mobile-bottom-nav-height) + env(safe-area-inset-bottom) + 22px); }
-          .home-hero { height: 168px; padding: 16px; }
+          .home-hero { height: 178px; padding: 16px; }
           .home-hero-copy { width: 54%; }
           .home-hero-kicker { font-size: 7px; }
           .home-hero h1 { margin: 8px 0 14px; font-size: 17px; }
@@ -303,7 +291,8 @@ export default async function Home() {
           .home-hero-products { inset: 12px -4% 12px 56%; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 4px; }
           .home-hero-banner-media { inset: 20px -5% 12px 53%; }
           .home-hero-product { height: 86%; }
-          .home-hero-product:nth-child(2) { height: 92%; }
+          .home-hero-product:nth-child(1) { height: 96%; }
+          .home-hero-product:nth-child(2) { height: 82%; }
           .home-hero-product:nth-child(3) { display: none; }
           .home-hero-discount { display: none; }
           .home-hero-copy .home-primary-cta { height: 30px; padding: 0 12px; font-size: 9px; }
@@ -424,10 +413,10 @@ export default async function Home() {
         <div className="home-content">
           <section className="home-hero">
             <div className="home-hero-copy">
-              <p className="home-hero-kicker">Selección práctica</p>
+              <p className="home-hero-kicker">Soluciones para tu rutina</p>
               <h1>Detalles que hacen<br /><span>la diferencia.</span></h1>
               <p className="relative z-[2] -mt-3 mb-4 max-w-[360px] text-xs font-bold leading-relaxed text-zinc-600">
-                Productos pensados para acompañarte, resolver y simplificar tu día.
+                Accesorios pensados para hacer tu día más simple, práctico y conectado.
               </p>
               <div className="home-hero-benefits">
                 <span className="home-hero-benefit"><Truck className="size-5" /> Envíos rápidos</span>
@@ -437,7 +426,7 @@ export default async function Home() {
               <div className="home-hero-actions">
                 <Link href="/shop" className="home-primary-cta">Explorar catálogo</Link>
                 <Link href={activeDiscount ? '/shop?promo=1&page=1' : '/shop?sort=newest'} className="home-secondary-cta">
-                  {activeDiscount ? 'Ver ofertas' : 'Ver nuevos'}
+                  {activeDiscount ? 'Ver ofertas' : 'Ver productos nuevos ->'}
                 </Link>
               </div>
             </div>
@@ -460,7 +449,6 @@ export default async function Home() {
                   <Link key={category.value} href={`/shop?cat=${category.value}`} className="home-category">
                     <Icon className="size-6" />
                     <span>{category.label}</span>
-                    <small>{counts[category.value] ?? 0} productos</small>
                   </Link>
                 )
               })}
