@@ -53,7 +53,7 @@ async function fetchAll<T>(endpoint: string): Promise<T[]> {
     const url = `${BSALE_API}${endpoint}${endpoint.includes('?') ? '&' : '?'}limit=${limit}&offset=${offset}`
     const res = await fetch(url, {
       headers: { access_token: token, 'Content-Type': 'application/json' },
-      cache: 'no-store',
+      next: { revalidate: 600 },
     })
 
     if (!res.ok) throw new Error(`Bsale API error ${res.status}`)

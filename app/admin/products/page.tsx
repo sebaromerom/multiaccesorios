@@ -16,7 +16,23 @@ import { requireAdminPage } from '@/lib/admin-auth'
 import { getBranchStockByProductName, normalizeBsaleProductName } from '@/lib/bsale-branch-stock'
 
 const CATEGORIES = ['Carcasa','Lamina','Cargador','Cable','Audifonos','Vapers','Computacion','Otros'] as const
-const PER_PAGE = 50
+const PER_PAGE = 30
+const emptyBranchStock = new Map<string, never[]>()
+
+async function getBranchStockWithTimeout(names: string[]) {
+  let timeout: ReturnType<typeof setTimeout> | undefined
+
+  try {
+    return await Promise.race([
+      getBranchStockByProductName(names),
+      new Promise<typeof emptyBranchStock>((resolve) => {
+        timeout = setTimeout(() => resolve(emptyBranchStock), 1500)
+      }),
+    ])
+  } finally {
+    if (timeout) clearTimeout(timeout)
+  }
+}
 
 export default async function ProductsPage({
   searchParams,
@@ -45,7 +61,7 @@ export default async function ProductsPage({
   ])
 
   const totalPages = Math.ceil(total / PER_PAGE)
-  const branchStock = await getBranchStockByProductName(products.map((product) => product.name))
+  const branchStock = await getBranchStockWithTimeout(products.map((product) => product.name))
 
   // Preserve current filters after editing a product.
   const currentParams = new URLSearchParams()
