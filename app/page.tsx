@@ -49,7 +49,6 @@ const HERO_CATEGORY_ORDER = ['Audifonos', 'Computacion', 'Vapers', 'Cargador', '
 const HERO_BRAND_TERMS = [
   'JBL',
   'XIAOMI',
-  'HOCO',
   'MLAB',
   'BASEUS',
   'TP-LINK',
@@ -60,7 +59,13 @@ const HERO_BRAND_TERMS = [
 ]
 
 function isRealProductImage(imageUrl: string | null) {
-  return Boolean(imageUrl && !/(multi\.jpe?g|logo|placeholder)/i.test(imageUrl))
+  return Boolean(imageUrl && !/(multi\.jpe?g|logo|placeholder|file\.svg|globe\.svg)/i.test(imageUrl))
+}
+
+function isHeroProduct(product: { name: string; imageUrl: string | null }) {
+  const name = product.name.toUpperCase()
+  return isRealProductImage(product.imageUrl) &&
+    !/(EW46|GATO|CAT|FUNDA|CARCASA|LAMINA|LÁMINA)/i.test(name)
 }
 
 function heroScore(product: { name: string; category: string | null; stock: number; imageUrl: string | null }) {
@@ -113,7 +118,7 @@ export default async function Home() {
     .slice(0, 5)
   const heroPool = [...featuredProducts, ...fallbackProducts]
     .filter((product, index, products) => products.findIndex((item) => item.id === product.id) === index)
-    .filter((product) => isRealProductImage(product.imageUrl))
+    .filter(isHeroProduct)
     .sort((a, b) => heroScore(b) - heroScore(a))
   const categoryHeroProducts = HERO_CATEGORY_ORDER.flatMap((category) => {
     const product = heroPool.find((item) => item.category === category)
@@ -177,12 +182,12 @@ export default async function Home() {
         .home-nav-links a:hover::after { transform: scaleX(1); }
         .home-nav-links a:first-child { color: #e30613; }
         .home-content { padding: 18px 52px 0; }
-        .home-hero { height: 250px; border-radius: 8px; background: linear-gradient(115deg, #fff7f7 0%, #fff 48%, #fff0f0 100%); position: relative; overflow: hidden; display: flex; align-items: center; padding: 34px 38px; isolation: isolate; animation: homeRise .55s .05s ease both; }
+        .home-hero { height: 230px; border-radius: 8px; background: linear-gradient(115deg, #fff7f7 0%, #fff 50%, #fff0f0 100%); position: relative; overflow: hidden; display: flex; align-items: center; padding: 28px 38px; isolation: isolate; animation: homeRise .55s .05s ease both; }
         .home-hero::before { content: ""; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 0%, rgba(255,255,255,.7) 44%, transparent 58%); transform: translateX(-115%); animation: homeHeroSheen 4.8s 1.2s ease-in-out infinite; pointer-events: none; }
         .home-hero::after { content: ""; position: absolute; inset: 0; border: 1px solid rgba(227,6,19,.08); border-radius: inherit; pointer-events: none; }
-        .home-hero-copy { position: relative; z-index: 3; width: 45%; animation: homeCopyIn .5s .15s ease both; }
+        .home-hero-copy { position: relative; z-index: 3; width: 48%; animation: homeCopyIn .5s .15s ease both; }
         .home-hero-kicker { color: #e30613; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; }
-        .home-hero h1 { margin: 14px 0 24px; font-size: 31px; line-height: 1.12; font-weight: 900; }
+        .home-hero h1 { margin: 12px 0 20px; font-size: 29px; line-height: 1.1; font-weight: 900; }
         .home-hero h1 span { color: #e30613; }
         .home-hero-benefits { display: flex; gap: 24px; }
         .home-hero-benefit { display: flex; align-items: center; gap: 8px; font-size: 10px; font-weight: 800; color: #555; }
@@ -198,13 +203,13 @@ export default async function Home() {
         .home-offer-link:active { transform: translateY(0) scale(.98); }
         .home-secondary-cta { border: 1px solid #ddd; color: #111; background: #fff; }
         .home-secondary-cta:hover { border-color: #111; transform: translateY(-1px); box-shadow: 0 10px 22px rgba(0,0,0,.08); }
-        .home-hero-products { position: absolute; inset: 0 2% 0 45%; display: flex; align-items: flex-end; justify-content: center; gap: 2px; }
+        .home-hero-products { position: absolute; inset: 10px 4% 10px 50%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: center; gap: 12px; }
         .home-hero-banner-media { position: absolute; inset: 16px 4% 16px 48%; filter: drop-shadow(0 14px 20px rgba(0,0,0,.14)); }
         .home-hero-banner-media img { object-fit: contain; }
-        .home-hero-product { position: relative; width: 24%; height: 80%; filter: drop-shadow(0 12px 12px rgba(0,0,0,.12)); animation: homeProductFloat 5.2s ease-in-out infinite; transform-origin: center bottom; will-change: transform; }
+        .home-hero-product { position: relative; height: 86%; filter: drop-shadow(0 12px 12px rgba(0,0,0,.12)); animation: homeProductFloat 5.2s ease-in-out infinite; transform-origin: center bottom; will-change: transform; }
         .home-hero-product img { object-fit: contain; }
-        .home-hero-product:nth-child(2) { height: 92%; animation-delay: .25s; }
-        .home-hero-product:nth-child(3) { height: 68%; animation-delay: .5s; }
+        .home-hero-product:nth-child(2) { height: 96%; animation-delay: .25s; }
+        .home-hero-product:nth-child(3) { height: 84%; animation-delay: .5s; }
         .home-hero-discount { position: absolute; z-index: 4; top: 24px; right: 17%; width: 66px; height: 66px; border-radius: 50%; background: #e30613; color: #fff; display: grid; place-items: center; text-align: center; font-size: 13px; font-weight: 900; line-height: 1; box-shadow: 0 14px 26px rgba(227,6,19,.28); animation: homeBadgePop .5s .45s ease both, homeBadgePulse 2.8s 1.2s ease-in-out infinite; }
         .home-section { margin-top: 22px; animation: homeRise .52s ease both; }
         .home-section:nth-of-type(2) { animation-delay: .12s; }
@@ -214,7 +219,7 @@ export default async function Home() {
         .home-section-head a { height: 30px; padding: 0 15px; border: 1px solid #ddd; border-radius: 4px; display: inline-flex; align-items: center; color: #111; text-decoration: none; font-size: 10px; font-weight: 800; transition: border-color .16s ease, transform .16s ease, box-shadow .16s ease; }
         .home-section-head a:hover { border-color: #111; transform: translateY(-1px); box-shadow: 0 8px 18px rgba(0,0,0,.07); }
         .home-categories { display: grid; grid-template-columns: repeat(6, minmax(0,1fr)); gap: 16px; }
-        .home-category { min-height: 92px; border: 1px solid #e5e5e5; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: #111; text-decoration: none; font-size: 11px; font-weight: 800; transition: transform .18s ease, border-color .18s ease, color .18s ease, box-shadow .18s ease, background-color .18s ease; }
+        .home-category { min-height: 78px; border: 1px solid #e5e5e5; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; color: #111; text-decoration: none; font-size: 11px; font-weight: 800; transition: transform .18s ease, border-color .18s ease, color .18s ease, box-shadow .18s ease, background-color .18s ease; }
         .home-category:hover { border-color: #e30613; color: #e30613; background: #fff; transform: translateY(-3px); box-shadow: 0 14px 30px rgba(0,0,0,.08); }
         .home-category small { color: #999; font-size: 9px; font-weight: 700; }
         .home-trending-layout { display: grid; grid-template-columns: minmax(0,1fr) 290px; gap: 22px; }
@@ -288,17 +293,18 @@ export default async function Home() {
           .home-mobile-header .shop-search-control { height: 42px; border-radius: 5px; }
           .home-mobile-header .shop-search-submit { height: 42px; width: 48px; }
           .home-content { padding: 14px 14px calc(var(--mobile-bottom-nav-height) + env(safe-area-inset-bottom) + 22px); }
-          .home-hero { height: 170px; padding: 18px 16px; }
-          .home-hero-copy { width: 52%; }
+          .home-hero { height: 168px; padding: 16px; }
+          .home-hero-copy { width: 54%; }
           .home-hero-kicker { font-size: 7px; }
           .home-hero h1 { margin: 8px 0 14px; font-size: 17px; }
           .home-hero-benefits { display: none; }
           .home-hero-actions { margin-top: 0; }
           .home-secondary-cta { display: none; }
-          .home-hero-products { inset: 0 -5% 0 48%; }
+          .home-hero-products { inset: 12px -4% 12px 56%; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 4px; }
           .home-hero-banner-media { inset: 20px -5% 12px 53%; }
-          .home-hero-product { width: 30%; height: 72%; }
-          .home-hero-product:nth-child(2) { height: 82%; }
+          .home-hero-product { height: 86%; }
+          .home-hero-product:nth-child(2) { height: 92%; }
+          .home-hero-product:nth-child(3) { display: none; }
           .home-hero-discount { display: none; }
           .home-hero-copy .home-primary-cta { height: 30px; padding: 0 12px; font-size: 9px; }
           .home-categories { display: flex; gap: 12px; overflow-x: auto; scrollbar-width: none; margin-right: -14px; padding-right: 14px; }
