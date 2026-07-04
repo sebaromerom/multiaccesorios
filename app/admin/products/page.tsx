@@ -5,6 +5,7 @@ import {
   TableHeader, TableRow,
 } from '@/components/ui/table'
 import Link from 'next/link'
+import { Pencil } from 'lucide-react'
 import DeleteProductButton from './DeleteProductButton'
 import { Badge } from '@/components/ui/badge'
 import SyncBsaleButton from '@/components/admin/SyncBsaleButton'
@@ -46,7 +47,7 @@ export default async function ProductsPage({
   const totalPages = Math.ceil(total / PER_PAGE)
   const branchStock = await getBranchStockByProductName(products.map((product) => product.name))
 
-  // 🎒 EMPACAMOS LOS FILTROS ACTUALES
+  // Preserve current filters after editing a product.
   const currentParams = new URLSearchParams()
   if (q) currentParams.set('q', q)
   if (cat) currentParams.set('cat', cat)
@@ -100,7 +101,7 @@ export default async function ProductsPage({
           defaultValue={cat ?? ''}
           className="h-11 px-3 rounded-[4px] border border-zinc-300 focus:border-red-600 outline-none text-sm bg-white transition-colors w-full sm:w-auto"
         >
-          <option value="">Todas las categorías</option>
+          <option value="">Todas las categorias</option>
           {CATEGORIES.map(c => (
             <option key={c} value={c}>{c}</option>
           ))}
@@ -132,10 +133,10 @@ export default async function ProductsPage({
             <TableRow className="border-b border-zinc-200 bg-zinc-50 hover:bg-zinc-50">
               <TableHead className="w-[72px] py-5 text-black font-black uppercase tracking-tight">Imagen</TableHead>
               <TableHead className="text-black font-black uppercase tracking-tight">Nombre</TableHead>
-              <TableHead className="w-[120px] text-black font-black uppercase tracking-tight">Categoría</TableHead>
-              <TableHead className="w-[105px] text-black font-black uppercase tracking-tight">Precio</TableHead>
-              <TableHead className="w-[180px] text-black font-black uppercase tracking-tight">Stock</TableHead>
-              <TableHead className="sticky right-0 z-10 w-[112px] bg-zinc-50 text-right text-black font-black uppercase tracking-tight shadow-[-10px_0_18px_rgba(255,255,255,.9)]">Acciones</TableHead>
+              <TableHead className="w-[115px] text-black font-black uppercase tracking-tight">Categoria</TableHead>
+              <TableHead className="w-[115px] text-black font-black uppercase tracking-tight">Precio</TableHead>
+              <TableHead className="w-[155px] text-black font-black uppercase tracking-tight">Stock</TableHead>
+              <TableHead className="sticky right-0 z-10 w-[92px] bg-zinc-50 text-right text-black font-black uppercase tracking-tight shadow-[-10px_0_18px_rgba(255,255,255,.9)]">Acciones</TableHead>
             </TableRow>
           </TableHeader>
 
@@ -150,7 +151,6 @@ export default async function ProductsPage({
               products.map((product) => (
                 <TableRow key={product.id} className="border-b border-zinc-100 hover:bg-zinc-50 transition-colors">
                   <TableCell className="py-3">
-                    {/* Validación estricta para strings vacíos o URLs corruptas */}
                     <div className="relative h-12 w-12 overflow-hidden border border-zinc-200 bg-zinc-50">
                       <SafeProductImage
                         src={product.imageUrl}
@@ -163,14 +163,14 @@ export default async function ProductsPage({
                   </TableCell>
 
                   <TableCell>
-                    <span className="font-bold text-black text-sm uppercase tracking-tight">
+                    <span className="line-clamp-2 font-bold text-black text-sm uppercase tracking-tight">
                       {product.name}
                     </span>
                   </TableCell>
 
                   <TableCell>
-                      <Badge variant="secondary" className="max-w-full rounded-none bg-zinc-100 text-zinc-700 uppercase text-[10px] tracking-wider font-bold border-none px-2 py-1">
-                      {product.category || 'Sin categoría'}
+                    <Badge variant="secondary" className="max-w-full truncate rounded-none bg-zinc-100 text-zinc-700 uppercase text-[10px] tracking-wider font-bold border-none px-2 py-1">
+                      {product.category || 'Sin categoria'}
                     </Badge>
                   </TableCell>
 
@@ -179,14 +179,15 @@ export default async function ProductsPage({
                   </TableCell>
 
                   <TableCell>
+                    <div className="max-w-[145px]">
                     {(() => {
                       const branches = branchStock.get(normalizeBsaleProductName(product.name)) ?? []
                       return (
                         <div className="space-y-1">
-                          <Badge className={`rounded-none uppercase text-[10px] tracking-widest px-3 py-1 border-none ${
+                          <Badge className={`rounded-none uppercase text-[10px] tracking-widest px-2 py-1 border-none ${
                             product.stock <= 5 ? 'bg-red-100 text-red-700' : 'bg-zinc-100 text-zinc-700'
                           }`}>
-                            Total app: {product.stock}
+                            App: {product.stock}
                           </Badge>
                           {branches.length > 0 ? (
                             <div className="space-y-0.5 text-[10px] font-bold text-zinc-600">
@@ -203,13 +204,14 @@ export default async function ProductsPage({
                         </div>
                       )
                     })()}
+                    </div>
                   </TableCell>
 
                   <TableCell className="sticky right-0 z-10 bg-white shadow-[-10px_0_18px_rgba(255,255,255,.9)]">
                     <div className="flex justify-end gap-1">
-                      <Link href={`/admin/products/${product.id}${queryString ? `?${queryString}` : ''}`}>
-                        <Button variant="outline" size="sm" className="h-9 rounded-[4px] border-zinc-300 px-3 hover:border-black hover:bg-black hover:text-white uppercase text-[10px] tracking-widest font-bold transition-all">
-                          Editar
+                      <Link href={`/admin/products/${product.id}${queryString ? `?${queryString}` : ''}`} title="Editar producto">
+                        <Button variant="outline" size="sm" className="h-9 w-9 rounded-[4px] border-zinc-300 p-0 hover:border-black hover:bg-black hover:text-white transition-all">
+                          <Pencil className="size-4" />
                         </Button>
                       </Link>
                       <DeleteProductButton id={product.id} compact />
@@ -241,7 +243,7 @@ export default async function ProductsPage({
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-bold leading-snug line-clamp-2">{product.name}</p>
-                <p className="mt-1 text-xs text-zinc-500">{product.category || 'Sin categoría'}</p>
+                <p className="mt-1 text-xs text-zinc-500">{product.category || 'Sin categoria'}</p>
                 <div className="mt-2 flex items-center justify-between gap-2">
                   <span className="text-sm font-extrabold text-red-600">${Number(product.price).toLocaleString('es-CL')}</span>
                   <span className={`text-[10px] font-bold ${product.stock <= 5 ? 'text-red-600' : 'text-zinc-500'}`}>{product.stock} unid.</span>
@@ -270,17 +272,17 @@ export default async function ProductsPage({
         ))}
       </div>
 
-      {/* PAGINACIÓN */}
+      {/* PAGINACION */}
       {totalPages > 1 && (
         <div className="flex flex-col sm:flex-row items-center justify-between mt-6 pt-4 border-t border-zinc-200 gap-4">
           <p className="text-xs uppercase tracking-widest text-zinc-500 text-center sm:text-left">
-            Página {currentPage} de {totalPages} — {total} productos
+            Pagina {currentPage} de {totalPages} - {total} productos
           </p>
           <div className="flex flex-wrap justify-center gap-2">
             {currentPage > 1 && (
               <Link href={buildUrl({ q, cat, page: String(currentPage - 1) })}>
                 <Button variant="outline" size="sm" className="rounded-none border-zinc-300 uppercase text-[10px] tracking-widest font-bold">
-                  ← Ant.
+                  Ant.
                 </Button>
               </Link>
             )}
@@ -294,7 +296,7 @@ export default async function ProductsPage({
               }, [])
               .map((p, i) =>
                 p === '...' ? (
-                  <span key={`dots-${i}`} className="px-2 py-1 text-zinc-400 text-xs flex items-center">…</span>
+                  <span key={`dots-${i}`} className="px-2 py-1 text-zinc-400 text-xs flex items-center">...</span>
                 ) : (
                   <Link key={p} href={buildUrl({ q, cat, page: String(p) })}>
                     <Button
@@ -313,7 +315,7 @@ export default async function ProductsPage({
             {currentPage < totalPages && (
               <Link href={buildUrl({ q, cat, page: String(currentPage + 1) })}>
                 <Button variant="outline" size="sm" className="rounded-none border-zinc-300 uppercase text-[10px] tracking-widest font-bold">
-                  Sig. →
+                  Sig.
                 </Button>
               </Link>
             )}
