@@ -41,41 +41,11 @@ const CATEGORIES = [
   { value: 'Otros', label: 'Novedades', icon: HomeIcon },
 ] as const
 
-const HERO_CATEGORY_ORDER = ['Audifonos', 'Computacion', 'Cargador', 'Cable']
-const HERO_BRAND_TERMS = [
-  'JBL',
-  'XIAOMI',
-  'MLAB',
-  'BASEUS',
-  'TP-LINK',
-  'KINGSTON',
-  'LOGITECH',
-  'MOUSE',
-  'PARLANTE',
+const HERO_IMAGES = [
+  { src: '/home/hero-jbl.png', alt: 'Audifonos JBL' },
+  { src: '/home/hero-speaker.png', alt: 'Parlante portatil' },
+  { src: '/home/hero-geekbar.png', alt: 'Geek Bar Meloso' },
 ]
-
-function isRealProductImage(imageUrl: string | null) {
-  return Boolean(imageUrl && !/(multi\.jpe?g|logo|placeholder|file\.svg|globe\.svg)/i.test(imageUrl))
-}
-
-function isHeroProduct(product: { name: string; imageUrl: string | null }) {
-  const name = product.name.toUpperCase()
-  return isRealProductImage(product.imageUrl) &&
-    !/(EW46|GATO|CAT|FUNDA|CARCASA|LAMINA|LÁMINA|ACCESORIOS DEL STAND)/i.test(name)
-}
-
-function heroScore(product: { name: string; category: string | null; stock: number; imageUrl: string | null }) {
-  const name = product.name.toUpperCase()
-  const brandScore = HERO_BRAND_TERMS.reduce((score, term, index) => (
-    name.includes(term) ? score + 120 - index * 6 : score
-  ), 0)
-  const categoryScore = product.category === 'Audifonos' ? 55
-    : product.category === 'Computacion' ? 45
-      : product.category === 'Cargador' ? 35
-        : product.category === 'Cable' ? 25
-          : 0
-  return brandScore + categoryScore + Math.min(product.stock, 30)
-}
 
 export default async function Home() {
   const [featuredProducts, fallbackProducts, activeDiscount, secondaryBanner] = await Promise.all([
@@ -106,18 +76,6 @@ export default async function Home() {
   const trending = [...featuredProducts, ...fallbackProducts]
     .filter((product, index, products) => products.findIndex((item) => item.id === product.id) === index)
     .slice(0, 5)
-  const heroPool = [...featuredProducts, ...fallbackProducts]
-    .filter((product, index, products) => products.findIndex((item) => item.id === product.id) === index)
-    .filter(isHeroProduct)
-    .sort((a, b) => heroScore(b) - heroScore(a))
-  const categoryHeroProducts = HERO_CATEGORY_ORDER.flatMap((category) => {
-    const product = heroPool.find((item) => item.category === category)
-    return product ? [product] : []
-  })
-  const heroProducts = [...categoryHeroProducts, ...heroPool]
-    .filter((product, index, products) => products.findIndex((item) => item.id === product.id) === index)
-    .slice(0, 3)
-
   const offerProduct = activeDiscount?.product ?? trending[0] ?? null
   const offerPrice = offerProduct && activeDiscount?.type === 'percentage'
     ? Math.max(0, offerProduct.price * (1 - activeDiscount.value / 100))
@@ -429,9 +387,9 @@ export default async function Home() {
               </div>
             </div>
             <div className="home-hero-products">
-              {heroProducts.slice(0, 3).map((product) => (
-                <span key={product.id} className="home-hero-product">
-                  <SafeProductImage src={product.imageUrl} alt={formatProductName(product.name)} fill sizes="180px" />
+              {HERO_IMAGES.map((image) => (
+                <span key={image.src} className="home-hero-product">
+                  <SafeProductImage src={image.src} alt={image.alt} fill sizes="180px" />
                 </span>
               ))}
             </div>
