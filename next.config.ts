@@ -30,14 +30,7 @@ const nextConfig: NextConfig = {
     deviceSizes: [360, 414, 640, 768, 1024, 1280, 1536],
     imageSizes: [32, 48, 64, 96, 128, 192, 256, 384],
     remotePatterns: [
-      { protocol: 'https', hostname: 'images.unsplash.com' },
       { protocol: 'https', hostname: '**.supabase.co' },
-      { protocol: 'https', hostname: 'placehold.co' },
-      { protocol: 'https', hostname: '**.placehold.co' },
-      { protocol: 'https', hostname: '**.bsale.cl' },
-      { protocol: 'https', hostname: '**.amazonaws.com' },
-      { protocol: 'https', hostname: '**.mlstatic.com' },
-      { protocol: 'https', hostname: '**' },
     ],
   },
 }

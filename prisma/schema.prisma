@@ -51,6 +51,20 @@ model ProductBranchStock {
   @@unique([productId, officeId])
 }
 
+model ImportedImage {
+  id        String   @id @default(cuid())
+  sourceUrl String   @unique
+  hash      String   @unique
+  mimeType  String
+  width     Int
+  height    Int
+  bytes     Int
+  thumbUrl  String
+  mediumUrl String
+  largeUrl  String
+  createdAt DateTime @default(now())
+}
+
 model ProductVariant {
   id String @id @default(cuid())
 

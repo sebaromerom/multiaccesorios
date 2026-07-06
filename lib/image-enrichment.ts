@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { Category } from '@prisma/client'
+import { importFirstValidImage } from '@/lib/imported-images'
 
 type ImageCandidate = {
   url: string
@@ -674,13 +675,20 @@ export async function enrichMissingProductImages(
         continue
       }
 
-      const images = (await getProductImages(product.name, product.category))
+      const candidateUrls = (await getProductImages(product.name, product.category))
         .filter((url) => !isGenericFallbackImageUrl(url))
 
-      if (images.length === 0) {
+      if (candidateUrls.length === 0) {
         result.skipped++
         continue
       }
+
+      const imported = await importFirstValidImage(candidateUrls, product.name)
+      if (!imported) {
+        result.skipped++
+        continue
+      }
+      const images = [imported.mediumUrl]
 
       await prisma.$transaction(async (tx) => {
         await tx.product.update({
@@ -751,16 +759,23 @@ export async function enrichMissingVariantImages(
       currentIndex++
 
       try {
-        const images = await getVariantImages(
+      const candidateUrls = await getVariantImages(
           variant.product.name,
           variant.size,
           variant.product.category
         )
 
-        if (images.length === 0) {
+        if (candidateUrls.length === 0) {
           result.skipped++
           continue
         }
+
+        const imported = await importFirstValidImage(candidateUrls, `${variant.product.name} / ${variant.size}`)
+        if (!imported) {
+          result.skipped++
+          continue
+        }
+        const images = [imported.mediumUrl]
 
         await prisma.$transaction(async (tx) => {
           await tx.productVariant.update({

@@ -37,7 +37,10 @@ export async function generateMetadata({
 
   const title = `${formatProductName(product.name)} | Multi Accesorios`
   const description = product.description || `Compra ${formatProductName(product.name)} en Multi Accesorios Linares.`
-  const image = product.imageUrl && !product.imageUrl.includes('placehold') ? product.imageUrl : '/multi.jpeg'
+  const importedImage = product.imageUrl
+    ? await prisma.importedImage.findFirst({ where: { mediumUrl: product.imageUrl }, select: { largeUrl: true } })
+    : null
+  const image = importedImage?.largeUrl ?? (product.imageUrl && !product.imageUrl.includes('placehold') ? product.imageUrl : '/multi.jpeg')
 
   return {
     title,
