@@ -25,7 +25,7 @@ const paymentAccepted = [
   ...(checkoutConfig.payOnPickupEnabled ? ['Pago al retirar'] : []),
 ]
 const siteDescription =
-  'Accesorios tech, carcasas, láminas, cargadores, cables, audio, vapers y servicio técnico con retiro en Linares y despacho a todo Chile.'
+  'Accesorios tech, audio, carga oficial, PC, vapers y novedades con retiro en Linares y despacho a todo Chile.'
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -39,9 +39,9 @@ export const metadata: Metadata = {
   keywords: [
     'Multi Accesorios',
     'accesorios celulares Linares',
-    'carcasas iPhone',
-    'láminas',
-    'cargadores',
+    'audio Linares',
+    'carga oficial',
+    'accesorios PC',
     'servicio técnico celulares Linares',
     'Chacabuco 479',
     'Chacabuco 456',
