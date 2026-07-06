@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { notFound } from 'next/navigation'
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Suspense } from 'react'
 import {
@@ -20,6 +21,41 @@ import { formatProductName } from '@/lib/utils'
 export const dynamic = 'force-dynamic'
 
 const WHATSAPP_URL = 'https://wa.me/56927109764'
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}): Promise<Metadata> {
+  const { id } = await params
+  const product = await prisma.product.findUnique({
+    where: { id },
+    select: { name: true, description: true, imageUrl: true },
+  })
+
+  if (!product) return {}
+
+  const title = `${formatProductName(product.name)} | Multi Accesorios`
+  const description = product.description || `Compra ${formatProductName(product.name)} en Multi Accesorios Linares.`
+  const image = product.imageUrl && !product.imageUrl.includes('placehold') ? product.imageUrl : '/multi.jpeg'
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      images: [{ url: image, alt: title }],
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [image],
+    },
+  }
+}
 
 export default async function ProductPage({
   params,
