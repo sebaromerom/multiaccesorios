@@ -24,12 +24,16 @@ function isUsableImageUrl(value?: string | null) {
   if (!value) return false
 
   const url = value.trim()
+
   if (!url) return false
   if (url.includes('placehold')) return false
   if (url === '/no-image-placeholder.jpg') return false
-  if (!url.startsWith('/') && !url.startsWith('https://')) return false
 
-  return true
+  return url.startsWith('/') || url.startsWith('https://')
+}
+
+function isExternalImage(src: string) {
+  return src.startsWith('https://')
 }
 
 function ProductFallback({
@@ -96,11 +100,24 @@ export default function SafeProductImage({
   unoptimized,
 }: SafeProductImageProps) {
   const [failedSrc, setFailedSrc] = useState<string | null>(null)
-  const safeSrc = useMemo(() => (isUsableImageUrl(src) ? src!.trim() : null), [src])
+
+  const safeSrc = useMemo(
+    () => (isUsableImageUrl(src) ? src!.trim() : null),
+    [src]
+  )
 
   if (!safeSrc || failedSrc === safeSrc) {
-    return <ProductFallback alt={alt} fill={fill} className={`${className} ${fallbackClassName}`} />
+    return (
+      <ProductFallback
+        alt={alt}
+        fill={fill}
+        className={`${className} ${fallbackClassName}`}
+      />
+    )
   }
+
+  const shouldSkipOptimization =
+    unoptimized ?? isExternalImage(safeSrc)
 
   return (
     <Image
@@ -116,8 +133,11 @@ export default function SafeProductImage({
       decoding="async"
       className={`${className} ${imageClassName}`.trim()}
       style={style}
-      unoptimized={unoptimized}
-      onError={() => setFailedSrc(safeSrc)}
+      unoptimized={shouldSkipOptimization}
+      onError={() => {
+        console.warn('No se pudo cargar la imagen:', safeSrc)
+        setFailedSrc(safeSrc)
+      }}
     />
   )
 }
