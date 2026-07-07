@@ -38,7 +38,6 @@ const CATEGORIES = [
   { value: 'Audifonos', label: 'Audio', icon: Headphones },
   { value: 'Cargador', label: 'Carga', icon: Zap },
   { value: 'Computacion', label: 'PC', icon: Laptop },
-  { value: 'Otros', label: 'Novedades', icon: HomeIcon },
 ] as const
 
 const HERO_IMAGES = [
@@ -60,7 +59,7 @@ export default async function Home() {
       take: 18,
     }),
     prisma.product.findMany({
-      where: { stock: { gt: 0 }, imageUrl: { not: null }, category: { in: ['Audifonos', 'Cargador', 'Cable', 'Vapers', 'Computacion', 'Otros'] } },
+      where: { stock: { gt: 0 }, imageUrl: { not: null }, category: { in: ['Audifonos', 'Cargador', 'Cable', 'Vapers', 'Computacion'] } },
       orderBy: { createdAt: 'desc' },
       include: { variants: { select: { id: true }, take: 1 } },
       take: 10,

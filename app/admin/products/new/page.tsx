@@ -184,7 +184,6 @@ export default function NewProductPage() {
                     <option value="Audifonos">Audífonos</option>
                     <option value="Vapers">Vapers</option>
                     <option value="Computacion">Computación</option>
-                    <option value="Otros">Otros</option>
                   </select>
                 </div>
 

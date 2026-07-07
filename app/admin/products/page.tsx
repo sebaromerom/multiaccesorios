@@ -23,9 +23,8 @@ const CATEGORIES = [
   { value: 'Audifonos', label: 'Audio' },
   { value: 'Vapers', label: 'Vapers' },
   { value: 'Computacion', label: 'PC' },
-  { value: 'Otros', label: 'Novedades' },
 ] as const
-const CATEGORY_VALUES = CATEGORIES.map((category) => category.value)
+const CATEGORY_VALUES = CATEGORIES.map((category) => category.value) as readonly Category[]
 const CATEGORY_LABELS = Object.fromEntries(CATEGORIES.map((category) => [category.value, category.label])) as Record<string, string>
 const PER_PAGE = 30
 

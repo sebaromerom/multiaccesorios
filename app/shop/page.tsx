@@ -16,7 +16,6 @@ import {
   Cable,
   Clock3,
   Headphones,
-  Home,
   Laptop,
   Menu,
   MessageCircle,
@@ -41,10 +40,9 @@ const CATEGORIES = [
   { value: 'Cargador', label: 'Carga oficial', icon: Zap },
   { value: 'Vapers', label: 'Vapers', icon: Sparkles },
   { value: 'Computacion', label: 'PC', icon: Laptop },
-  { value: 'Otros', label: 'Novedades', icon: Home },
 ] as const
 
-const CATEGORY_SEARCH_ALIASES: Record<Category, string[]> = {
+const CATEGORY_SEARCH_ALIASES: Partial<Record<Category, string[]>> = {
   Carcasa: ['carcasa', 'carcasas', 'case', 'cases', 'funda', 'fundas'],
   Lamina: ['lamina', 'laminas', 'protector', 'protector pantalla', 'vidrio'],
   Cargador: ['cargador', 'cargadores', 'carga', 'charger'],
@@ -52,7 +50,6 @@ const CATEGORY_SEARCH_ALIASES: Record<Category, string[]> = {
   Audifonos: ['audifono', 'audifonos', 'audio', 'bluetooth', 'tws', 'auricular', 'auriculares'],
   Vapers: ['vaper', 'vapers', 'vape', 'vapeo', 'desechable', 'desechables', 'puff', 'puffs'],
   Computacion: ['computacion', 'computo', 'tech', 'pc', 'notebook', 'laptop'],
-  Otros: ['otros', 'hogar', 'oficina', 'accesorio', 'accesorios'],
 }
 
 const PAGE_SIZE = 24
@@ -74,7 +71,6 @@ const CATEGORY_POPULARITY: Partial<Record<Category, number>> = {
   Audifonos: 12,
   Vapers: 10,
   Computacion: 8,
-  Otros: 4,
 }
 
 type CatalogProduct = {
