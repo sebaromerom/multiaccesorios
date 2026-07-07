@@ -37,6 +37,7 @@ const MAP_CHACABUCO_456 = 'https://maps.app.goo.gl/uRC2hoVc8ssf1TTU7'
 const CATEGORIES = [
   { value: 'Audifonos', label: 'Audio', icon: Headphones },
   { value: 'Cargador', label: 'Carga', icon: Zap },
+  { value: 'Vapers', label: 'Vapers', icon: Wrench },
   { value: 'Computacion', label: 'PC', icon: Laptop },
 ] as const
 

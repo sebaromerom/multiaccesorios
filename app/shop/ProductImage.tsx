@@ -7,14 +7,10 @@ interface ProductImageProps {
   initialImageUrl?: string | null
 }
 
-export default function ProductImage({ productId, productName, initialImageUrl }: ProductImageProps) {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://TU_PROYECTO_SUPABASE.supabase.co'
-  const deterministicUrl = `${supabaseUrl}/storage/v1/object/public/products/${productId}/1.jpg`
-  const primaryUrl = initialImageUrl || deterministicUrl
-
+export default function ProductImage({ productName, initialImageUrl }: ProductImageProps) {
   return (
     <SafeProductImage
-      src={primaryUrl}
+      src={initialImageUrl}
       alt={productName}
       fill
       sizes="(max-width: 760px) 42vw, (max-width: 1180px) 30vw, (max-width: 1400px) 23vw, 230px"

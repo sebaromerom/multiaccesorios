@@ -129,3 +129,91 @@ export async function importFirstValidImage(urls: string[], logPrefix: string) {
   }
   return null
 }
+
+function isOwnSupabaseImage(url: string | null | undefined) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  return Boolean(url && supabaseUrl && url.startsWith(`${supabaseUrl}/storage/v1/object/public/products/`))
+}
+
+function canImportStoredUrl(url: string | null | undefined) {
+  if (!url) return false
+  if (!url.startsWith('https://')) return false
+  if (isOwnSupabaseImage(url)) return false
+  if (looksLikePlaceholder(url)) return false
+  return true
+}
+
+export async function migrateStoredExternalImages(limit = 25) {
+  const cappedLimit = Math.min(Math.max(limit, 1), 120)
+  const result = {
+    scanned: 0,
+    updated: 0,
+    skipped: 0,
+    errors: [] as string[],
+  }
+
+  const products = await prisma.product.findMany({
+    where: { stock: { gt: 0 }, price: { gt: 0 }, category: { not: null } },
+    include: {
+      images: { orderBy: { order: 'asc' } },
+      variants: { include: { images: { orderBy: { order: 'asc' } } } },
+    },
+    orderBy: { createdAt: 'desc' },
+    take: cappedLimit,
+  })
+
+  for (const product of products) {
+    result.scanned++
+    try {
+      const productImport = canImportStoredUrl(product.imageUrl)
+        ? await importExternalImage(product.imageUrl!)
+        : null
+
+      const galleryUpdates: { id: string; url: string }[] = []
+      const variantGalleryUpdates: { id: string; url: string }[] = []
+      for (const image of product.images) {
+        if (!canImportStoredUrl(image.url)) continue
+        const imported = await importExternalImage(image.url)
+        if (imported) galleryUpdates.push({ id: image.id, url: imported.mediumUrl })
+      }
+
+      const variantUpdates: { id: string; imageUrl: string }[] = []
+      for (const variant of product.variants) {
+        const imported = canImportStoredUrl(variant.imageUrl)
+          ? await importExternalImage(variant.imageUrl!)
+          : null
+        if (imported) variantUpdates.push({ id: variant.id, imageUrl: imported.mediumUrl })
+
+        for (const image of variant.images) {
+          if (!canImportStoredUrl(image.url)) continue
+          const imageImport = await importExternalImage(image.url)
+          if (imageImport) variantGalleryUpdates.push({ id: image.id, url: imageImport.mediumUrl })
+        }
+      }
+
+      await prisma.$transaction(async (tx) => {
+        if (productImport) {
+          await tx.product.update({ where: { id: product.id }, data: { imageUrl: productImport.mediumUrl } })
+        }
+        for (const image of galleryUpdates) {
+          await tx.productImage.update({ where: { id: image.id }, data: { url: image.url } })
+        }
+        for (const image of variantGalleryUpdates) {
+          await tx.productVariantImage.update({ where: { id: image.id }, data: { url: image.url } })
+        }
+        for (const variant of variantUpdates) {
+          await tx.productVariant.update({ where: { id: variant.id }, data: { imageUrl: variant.imageUrl } })
+        }
+      })
+
+      const changed = Boolean(productImport) || galleryUpdates.length > 0 || variantGalleryUpdates.length > 0 || variantUpdates.length > 0
+      if (changed) result.updated++
+      else result.skipped++
+    } catch (error) {
+      result.skipped++
+      result.errors.push(`[${product.name}] ${error instanceof Error ? error.message : String(error)}`)
+    }
+  }
+
+  return result
+}

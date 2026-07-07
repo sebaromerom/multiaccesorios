@@ -92,15 +92,15 @@ export default async function ProductPage({
       ? [product.imageUrl]
       : []
 
-  const carouselImages = rawCarouselImages.filter(
+  const carouselImages = [...new Set(rawCarouselImages.filter(
     (url) => url && url.trim() !== '' && !url.includes('placehold')
-  )
+  ))]
 
   const variantsWithImages = product.variants.map((variant) => ({
     id: variant.id,
     size: variant.size,
     stock: variant.stock,
-    imageUrl: variant.imageUrl && !variant.imageUrl.includes('placehold') ? variant.imageUrl : null,
+    imageUrl: variant.imageUrl && !variant.imageUrl.includes('placehold') ? variant.imageUrl : carouselImages[0] ?? null,
     images: variant.images.map((image) => image.url).filter((url) => url && !url.includes('placehold')),
   }))
 
