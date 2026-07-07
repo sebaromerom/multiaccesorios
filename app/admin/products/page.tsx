@@ -15,7 +15,18 @@ import { Category } from '@prisma/client'
 import { requireAdminPage } from '@/lib/admin-auth'
 import type { BranchStockSummary } from '@/lib/bsale-branch-stock'
 
-const CATEGORIES = ['Carcasa','Lamina','Cargador','Cable','Audifonos','Vapers','Computacion','Otros'] as const
+const CATEGORIES = [
+  { value: 'Carcasa', label: 'Carcasas' },
+  { value: 'Lamina', label: 'Láminas' },
+  { value: 'Cargador', label: 'Carga oficial' },
+  { value: 'Cable', label: 'Conectividad' },
+  { value: 'Audifonos', label: 'Audio' },
+  { value: 'Vapers', label: 'Vapers' },
+  { value: 'Computacion', label: 'PC' },
+  { value: 'Otros', label: 'Novedades' },
+] as const
+const CATEGORY_VALUES = CATEGORIES.map((category) => category.value)
+const CATEGORY_LABELS = Object.fromEntries(CATEGORIES.map((category) => [category.value, category.label])) as Record<string, string>
 const PER_PAGE = 30
 
 export default async function ProductsPage({
@@ -34,10 +45,16 @@ export default async function ProductsPage({
     category: { not: null },
     price: { gt: 0 },
     ...(q ? { name: { contains: q, mode: 'insensitive' as const } } : {}),
-    ...(cat && CATEGORIES.includes(cat as Category) ? { category: cat as Category } : {}),
+    ...(cat && CATEGORY_VALUES.includes(cat as Category) ? { category: cat as Category } : {}),
   }
 
-  const [products, total] = await Promise.all([
+  const activeWhere = {
+    stock: { gt: 0 },
+    category: { not: null },
+    price: { gt: 0 },
+  }
+
+  const [products, total, categoryAggregations] = await Promise.all([
     prisma.product.findMany({
       where,
       orderBy: { name: 'asc' },
@@ -45,7 +62,17 @@ export default async function ProductsPage({
       take: PER_PAGE,
     }),
     prisma.product.count({ where }),
+    prisma.product.groupBy({
+      by: ['category'],
+      where: activeWhere,
+      _count: { id: true },
+    }),
   ])
+  const categoryCounts = categoryAggregations.reduce((acc, curr) => {
+    if (curr.category) acc[curr.category] = curr._count.id
+    return acc
+  }, {} as Record<string, number>)
+  const visibleCategories = CATEGORIES.filter((category) => (categoryCounts[category.value] ?? 0) > 0 || cat === category.value)
 
   const totalPages = Math.ceil(total / PER_PAGE)
   const branchRows = await prisma.productBranchStock.findMany({
@@ -113,9 +140,11 @@ export default async function ProductsPage({
           defaultValue={cat ?? ''}
           className="h-11 px-3 rounded-[4px] border border-zinc-300 focus:border-red-600 outline-none text-sm bg-white transition-colors w-full sm:w-auto"
         >
-          <option value="">Todas las categorias</option>
-          {CATEGORIES.map(c => (
-            <option key={c} value={c}>{c}</option>
+          <option value="">Todas las categorías</option>
+          {visibleCategories.map((category) => (
+            <option key={category.value} value={category.value}>
+              {category.label} ({categoryCounts[category.value] ?? 0})
+            </option>
           ))}
         </select>
 
@@ -182,7 +211,7 @@ export default async function ProductsPage({
 
                   <TableCell>
                     <Badge variant="secondary" className="max-w-full truncate rounded-none bg-zinc-100 text-zinc-700 uppercase text-[10px] tracking-wider font-bold border-none px-2 py-1">
-                      {product.category || 'Sin categoria'}
+                      {product.category ? CATEGORY_LABELS[product.category] ?? product.category : 'Sin categoría'}
                     </Badge>
                   </TableCell>
 
@@ -255,7 +284,7 @@ export default async function ProductsPage({
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-bold leading-snug line-clamp-2">{product.name}</p>
-                <p className="mt-1 text-xs text-zinc-500">{product.category || 'Sin categoria'}</p>
+                <p className="mt-1 text-xs text-zinc-500">{product.category ? CATEGORY_LABELS[product.category] ?? product.category : 'Sin categoría'}</p>
                 <div className="mt-2 flex items-center justify-between gap-2">
                   <span className="text-sm font-extrabold text-red-600">${Number(product.price).toLocaleString('es-CL')}</span>
                   <span className={`text-[10px] font-bold ${product.stock <= 5 ? 'text-red-600' : 'text-zinc-500'}`}>{product.stock} unid.</span>
