@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import { prisma } from '@/lib/prisma'
 
 const MAX_BYTES = 8 * 1024 * 1024
-const MIN_SIZE = 480
+const MIN_SIZE = 400
 const SUPPORTED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/avif'])
 const SIZES = [
   { key: 'thumb', size: 320 },
