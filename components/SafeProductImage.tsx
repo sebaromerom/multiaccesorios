@@ -54,30 +54,21 @@ function ProductFallback({
         display: 'grid',
         placeItems: 'center',
         minHeight: fill ? undefined : 96,
-        background: '#fafafa',
+        background: '#fff',
       }}
     >
       <div
         style={{
-          width: 'min(58%, 150px)',
+          width: 'min(42%, 96px)',
           aspectRatio: '1 / 1',
           display: 'grid',
           placeItems: 'center',
-          opacity: 0.78,
+          opacity: 0.12,
+          border: '1px solid #d4d4d8',
+          borderRadius: 12,
         }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/multi.jpeg"
-          alt=""
-          draggable={false}
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'contain',
-            filter: 'saturate(.95)',
-          }}
-        />
+        <span style={{ fontSize: 22, lineHeight: 1 }}>+</span>
       </div>
     </div>
   )
