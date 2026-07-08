@@ -68,18 +68,49 @@ async function buildWebp(buffer: Buffer, size: number) {
     .toBuffer()
 }
 
+async function storedImageIsUsable(url: string) {
+  try {
+    const res = await fetch(url, { headers: { Accept: 'image/webp,image/*;q=0.9' } })
+    if (!res.ok) return false
+    const buffer = Buffer.from(await res.arrayBuffer())
+    await sharp(buffer, { failOn: 'error' }).metadata()
+    return true
+  } catch {
+    return false
+  }
+}
+
+async function uploadWebpVersions(buffer: Buffer, hash: string) {
+  const supabase = storageClient()
+  const urls: Record<string, string> = {}
+
+  for (const item of SIZES) {
+    const output = await buildWebp(buffer, item.size)
+    const path = `imported/${hash}/${item.key}.webp`
+    const body = new Blob([new Uint8Array(output)], { type: 'image/webp' })
+    const { error } = await supabase.storage.from('products').upload(path, body, {
+      contentType: 'image/webp',
+      upsert: true,
+    })
+    if (error) throw new Error(`Supabase upload: ${error.message}`)
+    urls[item.key] = publicUrl(path)
+  }
+
+  return urls
+}
+
 export async function importExternalImage(sourceUrl: string): Promise<ImportedImageResult | null> {
   const url = sourceUrl.trim()
   if (!url || looksLikePlaceholder(url)) return null
 
   const existingBySource = await prisma.importedImage.findUnique({ where: { sourceUrl: url } })
-  if (existingBySource) return existingBySource
+  if (existingBySource && await storedImageIsUsable(existingBySource.mediumUrl)) return existingBySource
 
   const { buffer, contentType } = await fetchImage(url)
   const hash = crypto.createHash('sha256').update(buffer).digest('hex')
 
   const existingByHash = await prisma.importedImage.findUnique({ where: { hash } })
-  if (existingByHash) {
+  if (existingByHash && await storedImageIsUsable(existingByHash.mediumUrl)) {
     return existingByHash
   }
 
@@ -88,21 +119,9 @@ export async function importExternalImage(sourceUrl: string): Promise<ImportedIm
   const height = metadata.height ?? 0
   if (width < MIN_SIZE || height < MIN_SIZE) throw new Error(`Imagen pequena: ${width}x${height}`)
 
-  const supabase = storageClient()
-  const urls: Record<string, string> = {}
-  for (const item of SIZES) {
-    const output = await buildWebp(buffer, item.size)
-    const path = `imported/${hash}/${item.key}.webp`
-    const { error } = await supabase.storage.from('products').upload(path, output, {
-      contentType: 'image/webp',
-      upsert: true,
-    })
-    if (error) throw new Error(`Supabase upload: ${error.message}`)
-    urls[item.key] = publicUrl(path)
-  }
+  const urls = await uploadWebpVersions(buffer, hash)
 
-  const saved = await prisma.importedImage.create({
-    data: {
+  const data = {
       sourceUrl: url,
       hash,
       mimeType: contentType,
@@ -112,8 +131,12 @@ export async function importExternalImage(sourceUrl: string): Promise<ImportedIm
       thumbUrl: urls.thumb,
       mediumUrl: urls.medium,
       largeUrl: urls.large,
-    },
-  })
+    }
+  const saved = existingBySource
+    ? await prisma.importedImage.update({ where: { id: existingBySource.id }, data })
+    : existingByHash
+      ? await prisma.importedImage.update({ where: { id: existingByHash.id }, data })
+      : await prisma.importedImage.create({ data })
 
   return saved
 }
@@ -214,6 +237,57 @@ export async function migrateStoredExternalImages(limit = 25, productId?: string
     } catch (error) {
       result.skipped++
       result.errors.push(`[${product.name}] ${error instanceof Error ? error.message : String(error)}`)
+    }
+  }
+
+  return result
+}
+
+export async function repairImportedImageAssets(limit = 50, productId?: string) {
+  const cappedLimit = Math.min(Math.max(limit, 1), 200)
+  const result = { scanned: 0, repaired: 0, skipped: 0, errors: [] as string[] }
+
+  const products = await prisma.product.findMany({
+    where: productId ? { id: productId } : { stock: { gt: 0 }, price: { gt: 0 }, category: { not: null } },
+    include: {
+      images: true,
+      variants: { include: { images: true } },
+    },
+    take: cappedLimit,
+  })
+
+  const urls = new Set<string>()
+  for (const product of products) {
+    if (isOwnSupabaseImage(product.imageUrl)) urls.add(product.imageUrl!)
+    for (const image of product.images) if (isOwnSupabaseImage(image.url)) urls.add(image.url)
+    for (const variant of product.variants) {
+      if (isOwnSupabaseImage(variant.imageUrl)) urls.add(variant.imageUrl!)
+      for (const image of variant.images) if (isOwnSupabaseImage(image.url)) urls.add(image.url)
+    }
+  }
+
+  const imports = await prisma.importedImage.findMany({
+    where: {
+      OR: [
+        { thumbUrl: { in: [...urls] } },
+        { mediumUrl: { in: [...urls] } },
+        { largeUrl: { in: [...urls] } },
+      ],
+    },
+  })
+
+  for (const image of imports) {
+    result.scanned++
+    try {
+      if (await storedImageIsUsable(image.mediumUrl)) {
+        result.skipped++
+        continue
+      }
+      const { buffer } = await fetchImage(image.sourceUrl)
+      await uploadWebpVersions(buffer, image.hash)
+      result.repaired++
+    } catch (error) {
+      result.errors.push(`[${image.sourceUrl}] ${error instanceof Error ? error.message : String(error)}`)
     }
   }
 

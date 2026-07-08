@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { isAdminRequest } from '@/lib/admin-auth'
 import { enrichMissingProductImages, enrichMissingVariantImages } from '@/lib/image-enrichment'
-import { migrateStoredExternalImages } from '@/lib/imported-images'
+import { migrateStoredExternalImages, repairImportedImageAssets } from '@/lib/imported-images'
 
 export async function POST(req: Request) {
   try {
@@ -16,6 +16,10 @@ export async function POST(req: Request) {
     if (body.mode === 'migrate-existing') {
       const migrated = await migrateStoredExternalImages(Number(body.limit ?? 25), body.productId)
       return NextResponse.json({ ok: true, migrated })
+    }
+    if (body.mode === 'repair-imported') {
+      const repaired = await repairImportedImageAssets(Number(body.limit ?? 50), body.productId)
+      return NextResponse.json({ ok: true, repaired })
     }
 
     const result = await enrichMissingProductImages({
