@@ -122,8 +122,7 @@ export default function AddToCartWithSize({
               const variantInCart = cart.find((i) => i.id === `${product.id}-${variant.size}`)
               const variantQtyInCart = variantInCart ? variantInCart.quantity : 0
               const isVariantAgotada = variant.stock - variantQtyInCart <= 0
-              const hasOwnVariantImage = Boolean(variant.images?.[0] ?? variant.imageUrl)
-              const variantImage = variant.images?.[0] ?? variant.imageUrl ?? carouselImages[0]
+              const variantImage = variant.images?.[0] ?? variant.imageUrl ?? null
 
               return (
                 <button
@@ -145,7 +144,7 @@ export default function AddToCartWithSize({
                     <img
                       src={variantImage}
                       alt=""
-                      className={`size-8 rounded-[3px] bg-white object-contain ${hasOwnVariantImage ? '' : 'opacity-55 grayscale'}`}
+                      className="size-8 rounded-[3px] bg-white object-contain"
                     />
                   )}
                   {variant.size}

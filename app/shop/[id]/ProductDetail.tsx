@@ -452,8 +452,7 @@ export default function ProductDetail({
                   const itemInCart = cartItems.find((item) => item.id === `${product.id}-${variant.size}`)
                   const freeStock = Math.max(0, variant.stock - (itemInCart?.quantity ?? 0))
                   const isAvailable = freeStock > 0
-                  const hasOwnVariantImage = Boolean(variant.imageUrl ?? variant.images[0])
-                  const variantImage = variant.imageUrl ?? variant.images[0] ?? fallbackImages[0] ?? null
+                  const variantImage = variant.imageUrl ?? variant.images[0] ?? null
 
                   return (
                     <button
@@ -470,7 +469,7 @@ export default function ProductDetail({
                           fill
                           sizes="(max-width: 760px) 34px, 56px"
                           quality={62}
-                          imageClassName={hasOwnVariantImage ? '' : 'fallback-variant-image'}
+                          imageClassName=""
                         />
                       </span>
                       <span className="variant-text">
