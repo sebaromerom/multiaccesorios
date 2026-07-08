@@ -219,12 +219,12 @@ export async function migrateStoredExternalImages(limit = 25, productId?: string
 
       const variantUpdates: { id: string; imageUrl: string }[] = []
       for (const variant of product.variants) {
-        let imported = await safeImportStoredUrl(variant.imageUrl, productErrors, `${product.name} / ${variant.name}`)
+        let imported = await safeImportStoredUrl(variant.imageUrl, productErrors, `${product.name} / ${variant.size}`)
         if (imported) variantUpdates.push({ id: variant.id, imageUrl: imported.mediumUrl })
         if (!productImport && imported) productImport = imported
 
         for (const image of variant.images) {
-          const imageImport = await safeImportStoredUrl(image.url, productErrors, `${product.name} / ${variant.name} galeria`)
+          const imageImport = await safeImportStoredUrl(image.url, productErrors, `${product.name} / ${variant.size} galeria`)
           if (imageImport) variantGalleryUpdates.push({ id: image.id, url: imageImport.mediumUrl })
           if (!imported && imageImport) {
             imported = imageImport

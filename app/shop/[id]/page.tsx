@@ -21,6 +21,11 @@ import { formatProductName } from '@/lib/utils'
 export const dynamic = 'force-dynamic'
 
 const WHATSAPP_URL = 'https://wa.me/56927109764'
+const OWN_IMAGE_PREFIX = `${process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''}/storage/v1/object/public/products/`
+
+function isUsableImageUrl(url?: string | null) {
+  return Boolean(url && OWN_IMAGE_PREFIX && url.startsWith(OWN_IMAGE_PREFIX))
+}
 
 export async function generateMetadata({
   params,
@@ -86,22 +91,26 @@ export default async function ProductPage({
   if (!product || product.price <= 0 || product.stock <= 0 || !product.category) notFound()
   const displayName = formatProductName(product.name)
 
-  const rawCarouselImages = product.images.length > 0
-    ? product.images.map((image) => image.url)
-    : product.imageUrl
-      ? [product.imageUrl]
-      : []
+  const rawCarouselImages = [
+    product.imageUrl,
+    ...product.images.map((image) => image.url),
+    ...product.variants.flatMap((variant) => [
+      variant.imageUrl,
+      ...variant.images.map((image) => image.url),
+    ]),
+  ]
 
   const carouselImages = [...new Set(rawCarouselImages.filter(
-    (url) => url && url.trim() !== '' && !url.includes('placehold')
+    (url): url is string => isUsableImageUrl(url)
   ))]
+  if (carouselImages.length === 0) notFound()
 
   const variantsWithImages = product.variants.map((variant) => ({
     id: variant.id,
     size: variant.size,
     stock: variant.stock,
-    imageUrl: variant.imageUrl && !variant.imageUrl.includes('placehold') ? variant.imageUrl : carouselImages[0] ?? null,
-    images: variant.images.map((image) => image.url).filter((url) => url && !url.includes('placehold')),
+    imageUrl: isUsableImageUrl(variant.imageUrl) ? variant.imageUrl : carouselImages[0] ?? null,
+    images: variant.images.map((image) => image.url).filter((url) => isUsableImageUrl(url)),
   }))
 
   return (

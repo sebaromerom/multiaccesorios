@@ -54,6 +54,7 @@ const CATEGORY_SEARCH_ALIASES: Partial<Record<Category, string[]>> = {
 
 const PAGE_SIZE = 24
 const BRANDS = ['Hoco', 'Samsung', 'Borofone', 'Apple', 'Xiaomi', 'Baseus', 'MLab'] as const
+const OWN_IMAGE_PREFIX = `${process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''}/storage/v1/object/public/products/`
 const SORT_LABELS: Record<string, string> = {
   popular: 'Popularidad',
   newest: 'Más recientes',
@@ -93,15 +94,15 @@ function normalizeSearch(value: string) {
 }
 
 function hasUsableImage(product: CatalogProduct) {
-  if (product.imageUrl && !product.imageUrl.includes('placehold')) return true
+  if (isUsableImageUrl(product.imageUrl)) return true
   return product.variants.some((variant) => {
-    if (variant.imageUrl && !variant.imageUrl.includes('placehold')) return true
-    return variant.images.some((image) => image.url && !image.url.includes('placehold'))
+    if (isUsableImageUrl(variant.imageUrl)) return true
+    return variant.images.some((image) => isUsableImageUrl(image.url))
   })
 }
 
 function isUsableImageUrl(url?: string | null) {
-  return Boolean(url && !url.includes('placehold'))
+  return Boolean(url && OWN_IMAGE_PREFIX && url.startsWith(OWN_IMAGE_PREFIX))
 }
 
 function getVariantPreviewImage(product: CatalogProduct) {
@@ -158,6 +159,12 @@ export default async function ShopPage({
     price: { gt: 0 },
     stock: { gt: 0 },
     category: { not: null },
+    OR: [
+      { imageUrl: { startsWith: OWN_IMAGE_PREFIX } },
+      { images: { some: { url: { startsWith: OWN_IMAGE_PREFIX } } } },
+      { variants: { some: { imageUrl: { startsWith: OWN_IMAGE_PREFIX } } } },
+      { variants: { some: { images: { some: { url: { startsWith: OWN_IMAGE_PREFIX } } } } } },
+    ],
   }
 
   const where = {
@@ -1493,7 +1500,7 @@ export default async function ShopPage({
                   {products.map((product) => {
                     const displayName = formatProductName(product.name)
                     const variantPreviewImage = getVariantPreviewImage(product)
-                    const cardImage = product.imageUrl ?? variantPreviewImage ?? null
+                    const cardImage = isUsableImageUrl(product.imageUrl) ? product.imageUrl : variantPreviewImage
 
                     return (
                     <article key={product.id} className="product-card">
