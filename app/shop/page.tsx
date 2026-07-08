@@ -1493,9 +1493,7 @@ export default async function ShopPage({
                   {products.map((product) => {
                     const displayName = formatProductName(product.name)
                     const variantPreviewImage = getVariantPreviewImage(product)
-                    const cardImage = product.variants.length > 0
-                      ? variantPreviewImage ?? product.imageUrl ?? null
-                      : product.imageUrl ?? null
+                    const cardImage = product.imageUrl ?? variantPreviewImage ?? null
 
                     return (
                     <article key={product.id} className="product-card">
