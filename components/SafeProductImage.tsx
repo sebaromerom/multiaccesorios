@@ -36,6 +36,15 @@ function isExternalImage(src: string) {
   return src.startsWith('https://')
 }
 
+function isOwnStorageImage(src: string) {
+  return src.includes('.supabase.co/storage/v1/object/public/products/')
+}
+
+function withRetryToken(src: string) {
+  const separator = src.includes('?') ? '&' : '?'
+  return `${src}${separator}retry=1`
+}
+
 function ProductFallback({
   alt,
   fill,
@@ -90,14 +99,23 @@ export default function SafeProductImage({
   style,
   unoptimized,
 }: SafeProductImageProps) {
-  const [failedSrc, setFailedSrc] = useState<string | null>(null)
+  const [failedImage, setFailedImage] = useState<{ base: string; src: string } | null>(null)
+  const [retryImage, setRetryImage] = useState<{ base: string; src: string } | null>(null)
 
   const safeSrc = useMemo(
     () => (isUsableImageUrl(src) ? src!.trim() : null),
     [src]
   )
+  const retrySrc = retryImage?.base === safeSrc ? retryImage.src : null
+  const activeSrc = retrySrc ?? safeSrc
+  const hasFailed = Boolean(
+    safeSrc &&
+      activeSrc &&
+      failedImage?.base === safeSrc &&
+      failedImage.src === activeSrc
+  )
 
-  if (!safeSrc || failedSrc === safeSrc) {
+  if (!safeSrc || !activeSrc || hasFailed) {
     return (
       <ProductFallback
         alt={alt}
@@ -108,11 +126,11 @@ export default function SafeProductImage({
   }
 
   const shouldSkipOptimization =
-    unoptimized ?? isExternalImage(safeSrc)
+    unoptimized ?? isExternalImage(activeSrc)
 
   return (
     <Image
-      src={safeSrc}
+      src={activeSrc}
       alt={alt}
       fill={fill}
       width={fill ? undefined : width}
@@ -126,8 +144,13 @@ export default function SafeProductImage({
       style={style}
       unoptimized={shouldSkipOptimization}
       onError={() => {
-        console.warn('No se pudo cargar la imagen:', safeSrc)
-        setFailedSrc(safeSrc)
+        if (safeSrc && isOwnStorageImage(safeSrc) && !retrySrc) {
+          setRetryImage({ base: safeSrc, src: withRetryToken(safeSrc) })
+          return
+        }
+
+        console.warn('No se pudo cargar la imagen:', activeSrc)
+        setFailedImage({ base: safeSrc, src: activeSrc })
       }}
     />
   )
