@@ -143,7 +143,7 @@ function canImportStoredUrl(url: string | null | undefined) {
   return true
 }
 
-export async function migrateStoredExternalImages(limit = 25) {
+export async function migrateStoredExternalImages(limit = 25, productId?: string) {
   const cappedLimit = Math.min(Math.max(limit, 1), 120)
   const result = {
     scanned: 0,
@@ -153,7 +153,9 @@ export async function migrateStoredExternalImages(limit = 25) {
   }
 
   const products = await prisma.product.findMany({
-    where: { stock: { gt: 0 }, price: { gt: 0 }, category: { not: null } },
+    where: productId
+      ? { id: productId }
+      : { stock: { gt: 0 }, price: { gt: 0 }, category: { not: null } },
     include: {
       images: { orderBy: { order: 'asc' } },
       variants: { include: { images: { orderBy: { order: 'asc' } } } },

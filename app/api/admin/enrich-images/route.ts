@@ -14,7 +14,7 @@ export async function POST(req: Request) {
 
     const body = await req.json().catch(() => ({}))
     if (body.mode === 'migrate-existing') {
-      const migrated = await migrateStoredExternalImages(Number(body.limit ?? 25))
+      const migrated = await migrateStoredExternalImages(Number(body.limit ?? 25), body.productId)
       return NextResponse.json({ ok: true, migrated })
     }
 
