@@ -11,6 +11,12 @@ const SIZES = [
   { key: 'medium', size: 800 },
   { key: 'large', size: 1200 },
 ] as const
+const FETCH_HEADERS = {
+  Accept: 'image/avif,image/webp,image/png,image/jpeg;q=0.9,*/*;q=0.1',
+  Referer: 'https://www.google.com/',
+  'User-Agent':
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126 Safari/537.36',
+}
 
 export type ImportedImageResult = {
   thumbUrl: string
@@ -41,7 +47,7 @@ async function fetchImage(url: string, attempt = 1): Promise<{ buffer: Buffer; c
   try {
     const res = await fetch(url, {
       signal: controller.signal,
-      headers: { Accept: 'image/avif,image/webp,image/png,image/jpeg;q=0.9,*/*;q=0.1' },
+      headers: FETCH_HEADERS,
     })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const contentType = (res.headers.get('content-type') ?? '').split(';')[0].toLowerCase()
@@ -166,6 +172,16 @@ function canImportStoredUrl(url: string | null | undefined) {
   return true
 }
 
+async function safeImportStoredUrl(url: string | null | undefined, errors: string[], label: string) {
+  if (!canImportStoredUrl(url)) return null
+  try {
+    return await importExternalImage(url!)
+  } catch (error) {
+    errors.push(`[${label}] ${error instanceof Error ? error.message : String(error)}`)
+    return null
+  }
+}
+
 export async function migrateStoredExternalImages(limit = 25, productId?: string) {
   const cappedLimit = Math.min(Math.max(limit, 1), 120)
   const result = {
@@ -189,30 +205,32 @@ export async function migrateStoredExternalImages(limit = 25, productId?: string
 
   for (const product of products) {
     result.scanned++
+    const productErrors: string[] = []
     try {
-      const productImport = canImportStoredUrl(product.imageUrl)
-        ? await importExternalImage(product.imageUrl!)
-        : null
+      let productImport = await safeImportStoredUrl(product.imageUrl, productErrors, `${product.name} / principal`)
 
       const galleryUpdates: { id: string; url: string }[] = []
       const variantGalleryUpdates: { id: string; url: string }[] = []
       for (const image of product.images) {
-        if (!canImportStoredUrl(image.url)) continue
-        const imported = await importExternalImage(image.url)
+        const imported = await safeImportStoredUrl(image.url, productErrors, `${product.name} / galeria`)
         if (imported) galleryUpdates.push({ id: image.id, url: imported.mediumUrl })
+        if (!productImport && imported) productImport = imported
       }
 
       const variantUpdates: { id: string; imageUrl: string }[] = []
       for (const variant of product.variants) {
-        const imported = canImportStoredUrl(variant.imageUrl)
-          ? await importExternalImage(variant.imageUrl!)
-          : null
+        let imported = await safeImportStoredUrl(variant.imageUrl, productErrors, `${product.name} / ${variant.name}`)
         if (imported) variantUpdates.push({ id: variant.id, imageUrl: imported.mediumUrl })
+        if (!productImport && imported) productImport = imported
 
         for (const image of variant.images) {
-          if (!canImportStoredUrl(image.url)) continue
-          const imageImport = await importExternalImage(image.url)
+          const imageImport = await safeImportStoredUrl(image.url, productErrors, `${product.name} / ${variant.name} galeria`)
           if (imageImport) variantGalleryUpdates.push({ id: image.id, url: imageImport.mediumUrl })
+          if (!imported && imageImport) {
+            imported = imageImport
+            variantUpdates.push({ id: variant.id, imageUrl: imageImport.mediumUrl })
+          }
+          if (!productImport && imageImport) productImport = imageImport
         }
       }
 
@@ -233,7 +251,10 @@ export async function migrateStoredExternalImages(limit = 25, productId?: string
 
       const changed = Boolean(productImport) || galleryUpdates.length > 0 || variantGalleryUpdates.length > 0 || variantUpdates.length > 0
       if (changed) result.updated++
-      else result.skipped++
+      else {
+        result.skipped++
+        result.errors.push(...productErrors.slice(0, 3))
+      }
     } catch (error) {
       result.skipped++
       result.errors.push(`[${product.name}] ${error instanceof Error ? error.message : String(error)}`)
