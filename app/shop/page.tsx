@@ -55,6 +55,7 @@ const CATEGORY_SEARCH_ALIASES: Partial<Record<Category, string[]>> = {
 const PAGE_SIZE = 24
 const BRANDS = ['Hoco', 'Samsung', 'Borofone', 'Apple', 'Xiaomi', 'Baseus', 'MLab'] as const
 const OWN_IMAGE_PREFIX = `${process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''}/storage/v1/object/public/products/`
+const LOCAL_PRODUCT_IMAGE_PREFIX = '/products/'
 const SORT_LABELS: Record<string, string> = {
   popular: 'Popularidad',
   newest: 'Más recientes',
@@ -102,7 +103,7 @@ function hasUsableImage(product: CatalogProduct) {
 }
 
 function isUsableImageUrl(url?: string | null) {
-  return Boolean(url && OWN_IMAGE_PREFIX && url.startsWith(OWN_IMAGE_PREFIX))
+  return Boolean(url && ((OWN_IMAGE_PREFIX && url.startsWith(OWN_IMAGE_PREFIX)) || url.startsWith(LOCAL_PRODUCT_IMAGE_PREFIX)))
 }
 
 function getVariantPreviewImage(product: CatalogProduct) {
@@ -161,9 +162,13 @@ export default async function ShopPage({
     category: { not: null },
     OR: [
       { imageUrl: { startsWith: OWN_IMAGE_PREFIX } },
+      { imageUrl: { startsWith: LOCAL_PRODUCT_IMAGE_PREFIX } },
       { images: { some: { url: { startsWith: OWN_IMAGE_PREFIX } } } },
+      { images: { some: { url: { startsWith: LOCAL_PRODUCT_IMAGE_PREFIX } } } },
       { variants: { some: { imageUrl: { startsWith: OWN_IMAGE_PREFIX } } } },
+      { variants: { some: { imageUrl: { startsWith: LOCAL_PRODUCT_IMAGE_PREFIX } } } },
       { variants: { some: { images: { some: { url: { startsWith: OWN_IMAGE_PREFIX } } } } } },
+      { variants: { some: { images: { some: { url: { startsWith: LOCAL_PRODUCT_IMAGE_PREFIX } } } } } },
     ],
   }
 

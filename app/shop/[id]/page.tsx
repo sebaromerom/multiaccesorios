@@ -22,9 +22,10 @@ export const dynamic = 'force-dynamic'
 
 const WHATSAPP_URL = 'https://wa.me/56927109764'
 const OWN_IMAGE_PREFIX = `${process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''}/storage/v1/object/public/products/`
+const LOCAL_PRODUCT_IMAGE_PREFIX = '/products/'
 
 function isUsableImageUrl(url?: string | null) {
-  return Boolean(url && OWN_IMAGE_PREFIX && url.startsWith(OWN_IMAGE_PREFIX))
+  return Boolean(url && ((OWN_IMAGE_PREFIX && url.startsWith(OWN_IMAGE_PREFIX)) || url.startsWith(LOCAL_PRODUCT_IMAGE_PREFIX)))
 }
 
 export async function generateMetadata({
@@ -109,7 +110,7 @@ export default async function ProductPage({
     id: variant.id,
     size: variant.size,
     stock: variant.stock,
-    imageUrl: isUsableImageUrl(variant.imageUrl) ? variant.imageUrl : carouselImages[0] ?? null,
+    imageUrl: isUsableImageUrl(variant.imageUrl) ? variant.imageUrl : null,
     images: variant.images.map((image) => image.url).filter((url) => isUsableImageUrl(url)),
   }))
 
