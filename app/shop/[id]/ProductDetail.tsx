@@ -45,6 +45,52 @@ function cleanImages(images: string[]) {
   return [...new Set(images.filter((url) => url && !url.includes('placehold')))]
 }
 
+function normalizeMatchText(value: string) {
+  let decoded = value
+  try {
+    decoded = decodeURIComponent(value)
+  } catch {
+    decoded = value
+  }
+
+  return decoded
+    .toLocaleLowerCase('es-CL')
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+}
+
+function variantTokens(value: string) {
+  const normalized = normalizeMatchText(value)
+  const capacity = normalized.match(/\b\d+\s*(gb|g)\b/g) ?? []
+  const model = normalized.match(/\b(iphone\s*)?\d{1,2}\s*(pro|max|plus|mini)?\b/g) ?? []
+  return [...capacity, ...model].map((token) => token.replace(/\s+/g, ' ').trim())
+}
+
+function imagesForVariant(variant: Variant, allVariants: Variant[]) {
+  const currentTokens = variantTokens(variant.size)
+  const competingTokens = new Set(
+    allVariants
+      .filter((candidate) => candidate.id !== variant.id)
+      .flatMap((candidate) => variantTokens(candidate.size))
+  )
+  const images = cleanImages([
+    ...(variant.imageUrl ? [variant.imageUrl] : []),
+    ...variant.images,
+  ])
+
+  if (currentTokens.length === 0) return images
+
+  const exact = images.filter((url) => {
+    const normalizedUrl = normalizeMatchText(url)
+    const hasCurrentToken = currentTokens.some((token) => normalizedUrl.includes(token))
+    const hasCompetingToken = [...competingTokens].some((token) => normalizedUrl.includes(token))
+    return hasCurrentToken || !hasCompetingToken
+  })
+
+  return exact.length > 0 ? exact : images.slice(0, 1)
+}
+
 function titleCase(value: string) {
   return value
     .toLocaleLowerCase('es-CL')
@@ -182,10 +228,7 @@ export default function ProductDetail({
   const selectedVariant = variants.find((variant) => variant.size === selectedSize)
   const fallbackImages = cleanImages(carouselImages)
   const variantImages = selectedVariant
-    ? cleanImages([
-        ...(selectedVariant.imageUrl ? [selectedVariant.imageUrl] : []),
-        ...selectedVariant.images,
-      ])
+    ? imagesForVariant(selectedVariant, variants)
     : []
 
   const displayImages = variantImages.length > 0 ? variantImages : fallbackImages
@@ -452,7 +495,7 @@ export default function ProductDetail({
                   const itemInCart = cartItems.find((item) => item.id === `${product.id}-${variant.size}`)
                   const freeStock = Math.max(0, variant.stock - (itemInCart?.quantity ?? 0))
                   const isAvailable = freeStock > 0
-                  const variantImage = variant.imageUrl ?? variant.images[0] ?? null
+                  const variantImage = imagesForVariant(variant, variants)[0] ?? null
 
                   return (
                     <button
