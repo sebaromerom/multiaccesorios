@@ -951,6 +951,10 @@ export async function repairCategoryProductImages(category: Category, limit = 30
       const candidates = await getProductImages(product.name, product.category)
       const images = await importValidImages(candidates, product.name, 4)
       const finalImages = images.length > 0 ? images : await ownedProductImageUrls(current)
+      if (finalImages.length < 3) {
+        result.skipped++
+        continue
+      }
       if (finalImages.length === 0) {
         await prisma.$transaction(async (tx) => {
           await tx.product.update({ where: { id: product.id }, data: { imageUrl: null } })
@@ -1000,7 +1004,7 @@ export async function repairCategoryVariantImages(category: Category, limit = 30
         const images = await importValidImages(candidates, `${product.name} / ${variant.size}`, 4)
         if (images.length === 0) {
           const ownImages = await ownedProductImageUrls(current)
-          if (ownImages.length > 0) {
+          if (ownImages.length >= 3) {
             await replaceVariantImages(variant.id, ownImages)
             result.updated++
             continue
