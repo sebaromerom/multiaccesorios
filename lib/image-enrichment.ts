@@ -955,6 +955,7 @@ export async function repairCategoryProductImages(category: Category, limit = 30
       const finalImages = images.length > 0 ? images : await ownedProductImageUrls(current)
       if (finalImages.length < 3) {
         result.skipped++
+        result.errors.push(`[${product.name}] imagenes insuficientes: candidatas=${candidates.length}, importadas=${images.length}, finales=${finalImages.length}`)
         continue
       }
       if (finalImages.length === 0) {
@@ -1012,6 +1013,12 @@ export async function repairCategoryVariantImages(category: Category, limit = 30
             continue
           }
           result.skipped++
+          result.errors.push(`[${product.name} / ${variant.size}] imagenes insuficientes: candidatas=${candidates.length}, importadas=0, finales=${ownImages.length}`)
+          continue
+        }
+        if (images.length < 3) {
+          result.skipped++
+          result.errors.push(`[${product.name} / ${variant.size}] imagenes insuficientes: candidatas=${candidates.length}, importadas=${images.length}, finales=${images.length}`)
           continue
         }
 
