@@ -47,23 +47,28 @@ const HERO_IMAGES = [
   { src: '/home/hero-geekbar.png', alt: 'Geek Bar Meloso' },
 ]
 
+const isStoreImage = (url: string | null) => {
+  if (!url || url.includes('multi.jpeg')) return false
+  return url.startsWith('/products/') || url.includes('supabase.co/storage/v1/object/public/products/')
+}
+
 export default async function Home() {
   const [featuredProducts, fallbackProducts, activeDiscount, secondaryBanner] = await Promise.all([
     prisma.product.findMany({
       where: {
         stock: { gt: 0 },
         imageUrl: { not: null },
-        category: { in: ['Audifonos', 'Computacion', 'Cargador', 'Cable'] },
+        category: { in: ['Audifonos', 'Computacion', 'Cargador', 'Vapers'] },
       },
       orderBy: { stock: 'desc' },
       include: { variants: { select: { id: true }, take: 1 } },
-      take: 18,
+      take: 36,
     }),
     prisma.product.findMany({
-      where: { stock: { gt: 0 }, imageUrl: { not: null }, category: { in: ['Audifonos', 'Cargador', 'Cable', 'Vapers', 'Computacion'] } },
+      where: { stock: { gt: 0 }, imageUrl: { not: null }, category: { in: ['Audifonos', 'Cargador', 'Vapers', 'Computacion'] } },
       orderBy: { createdAt: 'desc' },
       include: { variants: { select: { id: true }, take: 1 } },
-      take: 10,
+      take: 24,
     }),
     prisma.discountRule.findFirst({
       where: { active: true, productId: { not: null }, product: { stock: { gt: 0 }, imageUrl: { not: null } } },
@@ -74,9 +79,12 @@ export default async function Home() {
   ])
 
   const trending = [...featuredProducts, ...fallbackProducts]
+    .filter((product) => isStoreImage(product.imageUrl))
     .filter((product, index, products) => products.findIndex((item) => item.id === product.id) === index)
     .slice(0, 5)
-  const offerProduct = activeDiscount?.product ?? trending[0] ?? null
+  const offerProduct = activeDiscount?.product && isStoreImage(activeDiscount.product.imageUrl)
+    ? activeDiscount.product
+    : trending[0] ?? null
   const offerPrice = offerProduct && activeDiscount?.type === 'percentage'
     ? Math.max(0, offerProduct.price * (1 - activeDiscount.value / 100))
     : offerProduct && activeDiscount?.type === 'fixed'
