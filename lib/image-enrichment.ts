@@ -947,7 +947,10 @@ export async function enrichMissingVariantImages(
 export async function repairCategoryProductImages(category: Category, limit = 30): Promise<ImageEnrichmentResult> {
   const products = await prisma.product.findMany({
     where: { category, stock: { gt: 0 }, price: { gt: 0 } },
-    include: { images: { orderBy: { order: 'asc' } } },
+    include: {
+      images: { orderBy: { order: 'asc' } },
+      variants: { include: { images: { orderBy: { order: 'asc' } } } },
+    },
     orderBy: { name: 'asc' },
     take: Math.min(Math.max(limit, 1), 120),
   })
@@ -955,7 +958,11 @@ export async function repairCategoryProductImages(category: Category, limit = 30
 
   for (const product of products) {
     result.scanned++
-    const current = [product.imageUrl, ...product.images.map((image) => image.url)].filter(isUsableImageUrl)
+    const variantFallback = product.variants.flatMap((variant) => [
+      variant.imageUrl,
+      ...variant.images.map((image) => image.url),
+    ])
+    const current = [product.imageUrl, ...product.images.map((image) => image.url), ...variantFallback].filter(isUsableImageUrl)
     if (!(await imageListNeedsRepair(current))) {
       result.skipped++
       continue
@@ -1003,7 +1010,10 @@ export async function repairCategoryProductImages(category: Category, limit = 30
 export async function repairCategoryVariantImages(category: Category, limit = 30): Promise<ImageEnrichmentResult> {
   const products = await prisma.product.findMany({
     where: { category, stock: { gt: 0 }, price: { gt: 0 } },
-    include: { variants: { include: { images: { orderBy: { order: 'asc' } } } } },
+    include: {
+      images: { orderBy: { order: 'asc' } },
+      variants: { include: { images: { orderBy: { order: 'asc' } } } },
+    },
     orderBy: { name: 'asc' },
     take: Math.min(Math.max(limit, 1), 120),
   })
@@ -1012,7 +1022,12 @@ export async function repairCategoryVariantImages(category: Category, limit = 30
   for (const product of products) {
     for (const variant of product.variants) {
       result.scanned++
-      const current = [variant.imageUrl, ...variant.images.map((image) => image.url)].filter(isUsableImageUrl)
+      const current = [
+        variant.imageUrl,
+        ...variant.images.map((image) => image.url),
+        product.imageUrl,
+        ...product.images.map((image) => image.url),
+      ].filter(isUsableImageUrl)
       if (!(await imageListNeedsRepair(current))) {
         result.skipped++
         continue
