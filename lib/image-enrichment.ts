@@ -910,7 +910,11 @@ export async function repairCategoryProductImages(category: Category, limit = 30
       const images = await importValidImages(candidates, product.name, 4)
       const finalImages = images.length > 0 ? images : await ownedProductImageUrls(current)
       if (finalImages.length === 0) {
-        result.skipped++
+        await prisma.$transaction(async (tx) => {
+          await tx.product.update({ where: { id: product.id }, data: { imageUrl: null } })
+          await tx.productImage.deleteMany({ where: { productId: product.id } })
+        })
+        result.updated++
         continue
       }
 
