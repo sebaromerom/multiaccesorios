@@ -102,6 +102,8 @@ export function formatProductName(value: string) {
   }
 
   return formatted
+    .replace(/\b([a-z]{1,5}\d{1,4}[a-z]?)\b/gi, (token) => token.toLocaleUpperCase('es-CL'))
+    .replace(/\b(\d{1,2}[a-z]{1,3})\b/gi, (token) => token.toLocaleUpperCase('es-CL'))
     .replace(/\bAud\u00edfono Bluetooth\b/g, 'Aud\u00edfonos Bluetooth')
     .replace(/\bAud\u00edfonos Bluetooth Bluetooth\b/g, 'Aud\u00edfonos Bluetooth')
     .replace(/\bVaper\s+(Fume|Smok|Geek\s*Bar|Meloso)/gi, 'Vaper Desechable $1')
