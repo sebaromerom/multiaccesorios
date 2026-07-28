@@ -231,7 +231,7 @@ export default function ProductDetail({
     ? imagesForVariant(selectedVariant, variants)
     : []
 
-  const displayImages = variantImages.length > 0 ? variantImages : fallbackImages
+  const displayImages = cleanImages([...variantImages, ...fallbackImages])
   const safeDisplayImages = displayImages.length > 0 ? displayImages : [null]
   const primaryImage = safeDisplayImages[activeImage] ?? safeDisplayImages[0]
 

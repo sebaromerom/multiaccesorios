@@ -106,6 +106,13 @@ const PRECISE_VARIANT_CATEGORIES = new Set<Category>([
   Category.Cargador,
 ])
 
+const NO_GENERIC_FALLBACK_CATEGORIES = new Set<Category>([
+  Category.Audifonos,
+  Category.Cargador,
+  Category.Computacion,
+  Category.Vapers,
+])
+
 const COLOR_SYNONYMS: Record<string, string[]> = {
   blanco: ['white', 'blanca'],
   blanca: ['white', 'blanco'],
@@ -581,15 +588,17 @@ export async function getProductImages(
 
     if (collected.length > 0) return [...new Set(collected)].slice(0, 4)
 
-    const unsplashCandidates = await fetchUnsplashCandidates(productName, category)
-    if (unsplashCandidates.length > 0) {
-      return [...new Set(unsplashCandidates.map((candidate) => candidate.url))]
+    if (!category || !NO_GENERIC_FALLBACK_CATEGORIES.has(category)) {
+      const unsplashCandidates = await fetchUnsplashCandidates(productName, category)
+      if (unsplashCandidates.length > 0) {
+        return [...new Set(unsplashCandidates.map((candidate) => candidate.url))]
+      }
     }
 
-    return category ? [CATEGORY_FALLBACK_IMAGES[category]] : []
+    return category && !NO_GENERIC_FALLBACK_CATEGORIES.has(category) ? [CATEGORY_FALLBACK_IMAGES[category]] : []
   } catch (err) {
     console.warn('Error buscando imagenes:', err)
-    return category ? [CATEGORY_FALLBACK_IMAGES[category]] : []
+    return category && !NO_GENERIC_FALLBACK_CATEGORIES.has(category) ? [CATEGORY_FALLBACK_IMAGES[category]] : []
   }
 }
 
@@ -663,6 +672,7 @@ async function imageListNeedsRepair(urls: string[]) {
   const ownUrls = ownedImageUrls(urls)
   if (urls.some((url) => !isOwned(url))) return true
   if (ownUrls.length < 2) return true
+  if ((await genericSourceImageUrls(ownUrls)).length > 0) return true
   const checks = await Promise.all(ownUrls.slice(0, 4).map((url) => storedImageIsUsable(url)))
   return checks.some((ok) => !ok)
 }
@@ -671,6 +681,24 @@ function ownedImageUrls(urls: string[]) {
   const isOwned = (url: string) =>
     (OWN_IMAGE_PREFIX && url.startsWith(OWN_IMAGE_PREFIX)) || url.startsWith(LOCAL_PRODUCT_IMAGE_PREFIX)
   return [...new Set(urls.filter(isOwned))]
+}
+
+async function genericSourceImageUrls(urls: string[]) {
+  if (urls.length === 0) return []
+  const imports = await prisma.importedImage.findMany({
+    where: {
+      mediumUrl: { in: urls },
+      sourceUrl: { contains: 'images.unsplash.com' },
+    },
+    select: { mediumUrl: true },
+  })
+  return imports.map((image) => image.mediumUrl)
+}
+
+async function ownedProductImageUrls(urls: string[]) {
+  const ownUrls = ownedImageUrls(urls)
+  const genericUrls = new Set(await genericSourceImageUrls(ownUrls))
+  return ownUrls.filter((url) => !genericUrls.has(url))
 }
 
 async function replaceVariantImages(variantId: string, images: string[]) {
@@ -880,7 +908,7 @@ export async function repairCategoryProductImages(category: Category, limit = 30
     try {
       const candidates = await getProductImages(product.name, product.category)
       const images = await importValidImages(candidates, product.name, 4)
-      const finalImages = images.length > 0 ? images : ownedImageUrls(current)
+      const finalImages = images.length > 0 ? images : await ownedProductImageUrls(current)
       if (finalImages.length === 0) {
         result.skipped++
         continue
@@ -925,7 +953,7 @@ export async function repairCategoryVariantImages(category: Category, limit = 30
         const candidates = await getVariantImages(product.name, variant.size, product.category)
         const images = await importValidImages(candidates, `${product.name} / ${variant.size}`, 4)
         if (images.length === 0) {
-          const ownImages = ownedImageUrls(current)
+          const ownImages = await ownedProductImageUrls(current)
           if (ownImages.length > 0) {
             await replaceVariantImages(variant.id, ownImages)
             result.updated++
