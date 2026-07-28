@@ -558,6 +558,8 @@ export async function getProductImages(
   category?: Category | null
 ): Promise<string[]> {
   try {
+    const collected: string[] = []
+
     for (const query of buildSearchQueries(productName, category)) {
       const mercadoLibreCandidates = await fetchMercadoLibreCandidates(productName, category, query)
       const bestCatalogMatches = mercadoLibreCandidates
@@ -566,14 +568,18 @@ export async function getProductImages(
         .slice(0, 4)
 
       if (bestCatalogMatches.length > 0) {
-        return [...new Set(bestCatalogMatches.map((candidate) => candidate.url))]
+        collected.push(...bestCatalogMatches.map((candidate) => candidate.url))
+        if ([...new Set(collected)].length >= 4) return [...new Set(collected)].slice(0, 4)
       }
 
       const duckDuckGoCandidates = await fetchDuckDuckGoCandidates(productName, query)
       if (duckDuckGoCandidates.length > 0) {
-        return [...new Set(duckDuckGoCandidates.map((candidate) => candidate.url))]
+        collected.push(...duckDuckGoCandidates.map((candidate) => candidate.url))
+        if ([...new Set(collected)].length >= 4) return [...new Set(collected)].slice(0, 4)
       }
     }
+
+    if (collected.length > 0) return [...new Set(collected)].slice(0, 4)
 
     const unsplashCandidates = await fetchUnsplashCandidates(productName, category)
     if (unsplashCandidates.length > 0) {
