@@ -276,6 +276,23 @@ function hasModelTokenMatch(productName: string, candidateTitle: string): boolea
   return productModelTokens.some((token) => candidateTokens.has(token))
 }
 
+function getBrandModelTokens(productName: string) {
+  const tokens = getTokens(productName)
+  const modelTokens = tokens.filter((token) => /\d/.test(token))
+  const brandTokens = tokens.filter((token) =>
+    /^(hoco|borofone|remax|jbl|aiwa|onikuma|monster|motomo|evotec|pioneer|ah|p47|p9)$/i.test(token)
+  )
+  return { brandTokens, modelTokens }
+}
+
+function hasStrongProductMatch(productName: string, candidateTitle: string) {
+  const candidateTokens = new Set(getTokens(candidateTitle))
+  const { brandTokens, modelTokens } = getBrandModelTokens(productName)
+  const brandOk = brandTokens.length === 0 || brandTokens.some((token) => candidateTokens.has(token))
+  const modelOk = modelTokens.length === 0 || modelTokens.every((token) => candidateTokens.has(token))
+  return brandOk && modelOk
+}
+
 function isUsableImageUrl(url: string | null | undefined): url is string {
   if (!url) return false
   if (!url.startsWith('http')) return false
@@ -320,6 +337,14 @@ function buildSearchQueries(productName: string, category?: Category | null): st
 
   if (category === Category.Cargador) {
     accessoryQueries.push(cleanName.replace(/\bcargador\b/g, 'charger').trim())
+  }
+
+  if (category === Category.Audifonos) {
+    const { brandTokens, modelTokens } = getBrandModelTokens(productName)
+    const brandModel = [...brandTokens, ...modelTokens].join(' ').trim()
+    if (brandModel) {
+      accessoryQueries.push(brandModel, `${brandModel} audifonos`, `${brandModel} headphones`)
+    }
   }
 
   return [
@@ -418,7 +443,7 @@ async function fetchMercadoLibreCandidates(
   rawQuery?: string
 ): Promise<ImageCandidate[]> {
   const query = encodeURIComponent(rawQuery ?? buildSearchQuery(productName, category))
-  const searchUrl = `https://api.mercadolibre.com/sites/MLC/search?q=${query}&limit=6`
+  const searchUrl = `https://api.mercadolibre.com/sites/MLC/search?q=${query}&limit=12`
 
   const searchRes = await fetch(searchUrl, {
     headers: { Accept: 'application/json' },
@@ -570,9 +595,13 @@ export async function getProductImages(
     for (const query of buildSearchQueries(productName, category)) {
       const mercadoLibreCandidates = await fetchMercadoLibreCandidates(productName, category, query)
       const bestCatalogMatches = mercadoLibreCandidates
-        .filter((candidate) => candidate.score >= 0.32)
+        .filter((candidate) =>
+          candidate.score >= (category === Category.Audifonos ? 0.28 : 0.32) &&
+          matchesCategoryIntent(category, candidate.title) &&
+          (category !== Category.Audifonos || hasStrongProductMatch(productName, candidate.title))
+        )
         .sort((a, b) => b.score - a.score)
-        .slice(0, 4)
+        .slice(0, 6)
 
       if (bestCatalogMatches.length > 0) {
         collected.push(...bestCatalogMatches.map((candidate) => candidate.url))
@@ -580,8 +609,14 @@ export async function getProductImages(
       }
 
       const duckDuckGoCandidates = await fetchDuckDuckGoCandidates(productName, query)
-      if (duckDuckGoCandidates.length > 0) {
-        collected.push(...duckDuckGoCandidates.map((candidate) => candidate.url))
+      const strongWebMatches = duckDuckGoCandidates.filter((candidate) =>
+        category !== Category.Audifonos ||
+        (candidate.score >= 0.55 &&
+          matchesCategoryIntent(category, candidate.title) &&
+          hasStrongProductMatch(productName, `${candidate.title} ${candidate.url}`))
+      )
+      if (strongWebMatches.length > 0) {
+        collected.push(...strongWebMatches.map((candidate) => candidate.url))
         if ([...new Set(collected)].length >= 4) return [...new Set(collected)].slice(0, 4)
       }
     }
@@ -616,20 +651,23 @@ export async function getVariantImages(
   }
 
   try {
+    const collected: string[] = []
     for (const query of buildVariantSearchQueries(productName, variantName, category)) {
       const mercadoLibreCandidates = await fetchMercadoLibreCandidates(combinedName, category, query)
       const bestCatalogMatches = mercadoLibreCandidates
         .filter((candidate) =>
-          candidate.score >= 0.34 &&
+          candidate.score >= (category === Category.Audifonos ? 0.28 : 0.34) &&
           hasVariantToken(candidate.title) &&
           matchesCategoryIntent(category, candidate.title) &&
-          matchesVariantModelIntent(productName, variantName, candidate.title)
+          matchesVariantModelIntent(productName, variantName, candidate.title) &&
+          (category !== Category.Audifonos || hasStrongProductMatch(productName, candidate.title))
         )
         .sort((a, b) => b.score - a.score)
-        .slice(0, 4)
+        .slice(0, 6)
 
       if (bestCatalogMatches.length > 0) {
-        return [...new Set(bestCatalogMatches.map((candidate) => candidate.url))]
+        collected.push(...bestCatalogMatches.map((candidate) => candidate.url))
+        if ([...new Set(collected)].length >= 4) return [...new Set(collected)].slice(0, 4)
       }
 
       const duckDuckGoCandidates = await fetchDuckDuckGoCandidates(combinedName, query)
@@ -637,14 +675,18 @@ export async function getVariantImages(
         .filter((candidate) =>
           hasVariantToken(candidate.title) &&
           matchesCategoryIntent(category, candidate.title) &&
-          matchesVariantModelIntent(productName, variantName, `${candidate.title} ${candidate.url}`)
+          matchesVariantModelIntent(productName, variantName, `${candidate.title} ${candidate.url}`) &&
+          (category !== Category.Audifonos ||
+            (candidate.score >= 0.55 && hasStrongProductMatch(productName, `${candidate.title} ${candidate.url}`)))
         )
-        .slice(0, 4)
+        .slice(0, 6)
 
       if (bestWebMatches.length > 0) {
-        return [...new Set(bestWebMatches.map((candidate) => candidate.url))]
+        collected.push(...bestWebMatches.map((candidate) => candidate.url))
+        if ([...new Set(collected)].length >= 4) return [...new Set(collected)].slice(0, 4)
       }
     }
+    if (collected.length > 0) return [...new Set(collected)].slice(0, 4)
   } catch (err) {
     console.warn('Error buscando imagenes de variante:', err)
   }
