@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -55,24 +56,38 @@ export default function LoginForm() {
   }
 
   return (
-    <div className="es-ruta-admin flex min-h-screen w-full items-center justify-center bg-zinc-950 p-4">
-      <div className="w-full max-w-sm">
-        <h1 className="mb-8 text-center text-5xl font-black uppercase italic tracking-tighter text-white">
-          Admin
-        </h1>
+    <div className="es-ruta-admin flex min-h-screen w-full items-center justify-center bg-white px-4 py-10 text-neutral-950">
+      <div className="w-full max-w-md">
+        <div className="mb-8 flex items-center justify-center gap-4">
+          <Image
+            src="/multi.jpeg"
+            alt="Multi Accesorios"
+            width={76}
+            height={76}
+            priority
+            className="h-16 w-16 rounded-[14px] object-cover"
+          />
+          <div className="leading-none">
+            <p className="text-3xl font-black uppercase tracking-tight">Multi</p>
+            <p className="text-3xl font-black uppercase tracking-tight">Accesorios</p>
+          </div>
+        </div>
 
-        <Card className="border-zinc-800 bg-zinc-900 shadow-2xl">
-          <CardHeader>
-            <CardTitle className="text-xl font-bold uppercase tracking-wide text-white">
-              Iniciar sesion
+        <Card className="rounded-md border-neutral-200 bg-white shadow-[0_18px_60px_rgba(0,0,0,0.10)]">
+          <CardHeader className="space-y-2 border-b border-neutral-100 pb-5">
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-red-600">
+              Panel administrativo
+            </p>
+            <CardTitle className="text-2xl font-black uppercase tracking-tight text-neutral-950">
+              Iniciar sesión
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div className="flex flex-col gap-2">
                 <Label
                   htmlFor="username"
-                  className="text-xs font-medium uppercase tracking-wider text-zinc-300"
+                  className="text-xs font-black uppercase tracking-[0.14em] text-neutral-600"
                 >
                   Usuario
                 </Label>
@@ -80,23 +95,23 @@ export default function LoginForm() {
                   id="username"
                   name="username"
                   required
-                  className="h-10 border-zinc-700 bg-zinc-800 text-white focus:border-white focus:ring-0"
+                  className="h-12 rounded-md border-neutral-200 bg-white text-base text-neutral-950 focus:border-red-600 focus:ring-0"
                 />
               </div>
 
               <div className="flex flex-col gap-2">
                 <Label
                   htmlFor="password"
-                  className="text-xs font-medium uppercase tracking-wider text-zinc-300"
+                  className="text-xs font-black uppercase tracking-[0.14em] text-neutral-600"
                 >
-                  Contrasena
+                  Contraseña
                 </Label>
                 <Input
                   id="password"
                   name="password"
                   type="password"
                   required
-                  className="h-10 border-zinc-700 bg-zinc-800 text-white focus:border-white focus:ring-0"
+                  className="h-12 rounded-md border-neutral-200 bg-white text-base text-neutral-950 focus:border-red-600 focus:ring-0"
                 />
               </div>
 
@@ -105,7 +120,7 @@ export default function LoginForm() {
               <Button
                 type="submit"
                 disabled={loading}
-                className="h-11 w-full rounded-sm bg-[#ff0066] text-xs font-black uppercase tracking-[0.2em] text-white transition-all duration-200 hover:bg-[#e6005c]"
+                className="mt-2 h-12 w-full rounded-md bg-red-600 text-sm font-black uppercase tracking-[0.12em] text-white transition-all duration-200 hover:bg-red-700"
               >
                 {loading ? 'Entrando...' : 'Entrar'}
               </Button>
