@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { Category } from '@prisma/client'
-import { importFirstValidImage } from '@/lib/imported-images'
+import { importExternalImage, storedImageIsUsable } from '@/lib/imported-images'
 
 type ImageCandidate = {
   url: string
@@ -62,6 +62,9 @@ const CATEGORY_FALLBACK_IMAGES: Record<Category, string> = {
   Computacion: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600&q=80',
   Otros: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=600&q=80',
 }
+
+const OWN_IMAGE_PREFIX = `${process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''}/storage/v1/object/public/products/`
+const LOCAL_PRODUCT_IMAGE_PREFIX = '/products/'
 
 const GENERIC_FALLBACK_IMAGE_IDS = [
   'photo-1601784551446-20c9e07cdbdb',
@@ -634,6 +637,46 @@ export async function getVariantImages(
   return []
 }
 
+async function importValidImages(urls: string[], logPrefix: string, limit = 4) {
+  const imported: string[] = []
+  for (const url of [...new Set(urls)]) {
+    if (imported.length >= limit) break
+    try {
+      const image = await importExternalImage(url)
+      if (image) imported.push(image.mediumUrl)
+    } catch (error) {
+      console.warn(`[image-import] ${logPrefix}: ${error instanceof Error ? error.message : String(error)}`)
+    }
+  }
+  return [...new Set(imported)]
+}
+
+async function imageListNeedsRepair(urls: string[]) {
+  const isOwned = (url: string) =>
+    (OWN_IMAGE_PREFIX && url.startsWith(OWN_IMAGE_PREFIX)) || url.startsWith(LOCAL_PRODUCT_IMAGE_PREFIX)
+  const ownUrls = ownedImageUrls(urls)
+  if (urls.some((url) => !isOwned(url))) return true
+  if (ownUrls.length < 2) return true
+  const checks = await Promise.all(ownUrls.slice(0, 4).map((url) => storedImageIsUsable(url)))
+  return checks.some((ok) => !ok)
+}
+
+function ownedImageUrls(urls: string[]) {
+  const isOwned = (url: string) =>
+    (OWN_IMAGE_PREFIX && url.startsWith(OWN_IMAGE_PREFIX)) || url.startsWith(LOCAL_PRODUCT_IMAGE_PREFIX)
+  return [...new Set(urls.filter(isOwned))]
+}
+
+async function replaceVariantImages(variantId: string, images: string[]) {
+  await prisma.$transaction(async (tx) => {
+    await tx.productVariant.update({ where: { id: variantId }, data: { imageUrl: images[0] } })
+    await tx.productVariantImage.deleteMany({ where: { variantId } })
+    await tx.productVariantImage.createMany({
+      data: images.map((url, order) => ({ variantId, url, order })),
+    })
+  })
+}
+
 export async function enrichMissingProductImages(
   options: EnrichOptions = {}
 ): Promise<ImageEnrichmentResult> {
@@ -683,12 +726,11 @@ export async function enrichMissingProductImages(
         continue
       }
 
-      const imported = await importFirstValidImage(candidateUrls, product.name)
-      if (!imported) {
+      const images = await importValidImages(candidateUrls, product.name, 4)
+      if (images.length === 0) {
         result.skipped++
         continue
       }
-      const images = [imported.mediumUrl]
 
       await prisma.$transaction(async (tx) => {
         await tx.product.update({
@@ -770,12 +812,11 @@ export async function enrichMissingVariantImages(
           continue
         }
 
-        const imported = await importFirstValidImage(candidateUrls, `${variant.product.name} / ${variant.size}`)
-        if (!imported) {
+      const images = await importValidImages(candidateUrls, `${variant.product.name} / ${variant.size}`)
+        if (images.length === 0) {
           result.skipped++
           continue
         }
-        const images = [imported.mediumUrl]
 
         await prisma.$transaction(async (tx) => {
           await tx.productVariant.update({
@@ -809,6 +850,93 @@ export async function enrichMissingVariantImages(
   await Promise.all(
     Array.from({ length: Math.min(concurrency, variants.length) }, () => runWorker())
   )
+
+  return result
+}
+
+export async function repairCategoryProductImages(category: Category, limit = 30): Promise<ImageEnrichmentResult> {
+  const products = await prisma.product.findMany({
+    where: { category, stock: { gt: 0 }, price: { gt: 0 } },
+    include: { images: { orderBy: { order: 'asc' } } },
+    orderBy: { name: 'asc' },
+    take: Math.min(Math.max(limit, 1), 120),
+  })
+  const result: ImageEnrichmentResult = { scanned: 0, updated: 0, skipped: 0, errors: [] }
+
+  for (const product of products) {
+    result.scanned++
+    const current = [product.imageUrl, ...product.images.map((image) => image.url)].filter(isUsableImageUrl)
+    if (!(await imageListNeedsRepair(current))) {
+      result.skipped++
+      continue
+    }
+
+    try {
+      const candidates = await getProductImages(product.name, product.category)
+      const images = await importValidImages(candidates, product.name, 4)
+      const finalImages = images.length > 0 ? images : ownedImageUrls(current)
+      if (finalImages.length === 0) {
+        result.skipped++
+        continue
+      }
+
+      await prisma.$transaction(async (tx) => {
+        await tx.product.update({ where: { id: product.id }, data: { imageUrl: finalImages[0] } })
+        await tx.productImage.deleteMany({ where: { productId: product.id } })
+        await tx.productImage.createMany({
+          data: finalImages.map((url, order) => ({ productId: product.id, url, order })),
+        })
+      })
+      result.updated++
+    } catch (error) {
+      result.skipped++
+      result.errors.push(`[${product.name}] ${error instanceof Error ? error.message : String(error)}`)
+    }
+  }
+
+  return result
+}
+
+export async function repairCategoryVariantImages(category: Category, limit = 30): Promise<ImageEnrichmentResult> {
+  const products = await prisma.product.findMany({
+    where: { category, stock: { gt: 0 }, price: { gt: 0 } },
+    include: { variants: { include: { images: { orderBy: { order: 'asc' } } } } },
+    orderBy: { name: 'asc' },
+    take: Math.min(Math.max(limit, 1), 120),
+  })
+  const result: ImageEnrichmentResult = { scanned: 0, updated: 0, skipped: 0, errors: [] }
+
+  for (const product of products) {
+    for (const variant of product.variants) {
+      result.scanned++
+      const current = [variant.imageUrl, ...variant.images.map((image) => image.url)].filter(isUsableImageUrl)
+      if (!(await imageListNeedsRepair(current))) {
+        result.skipped++
+        continue
+      }
+
+      try {
+        const candidates = await getVariantImages(product.name, variant.size, product.category)
+        const images = await importValidImages(candidates, `${product.name} / ${variant.size}`, 4)
+        if (images.length === 0) {
+          const ownImages = ownedImageUrls(current)
+          if (ownImages.length > 0) {
+            await replaceVariantImages(variant.id, ownImages)
+            result.updated++
+            continue
+          }
+          result.skipped++
+          continue
+        }
+
+        await replaceVariantImages(variant.id, images)
+        result.updated++
+      } catch (error) {
+        result.skipped++
+        result.errors.push(`[${product.name} / ${variant.size}] ${error instanceof Error ? error.message : String(error)}`)
+      }
+    }
+  }
 
   return result
 }

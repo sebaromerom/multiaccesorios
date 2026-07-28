@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { isAdminRequest } from '@/lib/admin-auth'
-import { enrichMissingProductImages, enrichMissingVariantImages } from '@/lib/image-enrichment'
+import { Category } from '@prisma/client'
+import { enrichMissingProductImages, enrichMissingVariantImages, repairCategoryProductImages, repairCategoryVariantImages } from '@/lib/image-enrichment'
 import { migrateStoredExternalImages, repairImportedImageAssets } from '@/lib/imported-images'
 
 export async function POST(req: Request) {
@@ -19,6 +20,22 @@ export async function POST(req: Request) {
     }
     if (body.mode === 'repair-imported') {
       const repaired = await repairImportedImageAssets(Number(body.limit ?? 50), body.productId)
+      return NextResponse.json({ ok: true, repaired })
+    }
+    if (body.mode === 'repair-category-variants') {
+      const category = String(body.category ?? '')
+      if (!(category in Category)) {
+        return NextResponse.json({ ok: false, error: 'Categoria invalida' }, { status: 400 })
+      }
+      const repaired = await repairCategoryVariantImages(Category[category as keyof typeof Category], Number(body.limit ?? 30))
+      return NextResponse.json({ ok: true, repaired })
+    }
+    if (body.mode === 'repair-category-products') {
+      const category = String(body.category ?? '')
+      if (!(category in Category)) {
+        return NextResponse.json({ ok: false, error: 'Categoria invalida' }, { status: 400 })
+      }
+      const repaired = await repairCategoryProductImages(Category[category as keyof typeof Category], Number(body.limit ?? 30))
       return NextResponse.json({ ok: true, repaired })
     }
 

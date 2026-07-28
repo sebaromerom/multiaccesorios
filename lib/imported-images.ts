@@ -74,7 +74,7 @@ async function buildWebp(buffer: Buffer, size: number) {
     .toBuffer()
 }
 
-async function storedImageIsUsable(url: string) {
+export async function storedImageIsUsable(url: string) {
   try {
     const res = await fetch(url, { headers: { Accept: 'image/webp,image/*;q=0.9' } })
     if (!res.ok) return false
