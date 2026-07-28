@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import SyncBsaleButton from '@/components/admin/SyncBsaleButton'
 import EnrichImagesButton from '@/components/admin/EnrichImagesButton'
 import SafeProductImage from '@/components/SafeProductImage'
-import { Category } from '@prisma/client'
+import { Category, Prisma } from '@prisma/client'
 import { requireAdminPage } from '@/lib/admin-auth'
 import type { BranchStockSummary } from '@/lib/bsale-branch-stock'
 
@@ -27,15 +27,69 @@ const CATEGORIES = [
 const CATEGORY_VALUES = CATEGORIES.map((category) => category.value) as readonly Category[]
 const CATEGORY_LABELS = Object.fromEntries(CATEGORIES.map((category) => [category.value, category.label])) as Record<string, string>
 const PER_PAGE = 30
+const SORT_OPTIONS = [
+  { value: 'popular', label: 'Popularidad' },
+  { value: 'newest', label: 'Más recientes' },
+  { value: 'sales', label: 'Más vendidos' },
+  { value: 'price_asc', label: 'Menor precio' },
+  { value: 'price_desc', label: 'Mayor precio' },
+  { value: 'alpha_asc', label: 'A-Z' },
+  { value: 'alpha_desc', label: 'Z-A' },
+] as const
+const SORT_VALUES = SORT_OPTIONS.map((option) => option.value)
+const CATEGORY_POPULARITY: Partial<Record<Category, number>> = {
+  Carcasa: 18,
+  Lamina: 16,
+  Cargador: 14,
+  Cable: 13,
+  Audifonos: 12,
+  Vapers: 10,
+  Computacion: 8,
+}
+
+type AdminProductForScore = {
+  price: number
+  stock: number
+  category: Category | null
+  createdAt: Date
+  imageUrl: string | null
+  variants: { stock: number }[]
+  discounts: { id: string }[]
+  _count: { orderItems: number }
+}
+
+function adminPopularityScore(product: AdminProductForScore) {
+  const accessiblePrice = product.price > 0 && product.price <= 39990
+  const impulsePrice = product.price >= 2990 && product.price <= 19990
+  return (
+    product._count.orderItems * 100 +
+    (product.imageUrl ? 35 : 0) +
+    (product.discounts.length > 0 ? 25 : 0) +
+    (product.variants.some((variant) => variant.stock > 0) ? 18 : 0) +
+    Math.min(product.stock, 12) +
+    (impulsePrice ? 12 : accessiblePrice ? 6 : 0) +
+    (product.category ? CATEGORY_POPULARITY[product.category] ?? 0 : 0)
+  )
+}
+
+function getAdminOrderBy(sort: string): Prisma.ProductOrderByWithRelationInput[] {
+  if (sort === 'price_asc') return [{ price: 'asc' }]
+  if (sort === 'price_desc') return [{ price: 'desc' }]
+  if (sort === 'alpha_desc') return [{ name: 'desc' }]
+  if (sort === 'newest') return [{ createdAt: 'desc' }]
+  if (sort === 'sales') return [{ orderItems: { _count: 'desc' } }, { createdAt: 'desc' }]
+  return [{ name: 'asc' }]
+}
 
 export default async function ProductsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; cat?: string; page?: string }>
+  searchParams: Promise<{ q?: string; cat?: string; page?: string; sort?: string }>
 }) {
   await requireAdminPage()
 
-  const { q, cat, page } = await searchParams
+  const { q, cat, page, sort } = await searchParams
+  const activeSort = sort && SORT_VALUES.includes(sort as (typeof SORT_VALUES)[number]) ? sort : 'popular'
   const currentPage = Math.max(1, Number(page ?? 1))
   const skip = (currentPage - 1) * PER_PAGE
 
@@ -53,13 +107,33 @@ export default async function ProductsPage({
     price: { gt: 0 },
   }
 
+  const productInclude = {
+    variants: { select: { stock: true } },
+    discounts: { where: { active: true }, select: { id: true } },
+    _count: { select: { orderItems: true } },
+  } satisfies Prisma.ProductInclude
+  const productsPromise = activeSort === 'popular'
+    ? prisma.product.findMany({
+        where,
+        orderBy: [{ createdAt: 'desc' }],
+        include: productInclude,
+      }).then((allProducts) => allProducts
+        .sort((a, b) => {
+          const scoreDiff = adminPopularityScore(b) - adminPopularityScore(a)
+          if (scoreDiff !== 0) return scoreDiff
+          return b.createdAt.getTime() - a.createdAt.getTime()
+        })
+        .slice(skip, skip + PER_PAGE))
+    : prisma.product.findMany({
+        where,
+        orderBy: getAdminOrderBy(activeSort),
+        skip,
+        take: PER_PAGE,
+        include: productInclude,
+      })
+
   const [products, total, categoryAggregations] = await Promise.all([
-    prisma.product.findMany({
-      where,
-      orderBy: { name: 'asc' },
-      skip,
-      take: PER_PAGE,
-    }),
+    productsPromise,
     prisma.product.count({ where }),
     prisma.product.groupBy({
       by: ['category'],
@@ -90,6 +164,7 @@ export default async function ProductsPage({
   if (q) currentParams.set('q', q)
   if (cat) currentParams.set('cat', cat)
   if (page) currentParams.set('page', String(currentPage))
+  if (activeSort !== 'popular') currentParams.set('sort', activeSort)
   const queryString = currentParams.toString()
 
   function buildUrl(params: Record<string, string | undefined>) {
@@ -97,6 +172,7 @@ export default async function ProductsPage({
     if (params.q)    p.set('q', params.q)
     if (params.cat)  p.set('cat', params.cat)
     if (params.page) p.set('page', params.page)
+    if (params.sort && params.sort !== 'popular') p.set('sort', params.sort)
     return `/admin/products?${p.toString()}`
   }
 
@@ -147,6 +223,18 @@ export default async function ProductsPage({
           ))}
         </select>
 
+        <select
+          name="sort"
+          defaultValue={activeSort}
+          className="h-11 px-3 rounded-[4px] border border-zinc-300 focus:border-red-600 outline-none text-sm bg-white transition-colors w-full sm:w-auto"
+        >
+          {SORT_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+
         <div className="flex gap-3 w-full sm:w-auto">
           <button
             type="submit"
@@ -155,7 +243,7 @@ export default async function ProductsPage({
             Buscar
           </button>
 
-          {(q || cat) && (
+          {(q || cat || activeSort !== 'popular') && (
             <Link
               href="/admin/products"
               className="min-h-11 flex-1 sm:flex-none px-6 border-2 border-zinc-300 text-zinc-500 text-xs uppercase tracking-widest font-bold hover:border-black hover:text-black transition-colors flex items-center justify-center"
@@ -320,7 +408,7 @@ export default async function ProductsPage({
           </p>
           <div className="flex flex-wrap justify-center gap-2">
             {currentPage > 1 && (
-              <Link href={buildUrl({ q, cat, page: String(currentPage - 1) })}>
+              <Link href={buildUrl({ q, cat, sort: activeSort, page: String(currentPage - 1) })}>
                 <Button variant="outline" size="sm" className="rounded-none border-zinc-300 uppercase text-[10px] tracking-widest font-bold">
                   Ant.
                 </Button>
@@ -338,7 +426,7 @@ export default async function ProductsPage({
                 p === '...' ? (
                   <span key={`dots-${i}`} className="px-2 py-1 text-zinc-400 text-xs flex items-center">...</span>
                 ) : (
-                  <Link key={p} href={buildUrl({ q, cat, page: String(p) })}>
+                  <Link key={p} href={buildUrl({ q, cat, sort: activeSort, page: String(p) })}>
                     <Button
                       variant={p === currentPage ? 'default' : 'outline'}
                       size="sm"
@@ -353,7 +441,7 @@ export default async function ProductsPage({
               )}
 
             {currentPage < totalPages && (
-              <Link href={buildUrl({ q, cat, page: String(currentPage + 1) })}>
+              <Link href={buildUrl({ q, cat, sort: activeSort, page: String(currentPage + 1) })}>
                 <Button variant="outline" size="sm" className="rounded-none border-zinc-300 uppercase text-[10px] tracking-widest font-bold">
                   Sig.
                 </Button>
