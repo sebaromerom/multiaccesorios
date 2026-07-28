@@ -958,12 +958,13 @@ export async function repairCategoryProductImages(category: Category, limit = 30
 
   for (const product of products) {
     result.scanned++
+    const productCurrent = [product.imageUrl, ...product.images.map((image) => image.url)].filter(isUsableImageUrl)
     const variantFallback = product.variants.flatMap((variant) => [
       variant.imageUrl,
       ...variant.images.map((image) => image.url),
     ])
-    const current = [product.imageUrl, ...product.images.map((image) => image.url), ...variantFallback].filter(isUsableImageUrl)
-    if (!(await imageListNeedsRepair(current))) {
+    const current = [...productCurrent, ...variantFallback].filter(isUsableImageUrl)
+    if (!(await imageListNeedsRepair(productCurrent))) {
       result.skipped++
       continue
     }
@@ -1022,13 +1023,13 @@ export async function repairCategoryVariantImages(category: Category, limit = 30
   for (const product of products) {
     for (const variant of product.variants) {
       result.scanned++
+      const variantCurrent = [variant.imageUrl, ...variant.images.map((image) => image.url)].filter(isUsableImageUrl)
       const current = [
-        variant.imageUrl,
-        ...variant.images.map((image) => image.url),
+        ...variantCurrent,
         product.imageUrl,
         ...product.images.map((image) => image.url),
       ].filter(isUsableImageUrl)
-      if (!(await imageListNeedsRepair(current))) {
+      if (!(await imageListNeedsRepair(variantCurrent))) {
         result.skipped++
         continue
       }
