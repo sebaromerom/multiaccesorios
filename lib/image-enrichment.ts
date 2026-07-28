@@ -671,7 +671,7 @@ async function imageListNeedsRepair(urls: string[]) {
     (OWN_IMAGE_PREFIX && url.startsWith(OWN_IMAGE_PREFIX)) || url.startsWith(LOCAL_PRODUCT_IMAGE_PREFIX)
   const ownUrls = ownedImageUrls(urls)
   if (urls.some((url) => !isOwned(url))) return true
-  if (ownUrls.length < 2) return true
+  if (ownUrls.length < 3) return true
   if ((await genericSourceImageUrls(ownUrls)).length > 0) return true
   const checks = await Promise.all(ownUrls.slice(0, 4).map((url) => storedImageIsUsable(url)))
   return checks.some((ok) => !ok)
