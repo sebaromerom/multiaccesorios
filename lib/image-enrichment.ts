@@ -694,7 +694,7 @@ export async function getVariantImages(
   return []
 }
 
-async function importValidImages(urls: string[], logPrefix: string, limit = 4) {
+async function importValidImages(urls: string[], logPrefix: string, limit = 4, errors?: string[]) {
   const imported: string[] = []
   for (const url of [...new Set(urls)]) {
     if (imported.length >= limit) break
@@ -702,7 +702,9 @@ async function importValidImages(urls: string[], logPrefix: string, limit = 4) {
       const image = await importExternalImage(url)
       if (image) imported.push(image.mediumUrl)
     } catch (error) {
-      console.warn(`[image-import] ${logPrefix}: ${error instanceof Error ? error.message : String(error)}`)
+      const message = `[image-import] ${logPrefix}: ${error instanceof Error ? error.message : String(error)}`
+      console.warn(message)
+      errors?.push(message)
     }
   }
   return [...new Set(imported)]
@@ -949,7 +951,7 @@ export async function repairCategoryProductImages(category: Category, limit = 30
 
     try {
       const candidates = await getProductImages(product.name, product.category)
-      const images = await importValidImages(candidates, product.name, 4)
+      const images = await importValidImages(candidates, product.name, 4, result.errors)
       const finalImages = images.length > 0 ? images : await ownedProductImageUrls(current)
       if (finalImages.length < 3) {
         result.skipped++
@@ -1001,7 +1003,7 @@ export async function repairCategoryVariantImages(category: Category, limit = 30
 
       try {
         const candidates = await getVariantImages(product.name, variant.size, product.category)
-        const images = await importValidImages(candidates, `${product.name} / ${variant.size}`, 4)
+        const images = await importValidImages(candidates, `${product.name} / ${variant.size}`, 4, result.errors)
         if (images.length === 0) {
           const ownImages = await ownedProductImageUrls(current)
           if (ownImages.length >= 3) {
