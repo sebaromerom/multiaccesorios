@@ -105,6 +105,51 @@ async function uploadWebpVersions(buffer: Buffer, hash: string) {
   return urls
 }
 
+async function uploadDerivedWebp(buffer: Buffer, hash: string, key: string) {
+  const supabase = storageClient()
+  const path = `derived/${hash}/${key}.webp`
+  const body = new Blob([new Uint8Array(buffer)], { type: 'image/webp' })
+  const { error } = await supabase.storage.from('products').upload(path, body, {
+    contentType: 'image/webp',
+    upsert: true,
+  })
+  if (error) throw new Error(`Supabase upload: ${error.message}`)
+  return publicUrl(path)
+}
+
+export async function createSupplementalProductImages(sourceUrl: string, count = 2) {
+  const { buffer } = await fetchImage(sourceUrl)
+  const baseHash = crypto.createHash('sha256').update(`${sourceUrl}:${buffer.toString('base64url')}`).digest('hex')
+  const variants = [
+    { key: 'full', size: 760, top: 20 },
+    { key: 'padded', size: 660, top: 70 },
+    { key: 'large', size: 820, top: -10 },
+  ].slice(0, Math.max(0, count))
+
+  const urls: string[] = []
+  for (const variant of variants) {
+    const product = await sharp(buffer, { failOn: 'error' })
+      .rotate()
+      .resize(variant.size, variant.size, { fit: 'contain', background: { r: 255, g: 255, b: 255, alpha: 0 } })
+      .png()
+      .toBuffer()
+    const canvas = await sharp({
+      create: {
+        width: 800,
+        height: 800,
+        channels: 4,
+        background: { r: 255, g: 255, b: 255, alpha: 1 },
+      },
+    })
+      .composite([{ input: product, left: Math.round((800 - variant.size) / 2), top: variant.top }])
+      .webp({ quality: 78, effort: 4 })
+      .toBuffer()
+    urls.push(await uploadDerivedWebp(canvas, baseHash, variant.key))
+  }
+
+  return urls
+}
+
 export async function importExternalImage(sourceUrl: string): Promise<ImportedImageResult | null> {
   const url = sourceUrl.trim()
   if (!url || looksLikePlaceholder(url)) return null

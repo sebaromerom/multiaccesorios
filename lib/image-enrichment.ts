@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { Category } from '@prisma/client'
-import { importExternalImage, storedImageIsUsable } from '@/lib/imported-images'
+import { createSupplementalProductImages, importExternalImage, storedImageIsUsable } from '@/lib/imported-images'
 
 type ImageCandidate = {
   url: string
@@ -710,6 +710,18 @@ async function importValidImages(urls: string[], logPrefix: string, limit = 4, e
   return [...new Set(imported)]
 }
 
+async function ensureMinimumGallery(images: string[], logPrefix: string, errors: string[], min = 3) {
+  const finalImages = [...new Set(images)]
+  if (finalImages.length >= min || finalImages.length === 0) return finalImages
+  try {
+    const supplements = await createSupplementalProductImages(finalImages[0], min - finalImages.length)
+    finalImages.push(...supplements.filter((url) => !finalImages.includes(url)))
+  } catch (error) {
+    errors.push(`[${logPrefix}] fallback imagenes: ${error instanceof Error ? error.message : String(error)}`)
+  }
+  return finalImages.slice(0, Math.max(min, finalImages.length))
+}
+
 async function imageListNeedsRepair(urls: string[]) {
   const isOwned = (url: string) =>
     (OWN_IMAGE_PREFIX && url.startsWith(OWN_IMAGE_PREFIX)) || url.startsWith(LOCAL_PRODUCT_IMAGE_PREFIX)
@@ -952,7 +964,11 @@ export async function repairCategoryProductImages(category: Category, limit = 30
     try {
       const candidates = await getProductImages(product.name, product.category)
       const images = await importValidImages(candidates, product.name, 4, result.errors)
-      const finalImages = images.length > 0 ? images : await ownedProductImageUrls(current)
+      const finalImages = await ensureMinimumGallery(
+        images.length > 0 ? images : await ownedProductImageUrls(current),
+        product.name,
+        result.errors
+      )
       if (finalImages.length < 3) {
         result.skipped++
         result.errors.push(`[${product.name}] imagenes insuficientes: candidatas=${candidates.length}, importadas=${images.length}, finales=${finalImages.length}`)
@@ -1005,8 +1021,13 @@ export async function repairCategoryVariantImages(category: Category, limit = 30
       try {
         const candidates = await getVariantImages(product.name, variant.size, product.category)
         const images = await importValidImages(candidates, `${product.name} / ${variant.size}`, 4, result.errors)
+        const finalImages = await ensureMinimumGallery(
+          images.length > 0 ? images : await ownedProductImageUrls(current),
+          `${product.name} / ${variant.size}`,
+          result.errors
+        )
         if (images.length === 0) {
-          const ownImages = await ownedProductImageUrls(current)
+          const ownImages = finalImages
           if (ownImages.length >= 3) {
             await replaceVariantImages(variant.id, ownImages)
             result.updated++
@@ -1016,13 +1037,13 @@ export async function repairCategoryVariantImages(category: Category, limit = 30
           result.errors.push(`[${product.name} / ${variant.size}] imagenes insuficientes: candidatas=${candidates.length}, importadas=0, finales=${ownImages.length}`)
           continue
         }
-        if (images.length < 3) {
+        if (finalImages.length < 3) {
           result.skipped++
-          result.errors.push(`[${product.name} / ${variant.size}] imagenes insuficientes: candidatas=${candidates.length}, importadas=${images.length}, finales=${images.length}`)
+          result.errors.push(`[${product.name} / ${variant.size}] imagenes insuficientes: candidatas=${candidates.length}, importadas=${images.length}, finales=${finalImages.length}`)
           continue
         }
 
-        await replaceVariantImages(variant.id, images)
+        await replaceVariantImages(variant.id, finalImages)
         result.updated++
       } catch (error) {
         result.skipped++
